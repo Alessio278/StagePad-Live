@@ -63,11 +63,16 @@ namespace StagePad.App
         public void Configure(string? value, int latency) { id = value ?? "fake-audio"; Latency = latency; }
         public void Dispose() { stop.Cancel(); thread.Join(1000); }
     }
+    internal static class FakeAudioImport
+    {
+        public static readonly ManualResetEventSlim AllowCompletion=new(true);
+    }
     internal static class Importer
     {
         public static IAudioSource Import(string original, string cache, MemoryBudget budget, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
+            FakeAudioImport.AllowCompletion.Wait(ct);
             if (!File.Exists(original)) throw new FileNotFoundException("Missing simulated audio", original);
             if (File.ReadAllText(original) == "CORRUPT") throw new InvalidDataException("Corrupt simulated audio");
             var samples = new float[48000 * 2 * 40];

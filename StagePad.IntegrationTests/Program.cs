@@ -32,6 +32,15 @@ async Task<StateInfo> Until(Func<StateInfo, bool> predicate, string name, int ti
 async Task Do(Request r) { var reply = await audio.Handle(r); Check(reply.Ok, "accepted " + r.Op + (reply.Ok ? "" : ": " + reply.Error)); }
 async Task Configure(int slot, Func<SlotSettings, SlotSettings> change)
 { var s = await State(); await Do(new("settings", slot, Settings: change(s.Project!.Slots[slot]))); }
+async Task LoadReady(int slot,string path,string name)
+{
+    int previousRevision=(await State()).Slots[slot].Revision;
+    await Do(new("load",slot,Path:path));
+    // State is a periodically published snapshot: Loading=false may still belong
+    // to the previous import, even when the same file is being loaded again.
+    await Until(s=>s.Slots[slot].Revision>previousRevision && !s.Slots[slot].Loading &&
+        s.Slots[slot].State=="Ready" && s.Slots[slot].Error==null,name);
+}
 void Emit(int note, bool down) => FakeMidi.Emit(MidiCodec.Note(1,note,down ? 100 : 0,down));
 try
 {
@@ -44,7 +53,7 @@ try
     await Do(new("configure", Routing: new() { MidiInput = "1:2:Fake MIDI", MidiOutput = "1:2:Fake MIDI" }));
     await Until(s => s.MidiIn?.Status == "Connesso" && s.MidiOut?.Status.StartsWith("Porta aperta") == true, "MIDI open");
     string file = Path.Combine(folder, "audio.wav"); await File.WriteAllTextAsync(file, "OK");
-    await Do(new("load", Path: file)); await Until(s => !s.Slots[0].Loading && s.Slots[0].State == "Ready", "load");
+    await LoadReady(0,file,"load");
     var wire = await Wire.Call(pipe, new("state")); Check(wire.State?.Project?.Slots.Length == 16, "serialized protocol project snapshot roundtrip (in-process transport)");
     Check((await Wire.Call(pipe, new("wave"))).Peaks?.Length == 5, "waveform serialized separately");
     await Do(new("learn", Flag:true)); Emit(36,true);
@@ -168,7 +177,7 @@ try
     Check(!(await audio.Handle(new("grid",Rows:11,Columns:10))).Ok,"coordinator rejects grid above 10x10");
     Check(!(await audio.Handle(new("slot-count",Value:101))).Ok && !(await audio.Handle(new("slot-count",Value:0))).Ok,"coordinator enforces 1-100 slot count");
     await Configure(99,s=>s with { Name="Finale slot 100",Action=SlotAction.Audio,Mode=PlayMode.TogglePause,PadNote=98 });
-    await Do(new("load",99,Path:file));await Until(s=>!s.Slots[99].Loading && s.Slots[99].State=="Ready","load slot 100");
+    await LoadReady(99,file,"load slot 100");
     await Do(new("pad-down",99));await Until(s=>s.Slots[99].State=="Playing" && s.Slots[99].Position>.02,"play slot 100");
     Check(!(await audio.Handle(new("slot-count",Value:16))).Ok,"slot count cannot change during playback");
     await Do(new("seek",99,Value:.25f));await Until(s=>!s.Slots[99].Seeking && s.Slots[99].Position>9,"seek slot 100");
@@ -251,7 +260,7 @@ try
         await Until(s=>s.Slots.All(v=>!v.Loading && !v.Seeking),"idle imports before combined-output tests");
         await Do(new("configure",Routing:(await State()).Project!.Routing with{MidiInput="1:2:Fake MIDI",MidiOutput="1:2:Fake MIDI"}));
         await Until(s=>s.MidiOut?.Status.StartsWith("Porta aperta")==true,"MIDI ready for combinations");
-        await Do(new("load",3,Path:file));await Until(s=>!s.Slots[3].Loading && s.Slots[3].State=="Ready","combined audio ready");
+        await LoadReady(3,file,"combined audio ready");
         long observedOsc=(await State()).OscSent;
         foreach(var combination in Enum.GetValues<SlotAction>())
         {
@@ -328,11 +337,11 @@ try
     string titleA=Path.Combine(folder,"track-one.wav"),titleB=Path.Combine(folder,"track-two.wav");
     await File.WriteAllTextAsync(titleA,"OK");await File.WriteAllTextAsync(titleB,"OK");
     await Configure(6,s=>s with{Name="Slot 7",AutoName=true,Action=SlotAction.Audio});
-    await Do(new("load",6,Path:titleA));await Until(s=>!s.Slots[6].Loading && s.Slots[6].Name=="track-one","automatic first track title");
-    await Do(new("load",6,Path:titleB));await Until(s=>!s.Slots[6].Loading && s.Slots[6].Name=="track-two","automatic replacement track title");
+    await LoadReady(6,titleA,"automatic first track audio");await Until(s=>s.Slots[6].Name=="track-one","automatic first track title");
+    await LoadReady(6,titleB,"automatic replacement audio");await Until(s=>s.Slots[6].Name=="track-two","automatic replacement track title");
     Check((await State()).Project!.Slots[6].AutoName==true,"automatic title keeps explicit mode after replacing audio");
-    await Configure(6,s=>s with{Name="Slot Drums",AutoName=false});await Do(new("load",6,Path:titleA));
-    await Until(s=>!s.Slots[6].Loading && s.Slots[6].Name=="Slot Drums","custom Slot-prefixed title retained");
+    await Configure(6,s=>s with{Name="Slot Drums",AutoName=false});await LoadReady(6,titleA,"custom title replacement audio");
+    await Until(s=>s.Slots[6].Name=="Slot Drums","custom Slot-prefixed title retained");
     await Configure(6,s=>s with{Name="",AutoName=true});await Until(s=>s.Slots[6].Name=="track-one","clearing title restores dynamic track name");
     await Do(new("clear",6));await Until(s=>s.Slots[6].Name=="Slot 7","empty automatic slot has default title");
     Check(true,"dynamic, custom and cleared slot titles behave correctly");
@@ -343,7 +352,22 @@ try
     await Do(new("learn-volume",Origin:"track",Flag:true));FakeMidi.Emit(MidiCodec.ControlChange(3,11,64));
     await Until(s=>s.Project!.CurrentTrackControl==new MidiCcBinding(3,11) && s.VolumeLearn==null,"current-track fader learned independently");
     Check(!(await audio.Handle(new("midi-volume-controls",MasterControl:new(2,7),TrackControl:new(2,7)))).Ok,"same controller cannot be assigned to both volumes");
-    await Do(new("load",4,Path:file));await Do(new("load",5,Path:file));await Until(s=>!s.Slots[4].Loading && !s.Slots[5].Loading,"two audio tracks prepared for faders");
+    await LoadReady(4,file,"first audio track prepared for faders");
+    // Re-import an already Ready slot while holding the fake decoder. The waiter
+    // must not accept the old Ready snapshot as completion of this new import.
+    int revisionBeforeReload=(await State()).Slots[4].Revision;
+    FakeAudioImport.AllowCompletion.Reset();
+    Task reload=LoadReady(4,file,"same-file replacement completed");
+    try
+    {
+        await Until(s=>s.Slots[4].Revision>revisionBeforeReload && s.Slots[4].Loading,"held import observed");
+        Check(!reload.IsCompleted,"load waiter rejects stale Ready state while a new import is held");
+        var duringImport=await State();
+        Check(!(await audio.Handle(new("settings",4,Settings:duringImport.Project!.Slots[4]))).Ok,"application still rejects settings during an active import");
+    }
+    finally{FakeAudioImport.AllowCompletion.Set();}
+    await reload;
+    await LoadReady(5,file,"second audio track prepared for faders");
     await Configure(4,s=>s with{Action=SlotAction.Audio,Mode=PlayMode.OneShot});await Configure(5,s=>s with{Action=SlotAction.Audio,Mode=PlayMode.OneShot});
     await Do(new("play",4));await Until(s=>s.CurrentPlaying==4,"first current audio");
     FakeMidi.Emit(MidiCodec.ControlChange(2,7,32));await Until(s=>Math.Abs(s.Master-32/127f)<.0001,"master CC applied");
@@ -470,7 +494,7 @@ try
 }
 finally
 {
-    FakeMidi.OutGate.Set(); await audio.Handle(new("shutdown")); await input.Handle(new("shutdown")); await output.Handle(new("shutdown"));
+    FakeAudioImport.AllowCompletion.Set();FakeMidi.OutGate.Set(); await audio.Handle(new("shutdown")); await input.Handle(new("shutdown")); await output.Handle(new("shutdown"));
     Wire.TestRoute = null;
 }
 
