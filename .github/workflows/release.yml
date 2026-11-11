@@ -1,0 +1,36 @@
+name: Build a draft Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Verify version, test, and build
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content 'StagePad.App/StagePad.App.csproj')).Project.PropertyGroup.Version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and source versions differ.' }
+          ./Build.ps1
+      - name: Prepare checksums and draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $exe = 'artifacts/win-x64/StagePad.exe'
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  StagePad.exe" | Set-Content 'artifacts/SHA256.txt' -Encoding utf8NoBOM
+          gh release view $env:GITHUB_REF_NAME --json id 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host 'Release already exists; keeping its manually selected assets.'
+            exit 0
+          }
+          gh release create $env:GITHUB_REF_NAME $exe artifacts/SHA256.txt artifacts/*-Windows.zip --draft --verify-tag --title "StagePad $env:GITHUB_REF_NAME" --notes 'Windows portable build. Review the changelog and test audio, MIDI, OSC and shutdown on Windows before publishing this draft.'
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed.' }
