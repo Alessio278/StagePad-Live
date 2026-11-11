@@ -1,0 +1,2097 @@
+{
+  "Impostazioni": {
+    "en": "Settings",
+    "es": "Ajustes",
+    "fr": "Paramètres"
+  },
+  "Lingua dell’interfaccia": {
+    "en": "Interface language",
+    "es": "Idioma de la interfaz",
+    "fr": "Langue de l’interface"
+  },
+  "La lingua si aggiorna subito ed è salvata su questo PC. L’audio continua senza interruzioni.": {
+    "en": "The language changes immediately and is saved on this PC. Audio continues uninterrupted.",
+    "es": "El idioma cambia al instante y se guarda en este PC. El audio continúa sin interrupciones.",
+    "fr": "La langue change immédiatement et est enregistrée sur ce PC. L’audio continue sans interruption."
+  },
+  "La lingua è applicata, ma non è stato possibile salvare la preferenza.": {
+    "en": "The language was applied, but the preference could not be saved.",
+    "es": "Se ha aplicado el idioma, pero no se ha podido guardar la preferencia.",
+    "fr": "La langue a été appliquée, mais la préférence n’a pas pu être enregistrée."
+  },
+  "Fatto": {
+    "en": "Done",
+    "es": "Listo",
+    "fr": "Terminé"
+  },
+  "Setup": {
+    "en": "Setup",
+    "es": "Preparación",
+    "fr": "Préparation"
+  },
+  "Serata": {
+    "en": "Live",
+    "es": "Directo",
+    "fr": "Direct"
+  },
+  "StagePad Live · Setup / Serata": {
+    "en": "StagePad Live · Setup / Live",
+    "es": "StagePad Live · Preparación / Directo",
+    "fr": "StagePad Live · Préparation / Direct"
+  },
+  "StagePad Live · SERATA": {
+    "en": "StagePad Live · LIVE",
+    "es": "StagePad Live · DIRECTO",
+    "fr": "StagePad Live · DIRECT"
+  },
+  "StagePad Live · SETUP": {
+    "en": "StagePad Live · SETUP",
+    "es": "StagePad Live · PREPARACIÓN",
+    "fr": "StagePad Live · PRÉPARATION"
+  },
+  "Il tuo show": {
+    "en": "Your show",
+    "es": "Tu espectáculo",
+    "fr": "Votre spectacle"
+  },
+  "Prepara il progetto, poi passa a Serata.": {
+    "en": "Prepare your project, then switch to Live.",
+    "es": "Prepara el proyecto y pasa a Directo.",
+    "fr": "Préparez le projet, puis passez en mode Direct."
+  },
+  "PROGETTO": {
+    "en": "PROJECT",
+    "es": "PROYECTO",
+    "fr": "PROJET"
+  },
+  "Apri…": {
+    "en": "Open…",
+    "es": "Abrir…",
+    "fr": "Ouvrir…"
+  },
+  "Salva…": {
+    "en": "Save…",
+    "es": "Guardar…",
+    "fr": "Enregistrer…"
+  },
+  "Numero di slot · 1–100": {
+    "en": "Number of slots · 1–100",
+    "es": "Número de slots · 1–100",
+    "fr": "Nombre de slots · 1–100"
+  },
+  "Applica numero slot": {
+    "en": "Apply slot count",
+    "es": "Aplicar número de slots",
+    "fr": "Appliquer le nombre de slots"
+  },
+  "USCITA AUDIO": {
+    "en": "AUDIO OUTPUT",
+    "es": "SALIDA DE AUDIO",
+    "fr": "SORTIE AUDIO"
+  },
+  "Dispositivo": {
+    "en": "Device",
+    "es": "Dispositivo",
+    "fr": "Périphérique"
+  },
+  "Applica": {
+    "en": "Apply",
+    "es": "Aplicar",
+    "fr": "Appliquer"
+  },
+  "Buffer / latenza · ms": {
+    "en": "Buffer / latency · ms",
+    "es": "Búfer / latencia · ms",
+    "fr": "Tampon / latence · ms"
+  },
+  "Test audio · −24 dB": {
+    "en": "Audio test · −24 dB",
+    "es": "Prueba de audio · −24 dB",
+    "fr": "Test audio · −24 dB"
+  },
+  "MIDI ROUTING": {
+    "en": "MIDI ROUTING",
+    "es": "RUTEO MIDI",
+    "fr": "ROUTAGE MIDI"
+  },
+  "Controller · MIDI IN": {
+    "en": "Controller · MIDI IN",
+    "es": "Controlador · MIDI IN",
+    "fr": "Contrôleur · MIDI IN"
+  },
+  "Destinazione · MIDI OUT": {
+    "en": "Destination · MIDI OUT",
+    "es": "Destino · MIDI OUT",
+    "fr": "Destination · MIDI OUT"
+  },
+  "Applica MIDI": {
+    "en": "Apply MIDI",
+    "es": "Aplicar MIDI",
+    "fr": "Appliquer MIDI"
+  },
+  "Test IN": {
+    "en": "Test IN",
+    "es": "Probar IN",
+    "fr": "Tester IN"
+  },
+  "Test OUT": {
+    "en": "Test OUT",
+    "es": "Probar OUT",
+    "fr": "Tester OUT"
+  },
+  "Premi un pad e osserva MIDI IN. Gli slot già associati restano operativi durante il test.": {
+    "en": "Press a pad and watch MIDI IN. Mapped slots remain active during the test.",
+    "es": "Pulsa un pad y observa MIDI IN. Los slots asignados siguen activos durante la prueba.",
+    "fr": "Appuyez sur un pad et observez MIDI IN. Les slots associés restent actifs pendant le test."
+  },
+  "Invia il messaggio MIDI dello slot selezionato al dispositivo di destinazione, senza audio.": {
+    "en": "Send the selected slot’s MIDI message to the destination device, without audio.",
+    "es": "Envía el mensaje MIDI del slot seleccionado al dispositivo de destino, sin audio.",
+    "fr": "Envoie le message MIDI du slot sélectionné au périphérique destinataire, sans audio."
+  },
+  "MEMORIA AUDIO": {
+    "en": "AUDIO MEMORY",
+    "es": "MEMORIA DE AUDIO",
+    "fr": "MÉMOIRE AUDIO"
+  },
+  "Applica MiB": {
+    "en": "Apply MiB",
+    "es": "Aplicar MiB",
+    "fr": "Appliquer MiB"
+  },
+  "Budget RAM non valido.": {
+    "en": "Invalid RAM budget.",
+    "es": "Presupuesto de RAM no válido.",
+    "fr": "Budget RAM non valide."
+  },
+  "DIAGNOSTICA": {
+    "en": "DIAGNOSTICS",
+    "es": "DIAGNÓSTICO",
+    "fr": "DIAGNOSTIC"
+  },
+  "Apri log": {
+    "en": "Open logs",
+    "es": "Abrir registros",
+    "fr": "Ouvrir les journaux"
+  },
+  "Licenze": {
+    "en": "Licenses",
+    "es": "Licencias",
+    "fr": "Licences"
+  },
+  "TRACCIA SELEZIONATA": {
+    "en": "SELECTED TRACK",
+    "es": "PISTA SELECCIONADA",
+    "fr": "PISTE SÉLECTIONNÉE"
+  },
+  "TRASCORSO": {
+    "en": "ELAPSED",
+    "es": "TRANSCURRIDO",
+    "fr": "ÉCOULÉ"
+  },
+  "DURATA TOTALE": {
+    "en": "TOTAL DURATION",
+    "es": "DURACIÓN TOTAL",
+    "fr": "DURÉE TOTALE"
+  },
+  "RIMANENTE": {
+    "en": "REMAINING",
+    "es": "RESTANTE",
+    "fr": "RESTANT"
+  },
+  "Righe": {
+    "en": "Rows",
+    "es": "Filas",
+    "fr": "Lignes"
+  },
+  "Colonne": {
+    "en": "Columns",
+    "es": "Columnas",
+    "fr": "Colonnes"
+  },
+  "Massimo 10 righe e 10 colonne, con una cella per ogni slot attivo. Scorri per raggiungere quelle fuori schermo.": {
+    "en": "Up to 10 rows and 10 columns, with a cell for each active slot. Scroll to reach off-screen cells.",
+    "es": "Hasta 10 filas y 10 columnas, con una celda por slot activo. Desplázate para acceder a las celdas fuera de pantalla.",
+    "fr": "Jusqu’à 10 lignes et 10 colonnes, avec une cellule par slot actif. Faites défiler pour atteindre les cellules hors écran."
+  },
+  "SHOW LOCK": {
+    "en": "SHOW LOCK",
+    "es": "BLOQUEO",
+    "fr": "VERROU"
+  },
+  "● LOCK ATTIVO": {
+    "en": "● LOCKED",
+    "es": "● BLOQUEADO",
+    "fr": "● VERROUILLÉ"
+  },
+  "Schermo intero · F11 / Esc": {
+    "en": "Full screen · F11 / Esc",
+    "es": "Pantalla completa · F11 / Esc",
+    "fr": "Plein écran · F11 / Esc"
+  },
+  "■  STOP ALL": {
+    "en": "■  STOP ALL",
+    "es": "■  DETENER TODO",
+    "fr": "■  TOUT ARRÊTER"
+  },
+  "PANIC · ferma subito tutte le tracce": {
+    "en": "PANIC · stop all tracks immediately",
+    "es": "PANIC · detiene todas las pistas al instante",
+    "fr": "PANIC · arrête immédiatement toutes les pistes"
+  },
+  "Seleziona uno slot": {
+    "en": "Select a slot",
+    "es": "Selecciona un slot",
+    "fr": "Sélectionnez un slot"
+  },
+  "VUOTO": {
+    "en": "EMPTY",
+    "es": "VACÍO",
+    "fr": "VIDE"
+  },
+  "PRONTO": {
+    "en": "READY",
+    "es": "LISTO",
+    "fr": "PRÊT"
+  },
+  "IN RIPRODUZIONE": {
+    "en": "PLAYING",
+    "es": "REPRODUCIENDO",
+    "fr": "LECTURE"
+  },
+  "IN PAUSA": {
+    "en": "PAUSED",
+    "es": "EN PAUSA",
+    "fr": "EN PAUSE"
+  },
+  "FERMO": {
+    "en": "STOPPED",
+    "es": "DETENIDO",
+    "fr": "ARRÊTÉ"
+  },
+  "TERMINATO": {
+    "en": "ENDED",
+    "es": "FINALIZADO",
+    "fr": "TERMINÉ"
+  },
+  "ERRORE": {
+    "en": "ERROR",
+    "es": "ERROR",
+    "fr": "ERREUR"
+  },
+  "IN CHIUSURA": {
+    "en": "STOPPING",
+    "es": "DETENIENDO",
+    "fr": "ARRÊT EN COURS"
+  },
+  "POSIZIONE…": {
+    "en": "SEEKING…",
+    "es": "BUSCANDO…",
+    "fr": "POSITIONNEMENT…"
+  },
+  "CARICAMENTO…": {
+    "en": "LOADING…",
+    "es": "CARGANDO…",
+    "fr": "CHARGEMENT…"
+  },
+  "COMANDO MIDI": {
+    "en": "MIDI MESSAGE",
+    "es": "MENSAJE MIDI",
+    "fr": "MESSAGE MIDI"
+  },
+  "Carica…": {
+    "en": "Load…",
+    "es": "Cargar…",
+    "fr": "Charger…"
+  },
+  "Configura": {
+    "en": "Configure",
+    "es": "Configurar",
+    "fr": "Configurer"
+  },
+  "Svuota": {
+    "en": "Clear",
+    "es": "Vaciar",
+    "fr": "Vider"
+  },
+  "Volume slot": {
+    "en": "Slot volume",
+    "es": "Volumen del slot",
+    "fr": "Volume du slot"
+  },
+  "Premi il titolo oppure ▶ per eseguire la modalità configurata.": {
+    "en": "Press the title or ▶ to trigger the configured mode.",
+    "es": "Pulsa el título o ▶ para activar el modo configurado.",
+    "fr": "Appuyez sur le titre ou sur ▶ pour déclencher le mode configuré."
+  },
+  "Play / riprendi · tieni premuto per Hold": {
+    "en": "Play / resume · keep pressed for Hold",
+    "es": "Reproducir / reanudar · mantener pulsado para Hold",
+    "fr": "Lire / reprendre · maintenir enfoncé pour Hold"
+  },
+  "Pausa": {
+    "en": "Pause",
+    "es": "Pausa",
+    "fr": "Pause"
+  },
+  "Stop": {
+    "en": "Stop",
+    "es": "Detener",
+    "fr": "Arrêter"
+  },
+  "Slot {0} · impostazioni": {
+    "en": "Slot {0} · settings",
+    "es": "Slot {0} · configuración",
+    "fr": "Slot {0} · paramètres"
+  },
+  "Audio, mappatura controller e messaggio MIDI": {
+    "en": "Audio, controller mapping and MIDI message",
+    "es": "Audio, asignación del controlador y mensaje MIDI",
+    "fr": "Audio, affectation du contrôleur et message MIDI"
+  },
+  "Applica allo slot": {
+    "en": "Apply to slot",
+    "es": "Aplicar al slot",
+    "fr": "Appliquer au slot"
+  },
+  "Reset": {
+    "en": "Reset",
+    "es": "Restablecer",
+    "fr": "Réinitialiser"
+  },
+  "Ripristina i valori predefiniti della configurazione. Premi Applica allo slot per salvarli.": {
+    "en": "Restore default settings. Press Apply to slot to save them.",
+    "es": "Restablece los ajustes predeterminados. Pulsa Aplicar al slot para guardarlos.",
+    "fr": "Rétablit les paramètres par défaut. Cliquez sur Appliquer au slot pour les enregistrer."
+  },
+  "Valori predefiniti caricati. Premi Applica allo slot per salvare.": {
+    "en": "Defaults loaded. Press Apply to slot to save.",
+    "es": "Valores predeterminados cargados. Pulsa Aplicar al slot para guardar.",
+    "fr": "Paramètres par défaut chargés. Cliquez sur Appliquer au slot pour enregistrer."
+  },
+  "Nome": {
+    "en": "Name",
+    "es": "Nombre",
+    "fr": "Nom"
+  },
+  "Azione": {
+    "en": "Action",
+    "es": "Acción",
+    "fr": "Action"
+  },
+  "Solo audio": {
+    "en": "Audio only",
+    "es": "Solo audio",
+    "fr": "Audio seul"
+  },
+  "Solo MIDI": {
+    "en": "MIDI only",
+    "es": "Solo MIDI",
+    "fr": "MIDI seul"
+  },
+  "Audio + MIDI": {
+    "en": "Audio + MIDI",
+    "es": "Audio + MIDI",
+    "fr": "Audio + MIDI"
+  },
+  "Play": {
+    "en": "Play",
+    "es": "Reproducción",
+    "fr": "Lecture"
+  },
+  "Tocca e parte (ripremi: riparte)": {
+    "en": "Tap to play (tap again: restart)",
+    "es": "Pulsar para reproducir (otra pulsación: reiniciar)",
+    "fr": "Appuyer pour lire (nouvel appui : redémarrer)"
+  },
+  "Tieni premuto": {
+    "en": "Hold to play",
+    "es": "Mantener pulsado",
+    "fr": "Maintenir enfoncé"
+  },
+  "Senza interruzione (solo STOP mouse)": {
+    "en": "Protected playback (mouse STOP only)",
+    "es": "Reproducción protegida (solo STOP con ratón)",
+    "fr": "Lecture protégée (STOP à la souris uniquement)"
+  },
+  "Play / pausa / riprendi": {
+    "en": "Play / pause / resume",
+    "es": "Reproducir / pausar / reanudar",
+    "fr": "Lire / mettre en pause / reprendre"
+  },
+  "Fade in ms": {
+    "en": "Fade in ms",
+    "es": "Entrada gradual ms",
+    "fr": "Fondu d’entrée ms"
+  },
+  "Fade out ms": {
+    "en": "Fade out ms",
+    "es": "Salida gradual ms",
+    "fr": "Fondu de sortie ms"
+  },
+  "Mappatura controller - puoi anche usare LEARN nella griglia Setup": {
+    "en": "Controller mapping - you can also use LEARN in Setup",
+    "es": "Asignación del controlador - también puedes usar LEARN en Preparación",
+    "fr": "Affectation du contrôleur - vous pouvez aussi utiliser LEARN en Préparation"
+  },
+  "Canale Pad": {
+    "en": "Pad channel",
+    "es": "Canal del pad",
+    "fr": "Canal du pad"
+  },
+  "Nota pad −1 = non associato": {
+    "en": "Pad note −1 = unassigned",
+    "es": "Nota del pad −1 = sin asignar",
+    "fr": "Note du pad −1 = non associé"
+  },
+  "Uscita MIDI indipendente": {
+    "en": "Independent MIDI output",
+    "es": "Salida MIDI independiente",
+    "fr": "Sortie MIDI indépendante"
+  },
+  "Protocollo": {
+    "en": "Protocol",
+    "es": "Protocolo",
+    "fr": "Protocole"
+  },
+  "Canale OUT 1–16": {
+    "en": "OUT channel 1–16",
+    "es": "Canal OUT 1–16",
+    "fr": "Canal OUT 1–16"
+  },
+  "Nota OUT 0–127": {
+    "en": "OUT note 0–127",
+    "es": "Nota OUT 0–127",
+    "fr": "Note OUT 0–127"
+  },
+  "Velocity 1–127": {
+    "en": "Velocity 1–127",
+    "es": "Velocidad 1–127",
+    "fr": "Vélocité 1–127"
+  },
+  "Nota": {
+    "en": "Note",
+    "es": "Nota",
+    "fr": "Note"
+  },
+  "Impulso con Note Off automatico": {
+    "en": "Pulse with automatic Note Off",
+    "es": "Pulso con Note Off automático",
+    "fr": "Impulsion avec Note Off automatique"
+  },
+  "Note On premendo / Off al rilascio": {
+    "en": "Note On on press / Off on release",
+    "es": "Note On al pulsar / Off al soltar",
+    "fr": "Note On à l’appui / Off au relâchement"
+  },
+  "Durata impulso ms": {
+    "en": "Pulse duration ms",
+    "es": "Duración del pulso ms",
+    "fr": "Durée d’impulsion ms"
+  },
+  "MIDI Show Control · GO / STOP / RESUME · pagina 1": {
+    "en": "MIDI Show Control · GO / STOP / RESUME · page 1",
+    "es": "MIDI Show Control · GO / STOP / RESUME · página 1",
+    "fr": "MIDI Show Control · GO / STOP / RESUME · page 1"
+  },
+  "Comando MSC": {
+    "en": "MSC command",
+    "es": "Comando MSC",
+    "fr": "Commande MSC"
+  },
+  "Device ID 0–127": {
+    "en": "Device ID 0–127",
+    "es": "ID de dispositivo 0–127",
+    "fr": "ID du périphérique 0–127"
+  },
+  "Command format 1 / 2 / 127": {
+    "en": "Command format 1 / 2 / 127",
+    "es": "Formato de comando 1 / 2 / 127",
+    "fr": "Format de commande 1 / 2 / 127"
+  },
+  "Cue per GO": {
+    "en": "Cue for GO",
+    "es": "Cue para GO",
+    "fr": "Cue pour GO"
+  },
+  "Indirizzamento": {
+    "en": "Addressing",
+    "es": "Direccionamiento",
+    "fr": "Adressage"
+  },
+  "Predefinito / Default": {
+    "en": "Default",
+    "es": "Predeterminado",
+    "fr": "Par défaut"
+  },
+  "Exec Page (spazio)": {
+    "en": "Exec Page (space)",
+    "es": "Exec Page (espacio)",
+    "fr": "Exec Page (espace)"
+  },
+  "Executor": {
+    "en": "Executor",
+    "es": "Executor",
+    "fr": "Executor"
+  },
+  "STOP e RESUME indirizzati inviano cue 0.000 all’executor configurato. Il ricevitore deve supportare il formato scelto. Il canale Note e il Device ID MSC sono indipendenti.": {
+    "en": "Addressed STOP and RESUME send cue 0.000 to the configured executor. The receiver must support the selected format. Note channel and MSC Device ID are independent.",
+    "es": "STOP y RESUME direccionados envían la cue 0.000 al executor configurado. El receptor debe admitir el formato elegido. El canal Note y el Device ID MSC son independientes.",
+    "fr": "STOP et RESUME adressés envoient la cue 0.000 à l’executor configuré. Le récepteur doit accepter le format choisi. Le canal Note et le Device ID MSC sont indépendants."
+  },
+  "Colore": {
+    "en": "Color",
+    "es": "Color",
+    "fr": "Couleur"
+  },
+  "Apri la ruota colore": {
+    "en": "Open color wheel",
+    "es": "Abrir rueda de color",
+    "fr": "Ouvrir la roue chromatique"
+  },
+  "Scegli il colore": {
+    "en": "Choose color",
+    "es": "Elegir color",
+    "fr": "Choisir la couleur"
+  },
+  "Luminosità": {
+    "en": "Brightness",
+    "es": "Luminosidad",
+    "fr": "Luminosité"
+  },
+  "COLORI RAPIDI": {
+    "en": "QUICK COLORS",
+    "es": "COLORES RÁPIDOS",
+    "fr": "COULEURS RAPIDES"
+  },
+  "Personalizzato": {
+    "en": "Custom",
+    "es": "Personalizado",
+    "fr": "Personnalisé"
+  },
+  "Blu": {
+    "en": "Blue",
+    "es": "Azul",
+    "fr": "Bleu"
+  },
+  "Turchese": {
+    "en": "Turquoise",
+    "es": "Turquesa",
+    "fr": "Turquoise"
+  },
+  "Ciano": {
+    "en": "Cyan",
+    "es": "Cian",
+    "fr": "Cyan"
+  },
+  "Rosso": {
+    "en": "Red",
+    "es": "Rojo",
+    "fr": "Rouge"
+  },
+  "Arancione": {
+    "en": "Orange",
+    "es": "Naranja",
+    "fr": "Orange"
+  },
+  "Giallo": {
+    "en": "Yellow",
+    "es": "Amarillo",
+    "fr": "Jaune"
+  },
+  "Viola": {
+    "en": "Purple",
+    "es": "Morado",
+    "fr": "Violet"
+  },
+  "Rosa": {
+    "en": "Pink",
+    "es": "Rosa",
+    "fr": "Rose"
+  },
+  "Verde": {
+    "en": "Green",
+    "es": "Verde",
+    "fr": "Vert"
+  },
+  "Sabbia": {
+    "en": "Sand",
+    "es": "Arena",
+    "fr": "Sable"
+  },
+  "Ardesia": {
+    "en": "Slate",
+    "es": "Pizarra",
+    "fr": "Ardoise"
+  },
+  "Indaco": {
+    "en": "Indigo",
+    "es": "Índigo",
+    "fr": "Indigo"
+  },
+  "Menta": {
+    "en": "Mint",
+    "es": "Menta",
+    "fr": "Menthe"
+  },
+  "Lavanda": {
+    "en": "Lavender",
+    "es": "Lavanda",
+    "fr": "Lavande"
+  },
+  "Corallo": {
+    "en": "Coral",
+    "es": "Coral",
+    "fr": "Corail"
+  },
+  "Prugna": {
+    "en": "Plum",
+    "es": "Ciruela",
+    "fr": "Prune"
+  },
+  "Bosco": {
+    "en": "Forest",
+    "es": "Bosque",
+    "fr": "Forêt"
+  },
+  "Ocra": {
+    "en": "Ochre",
+    "es": "Ocre",
+    "fr": "Ocre"
+  },
+  "Grigio": {
+    "en": "Gray",
+    "es": "Gris",
+    "fr": "Gris"
+  },
+  "Ghiaccio": {
+    "en": "Ice",
+    "es": "Hielo",
+    "fr": "Glace"
+  },
+  "Trascina per scegliere tonalità e saturazione. Frecce per regolare.": {
+    "en": "Drag to select hue and saturation. Use arrow keys to adjust.",
+    "es": "Arrastra para elegir tono y saturación. Ajusta con las flechas.",
+    "fr": "Faites glisser pour choisir la teinte et la saturation. Ajustez avec les flèches."
+  },
+  "Ruota colore: tonalità e saturazione": {
+    "en": "Color wheel: hue and saturation",
+    "es": "Rueda de color: tono y saturación",
+    "fr": "Roue chromatique : teinte et saturation"
+  },
+  "Fai doppio clic per saltare a questa posizione": {
+    "en": "Double-click to jump to this position",
+    "es": "Haz doble clic para saltar a esta posición",
+    "fr": "Double-cliquez pour aller à cette position"
+  },
+  "AVVIO": {
+    "en": "STARTING",
+    "es": "INICIANDO",
+    "fr": "DÉMARRAGE"
+  },
+  "APERTO": {
+    "en": "OPEN",
+    "es": "ABIERTO",
+    "fr": "OUVERT"
+  },
+  "CONNESSO": {
+    "en": "CONNECTED",
+    "es": "CONECTADO",
+    "fr": "CONNECTÉ"
+  },
+  "ATTESA": {
+    "en": "WAITING",
+    "es": "EN ESPERA",
+    "fr": "EN ATTENTE"
+  },
+  "Disabilitato": {
+    "en": "Disabled",
+    "es": "Desactivado",
+    "fr": "Désactivé"
+  },
+  "Connesso": {
+    "en": "Connected",
+    "es": "Conectado",
+    "fr": "Connecté"
+  },
+  "processo non disponibile": {
+    "en": "process unavailable",
+    "es": "proceso no disponible",
+    "fr": "processus indisponible"
+  },
+  "Non disponibile · ": {
+    "en": "Unavailable · ",
+    "es": "No disponible · ",
+    "fr": "Indisponible · "
+  },
+  "Avvio audio": {
+    "en": "Starting audio",
+    "es": "Iniciando audio",
+    "fr": "Démarrage audio"
+  },
+  "Audio pronto": {
+    "en": "Audio ready",
+    "es": "Audio listo",
+    "fr": "Audio prêt"
+  },
+  "Audio pronto · ": {
+    "en": "Audio ready · ",
+    "es": "Audio listo · ",
+    "fr": "Audio prêt · "
+  },
+  "Porta aperta · ricezione non verificata": {
+    "en": "Port open · reception not verified",
+    "es": "Puerto abierto · recepción no verificada",
+    "fr": "Port ouvert · réception non vérifiée"
+  },
+  "Uscita persa - riproduzione sospesa": {
+    "en": "Output lost - playback suspended",
+    "es": "Salida perdida - reproducción suspendida",
+    "fr": "Sortie perdue - lecture suspendue"
+  },
+  "Dispositivo rimosso": {
+    "en": "Device removed",
+    "es": "Dispositivo desconectado",
+    "fr": "Périphérique déconnecté"
+  },
+  "L'uscita selezionata non è disponibile.": {
+    "en": "The selected output is unavailable.",
+    "es": "La salida seleccionada no está disponible.",
+    "fr": "La sortie sélectionnée est indisponible."
+  },
+  "Audio non disponibile - nuovo tentativo": {
+    "en": "Audio unavailable - retrying",
+    "es": "Audio no disponible - reintentando",
+    "fr": "Audio indisponible - nouvelle tentative"
+  },
+  "Errore sottosistema audio": {
+    "en": "Audio subsystem error",
+    "es": "Error del subsistema de audio",
+    "fr": "Erreur du sous-système audio"
+  },
+  "Errore · retry automatico": {
+    "en": "Error · automatic retry",
+    "es": "Error · reintento automático",
+    "fr": "Erreur · nouvelle tentative automatique"
+  },
+  "● AUDIO · CONNESSIONE": {
+    "en": "● AUDIO · CONNECTING",
+    "es": "● AUDIO · CONECTANDO",
+    "fr": "● AUDIO · CONNEXION"
+  },
+  "● AUDIO · ERRORE": {
+    "en": "● AUDIO · ERROR",
+    "es": "● AUDIO · ERROR",
+    "fr": "● AUDIO · ERREUR"
+  },
+  "● AUDIO PRONTO": {
+    "en": "● AUDIO READY",
+    "es": "● AUDIO LISTO",
+    "fr": "● AUDIO PRÊT"
+  },
+  "● MIDI IN · AVVIO": {
+    "en": "● MIDI IN · STARTING",
+    "es": "● MIDI IN · INICIANDO",
+    "fr": "● MIDI IN · DÉMARRAGE"
+  },
+  "● MIDI OUT · AVVIO": {
+    "en": "● MIDI OUT · STARTING",
+    "es": "● MIDI OUT · INICIANDO",
+    "fr": "● MIDI OUT · DÉMARRAGE"
+  },
+  "MIDI IN: avvio · MIDI OUT: avvio": {
+    "en": "MIDI IN: starting · MIDI OUT: starting",
+    "es": "MIDI IN: iniciando · MIDI OUT: iniciando",
+    "fr": "MIDI IN : démarrage · MIDI OUT : démarrage"
+  },
+  "MOTORE NON RAGGIUNGIBILE · nessun riavvio automatico delle tracce": {
+    "en": "ENGINE UNREACHABLE · tracks will not restart automatically",
+    "es": "MOTOR INACCESIBLE · las pistas no se reinician automáticamente",
+    "fr": "MOTEUR INJOIGNABLE · aucune relance automatique des pistes"
+  },
+  "RAM audio {0:0.0} MiB · errori callback {1}": {
+    "en": "Audio RAM {0:0.0} MiB · callback errors {1}",
+    "es": "RAM de audio {0:0.0} MiB · errores de callback {1}",
+    "fr": "RAM audio {0:0.0} MiB · erreurs de callback {1}"
+  },
+  "LEARN slot {0}: premi il pad da associare (la pressione non avvia lo slot).": {
+    "en": "LEARN slot {0}: press the pad to map (this press does not trigger the slot).",
+    "es": "LEARN slot {0}: pulsa el pad que deseas asignar (esta pulsación no activa el slot).",
+    "fr": "LEARN slot {0} : appuyez sur le pad à associer (cet appui ne déclenche pas le slot)."
+  },
+  "Motore audio recuperato: progetto ripristinato, nessuna ripartenza automatica.": {
+    "en": "Audio engine recovered: project restored, no automatic playback.",
+    "es": "Motor de audio recuperado: proyecto restaurado, sin reproducción automática.",
+    "fr": "Moteur audio récupéré : projet restauré, aucune lecture automatique."
+  },
+  "Supervisore non disponibile.": {
+    "en": "Supervisor unavailable.",
+    "es": "Supervisor no disponible.",
+    "fr": "Superviseur indisponible."
+  },
+  "Comando non riuscito.": {
+    "en": "Command failed.",
+    "es": "El comando ha fallado.",
+    "fr": "Échec de la commande."
+  },
+  "Troppi comandi in attesa.": {
+    "en": "Too many pending commands.",
+    "es": "Demasiados comandos pendientes.",
+    "fr": "Trop de commandes en attente."
+  },
+  "Motore non raggiungibile: ": {
+    "en": "Engine unreachable: ",
+    "es": "Motor inaccesible: ",
+    "fr": "Moteur injoignable : "
+  },
+  "Lettura progetto in corso…": {
+    "en": "Reading project…",
+    "es": "Leyendo proyecto…",
+    "fr": "Lecture du projet…"
+  },
+  "Log MIDI non scrivibile.": {
+    "en": "Cannot write MIDI log.",
+    "es": "No se puede escribir el registro MIDI.",
+    "fr": "Impossible d’écrire le journal MIDI."
+  },
+  "Log UI non scrivibile.": {
+    "en": "Cannot write UI log.",
+    "es": "No se puede escribir el registro de la interfaz.",
+    "fr": "Impossible d’écrire le journal de l’interface."
+  },
+  "Log motore non scrivibile.": {
+    "en": "Cannot write engine log.",
+    "es": "No se puede escribir el registro del motor.",
+    "fr": "Impossible d’écrire le journal du moteur."
+  },
+  "Rilevati underrun: verificare il disco e il carico del PC.": {
+    "en": "Underruns detected: check disk and PC load.",
+    "es": "Se han detectado underruns: comprueba el disco y la carga del PC.",
+    "fr": "Sous-alimentations détectées : vérifiez le disque et la charge du PC."
+  },
+  "SHOW LOCK: caricamento bloccato.": {
+    "en": "SHOW LOCK: loading blocked.",
+    "es": "BLOQUEO: carga bloqueada.",
+    "fr": "VERROU : chargement bloqué."
+  },
+  "SHOW LOCK: impostazioni bloccate.": {
+    "en": "SHOW LOCK: settings blocked.",
+    "es": "BLOQUEO: configuración bloqueada.",
+    "fr": "VERROU : paramètres bloqués."
+  },
+  "SHOW LOCK: apertura bloccata.": {
+    "en": "SHOW LOCK: opening blocked.",
+    "es": "BLOQUEO: apertura bloqueada.",
+    "fr": "VERROU : ouverture bloquée."
+  },
+  "SHOW LOCK: test di uscita bloccati.": {
+    "en": "SHOW LOCK: output tests blocked.",
+    "es": "BLOQUEO: pruebas de salida bloqueadas.",
+    "fr": "VERROU : tests de sortie bloqués."
+  },
+  "SHOW LOCK attivo: modifiche bloccate.": {
+    "en": "SHOW LOCK enabled: changes blocked.",
+    "es": "BLOQUEO activado: cambios bloqueados.",
+    "fr": "VERROU activé : modifications bloquées."
+  },
+  "Lettura progetto in corso.": {
+    "en": "Reading project.",
+    "es": "Lectura del proyecto en curso.",
+    "fr": "Lecture du projet en cours."
+  },
+  "Ferma le tracce e attendi i caricamenti prima di aprire un progetto.": {
+    "en": "Stop tracks and wait for loading to finish before opening a project.",
+    "es": "Detén las pistas y espera a que termine la carga antes de abrir un proyecto.",
+    "fr": "Arrêtez les pistes et attendez la fin des chargements avant d’ouvrir un projet."
+  },
+  "Ferma le tracce prima di cambiare uscita audio o buffer.": {
+    "en": "Stop tracks before changing the audio output or buffer.",
+    "es": "Detén las pistas antes de cambiar la salida de audio o el búfer.",
+    "fr": "Arrêtez les pistes avant de changer la sortie audio ou le tampon."
+  },
+  "Ferma le tracce e attendi i caricamenti prima di cambiare il numero di slot.": {
+    "en": "Stop tracks and wait for loading to finish before changing the slot count.",
+    "es": "Detén las pistas y espera a que termine la carga antes de cambiar el número de slots.",
+    "fr": "Arrêtez les pistes et attendez la fin des chargements avant de changer le nombre de slots."
+  },
+  "Ferma lo slot prima di modificarlo.": {
+    "en": "Stop the slot before editing it.",
+    "es": "Detén el slot antes de modificarlo.",
+    "fr": "Arrêtez le slot avant de le modifier."
+  },
+  "Ferma lo slot e attendi il caricamento.": {
+    "en": "Stop the slot and wait for loading to finish.",
+    "es": "Detén el slot y espera a que termine la carga.",
+    "fr": "Arrêtez le slot et attendez la fin du chargement."
+  },
+  "Slot non valido.": {
+    "en": "Invalid slot.",
+    "es": "Slot no válido.",
+    "fr": "Slot non valide."
+  },
+  "Numero slot: da 1 a 100.": {
+    "en": "Slot count: 1 to 100.",
+    "es": "Número de slots: de 1 a 100.",
+    "fr": "Nombre de slots : de 1 à 100."
+  },
+  "Motore occupato: riprova tra un istante.": {
+    "en": "Engine busy: try again shortly.",
+    "es": "Motor ocupado: vuelve a intentarlo en un momento.",
+    "fr": "Moteur occupé : réessayez dans un instant."
+  },
+  "Seleziona un file.": {
+    "en": "Select a file.",
+    "es": "Selecciona un archivo.",
+    "fr": "Sélectionnez un fichier."
+  },
+  "Parametri mancanti.": {
+    "en": "Missing settings.",
+    "es": "Faltan parámetros.",
+    "fr": "Paramètres manquants."
+  },
+  "Volume non valido.": {
+    "en": "Invalid volume.",
+    "es": "Volumen no válido.",
+    "fr": "Volume non valide."
+  },
+  "Senza interruzione: usa STOP con il mouse.": {
+    "en": "Protected playback: use STOP with the mouse.",
+    "es": "Reproducción protegida: usa STOP con el ratón.",
+    "fr": "Lecture protégée : utilisez STOP à la souris."
+  },
+  "Questo pad è già associato a un altro slot.": {
+    "en": "This pad is already mapped to another slot.",
+    "es": "Este pad ya está asignado a otro slot.",
+    "fr": "Ce pad est déjà associé à un autre slot."
+  },
+  "Audio slot non pronto.": {
+    "en": "Slot audio is not ready.",
+    "es": "El audio del slot no está listo.",
+    "fr": "L’audio du slot n’est pas prêt."
+  },
+  "Posizione non valida.": {
+    "en": "Invalid position.",
+    "es": "Posición no válida.",
+    "fr": "Position non valide."
+  },
+  "Audio dello slot non pronto.": {
+    "en": "Slot audio is not ready.",
+    "es": "El audio del slot no está listo.",
+    "fr": "L’audio du slot n’est pas prêt."
+  },
+  "Spostamento già in preparazione.": {
+    "en": "A seek is already being prepared.",
+    "es": "Ya se está preparando un cambio de posición.",
+    "fr": "Un déplacement est déjà en préparation."
+  },
+  "Coda audio piena: spostamento annullato.": {
+    "en": "Audio queue full: seek cancelled.",
+    "es": "Cola de audio llena: cambio de posición cancelado.",
+    "fr": "File audio pleine : déplacement annulé."
+  },
+  "Coda piena: spostamento annullato.": {
+    "en": "Queue full: seek cancelled.",
+    "es": "Cola llena: cambio de posición cancelado.",
+    "fr": "File pleine : déplacement annulé."
+  },
+  "Coda audio piena.": {
+    "en": "Audio queue full.",
+    "es": "Cola de audio llena.",
+    "fr": "File audio pleine."
+  },
+  "Coda audio piena. PANIC resta disponibile.": {
+    "en": "Audio queue full. PANIC is still available.",
+    "es": "Cola de audio llena. PANIC sigue disponible.",
+    "fr": "File audio pleine. PANIC reste disponible."
+  },
+  "Coda comandi piena. PANIC resta disponibile.": {
+    "en": "Command queue full. PANIC is still available.",
+    "es": "Cola de comandos llena. PANIC sigue disponible.",
+    "fr": "File de commandes pleine. PANIC reste disponible."
+  },
+  "Comando sconosciuto.": {
+    "en": "Unknown command.",
+    "es": "Comando desconocido.",
+    "fr": "Commande inconnue."
+  },
+  "Nota MIDI non valida.": {
+    "en": "Invalid MIDI note.",
+    "es": "Nota MIDI no válida.",
+    "fr": "Note MIDI non valide."
+  },
+  "Porta non disponibile; riconnessione automatica in attesa.": {
+    "en": "Port unavailable; waiting to reconnect automatically.",
+    "es": "Puerto no disponible; esperando reconexión automática.",
+    "fr": "Port indisponible ; reconnexion automatique en attente."
+  },
+  "Dispositivi MIDI identici: impossibile riconnettere in modo univoco.": {
+    "en": "Identical MIDI devices: cannot reconnect unambiguously.",
+    "es": "Dispositivos MIDI idénticos: no se puede reconectar de forma inequívoca.",
+    "fr": "Périphériques MIDI identiques : reconnexion non ambiguë impossible."
+  },
+  "Overflow MIDI IN: possibili rilasci persi; usa STOP se necessario.": {
+    "en": "MIDI IN overflow: releases may be lost; use STOP if needed.",
+    "es": "Desbordamiento MIDI IN: pueden perderse liberaciones; usa STOP si es necesario.",
+    "fr": "Débordement MIDI IN : des relâchements peuvent être perdus ; utilisez STOP si nécessaire."
+  },
+  "Comando MIDI scartato: porta non disponibile.": {
+    "en": "MIDI message discarded: port unavailable.",
+    "es": "Mensaje MIDI descartado: puerto no disponible.",
+    "fr": "Message MIDI ignoré : port indisponible."
+  },
+  "Messaggio MIDI scartato perché in ritardo.": {
+    "en": "MIDI message discarded because it was late.",
+    "es": "Mensaje MIDI descartado por llegar tarde.",
+    "fr": "Message MIDI ignoré car trop tardif."
+  },
+  "Porta MIDI OUT non aperta: comando non inviato.": {
+    "en": "MIDI OUT port not open: message not sent.",
+    "es": "Puerto MIDI OUT cerrado: mensaje no enviado.",
+    "fr": "Port MIDI OUT fermé : message non envoyé."
+  },
+  "Comando scaduto, non ripetuto.": {
+    "en": "Expired command, not replayed.",
+    "es": "Comando caducado, no repetido.",
+    "fr": "Commande expirée, non répétée."
+  },
+  "Salvataggio non riuscito: ": {
+    "en": "Save failed: ",
+    "es": "Error al guardar: ",
+    "fr": "Échec de l’enregistrement : "
+  },
+  "Ripristino precedente non leggibile: ": {
+    "en": "Previous recovery could not be read: ",
+    "es": "No se ha podido leer la recuperación anterior: ",
+    "fr": "Récupération précédente illisible : "
+  },
+  "Spostamento non riuscito: ": {
+    "en": "Seek failed: ",
+    "es": "Cambio de posición fallido: ",
+    "fr": "Échec du déplacement : "
+  },
+  "StagePad · recupero interfaccia": {
+    "en": "StagePad · interface recovery",
+    "es": "StagePad · recuperación de interfaz",
+    "fr": "StagePad · récupération de l’interface"
+  },
+  "Interfaccia terminata. Il motore audio resta indipendente.": {
+    "en": "Interface closed. The audio engine remains independent.",
+    "es": "Interfaz cerrada. El motor de audio permanece independiente.",
+    "fr": "Interface fermée. Le moteur audio reste indépendant."
+  },
+  "Riapri interfaccia": {
+    "en": "Reopen interface",
+    "es": "Reabrir interfaz",
+    "fr": "Rouvrir l’interface"
+  },
+  "Comando precedente a PANIC scartato.": {
+    "en": "Command from before PANIC discarded.",
+    "es": "Comando anterior a PANIC descartado.",
+    "fr": "Commande antérieure à PANIC ignorée."
+  },
+  "Percorso progetto mancante.": {
+    "en": "Project path missing.",
+    "es": "Falta la ruta del proyecto.",
+    "fr": "Chemin du projet manquant."
+  },
+  "Percorso mancante.": {
+    "en": "Path missing.",
+    "es": "Falta la ruta.",
+    "fr": "Chemin manquant."
+  },
+  "Apertura annullata: stato del progetto cambiato durante la lettura.": {
+    "en": "Opening cancelled: project state changed during reading.",
+    "es": "Apertura cancelada: el estado del proyecto cambió durante la lectura.",
+    "fr": "Ouverture annulée : l’état du projet a changé pendant la lecture."
+  },
+  "Motore occupato: riprova ad aprire il progetto.": {
+    "en": "Engine busy: try opening the project again.",
+    "es": "Motor ocupado: vuelve a intentar abrir el proyecto.",
+    "fr": "Moteur occupé : réessayez d’ouvrir le projet."
+  },
+  "Coda piena, apertura annullata.": {
+    "en": "Queue full, opening cancelled.",
+    "es": "Cola llena, apertura cancelada.",
+    "fr": "File pleine, ouverture annulée."
+  },
+  "Budget 128–4096 MiB richiesto, non inferiore alla RAM già riservata.": {
+    "en": "RAM budget must be 128–4096 MiB and at least the amount already reserved.",
+    "es": "El presupuesto de RAM debe ser de 128–4096 MiB y no inferior a la memoria ya reservada.",
+    "fr": "Le budget RAM doit être de 128–4096 MiB et au moins égal à la mémoire déjà réservée."
+  },
+  "Coda piena alla fine del caricamento: riprova.": {
+    "en": "Queue full at the end of loading: try again.",
+    "es": "Cola llena al finalizar la carga: vuelve a intentarlo.",
+    "fr": "File pleine à la fin du chargement : réessayez."
+  },
+  "Progetto troppo grande.": {
+    "en": "Project too large.",
+    "es": "Proyecto demasiado grande.",
+    "fr": "Projet trop volumineux."
+  },
+  "Progetto vuoto.": {
+    "en": "Empty project.",
+    "es": "Proyecto vacío.",
+    "fr": "Projet vide."
+  },
+  "Ripristino automatico non salvato: ": {
+    "en": "Automatic recovery was not saved: ",
+    "es": "No se ha guardado la recuperación automática: ",
+    "fr": "Récupération automatique non enregistrée : "
+  },
+  "Coda MIDI piena: comando scartato.": {
+    "en": "MIDI queue full: message discarded.",
+    "es": "Cola MIDI llena: mensaje descartado.",
+    "fr": "File MIDI pleine : message ignoré."
+  },
+  "MIDI non disponibile: ": {
+    "en": "MIDI unavailable: ",
+    "es": "MIDI no disponible: ",
+    "fr": "MIDI indisponible : "
+  },
+  "Sono supportati file mono e stereo.": {
+    "en": "Mono and stereo files are supported.",
+    "es": "Se admiten archivos mono y estéreo.",
+    "fr": "Les fichiers mono et stéréo sont pris en charge."
+  },
+  "Campioni stereo incompleti.": {
+    "en": "Incomplete stereo samples.",
+    "es": "Muestras estéreo incompletas.",
+    "fr": "Échantillons stéréo incomplets."
+  },
+  "Il decoder ha prodotto campioni non validi.": {
+    "en": "The decoder produced invalid samples.",
+    "es": "El decodificador ha generado muestras no válidas.",
+    "fr": "Le décodeur a produit des échantillons non valides."
+  },
+  "File superiore al limite cautelativo di 2 ore.": {
+    "en": "File exceeds the precautionary two-hour limit.",
+    "es": "El archivo supera el límite preventivo de dos horas.",
+    "fr": "Le fichier dépasse la limite de précaution de deux heures."
+  },
+  "Il file non contiene audio decodificabile.": {
+    "en": "The file contains no decodable audio.",
+    "es": "El archivo no contiene audio decodificable.",
+    "fr": "Le fichier ne contient aucun audio décodable."
+  },
+  "File audio non trovato.": {
+    "en": "Audio file not found.",
+    "es": "Archivo de audio no encontrado.",
+    "fr": "Fichier audio introuvable."
+  },
+  "Impossibile avviare il decoder.": {
+    "en": "Cannot start decoder.",
+    "es": "No se puede iniciar el decodificador.",
+    "fr": "Impossible de démarrer le décodeur."
+  },
+  "Decoder terminato in errore o file non supportato.": {
+    "en": "Decoder failed or file is unsupported.",
+    "es": "El decodificador ha fallado o el archivo no es compatible.",
+    "fr": "Échec du décodeur ou fichier non pris en charge."
+  },
+  "Cache PCM non valida.": {
+    "en": "Invalid PCM cache.",
+    "es": "Caché PCM no válida.",
+    "fr": "Cache PCM non valide."
+  },
+  "Progetto non valido: schema 1 e da 1 a 100 slot richiesti.": {
+    "en": "Invalid project: schema 1 and 1–100 slots required.",
+    "es": "Proyecto no válido: se requiere el esquema 1 y de 1 a 100 slots.",
+    "fr": "Projet non valide : schéma 1 et 1 à 100 slots requis."
+  },
+  "Nome, master o budget RAM non validi.": {
+    "en": "Invalid name, master or RAM budget.",
+    "es": "Nombre, master o presupuesto de RAM no válidos.",
+    "fr": "Nom, master ou budget RAM non valide."
+  },
+  "Identificatore dispositivo troppo lungo.": {
+    "en": "Device identifier too long.",
+    "es": "Identificador de dispositivo demasiado largo.",
+    "fr": "Identifiant du périphérique trop long."
+  },
+  "Buffer audio non valido.": {
+    "en": "Invalid audio buffer.",
+    "es": "Búfer de audio no válido.",
+    "fr": "Tampon audio non valide."
+  },
+  "Griglia: righe e colonne da 1 a 10, con una cella per ogni slot attivo.": {
+    "en": "Grid: 1–10 rows and columns, with a cell for each active slot.",
+    "es": "Cuadrícula: de 1 a 10 filas y columnas, con una celda por slot activo.",
+    "fr": "Grille : 1 à 10 lignes et colonnes, avec une cellule par slot actif."
+  },
+  "Griglia Setup: righe e colonne da 1 a 10, con una cella per ogni slot attivo.": {
+    "en": "Setup grid: 1–10 rows and columns, with a cell for each active slot.",
+    "es": "Cuadrícula de Preparación: de 1 a 10 filas y columnas, con una celda por slot activo.",
+    "fr": "Grille de Préparation : 1 à 10 lignes et colonnes, avec une cellule par slot actif."
+  },
+  "Due slot sono associati alla stessa nota/canale del pad.": {
+    "en": "Two slots are mapped to the same pad note/channel.",
+    "es": "Dos slots están asignados a la misma nota/canal del pad.",
+    "fr": "Deux slots sont associés à la même note et au même canal du pad."
+  },
+  "Nome o colore slot non valido (#RRGGBB).": {
+    "en": "Invalid slot name or color (#RRGGBB).",
+    "es": "Nombre o color del slot no válido (#RRGGBB).",
+    "fr": "Nom ou couleur du slot non valide (#RRGGBB)."
+  },
+  "Percorso audio troppo lungo (massimo 1024 caratteri).": {
+    "en": "Audio path too long (maximum 1024 characters).",
+    "es": "Ruta de audio demasiado larga (máximo 1024 caracteres).",
+    "fr": "Chemin audio trop long (1024 caractères maximum)."
+  },
+  "Parametri audio/mappatura non validi.": {
+    "en": "Invalid audio/mapping settings.",
+    "es": "Parámetros de audio/asignación no válidos.",
+    "fr": "Paramètres audio ou d’affectation non valides."
+  },
+  "Parametri MIDI/MSC non validi. Indirizzamento MSC limitato a pagina 1 in questa versione.": {
+    "en": "Invalid MIDI/MSC settings. MSC addressing is limited to page 1 in this version.",
+    "es": "Parámetros MIDI/MSC no válidos. El direccionamiento MSC se limita a la página 1 en esta versión.",
+    "fr": "Paramètres MIDI/MSC non valides. L’adressage MSC est limité à la page 1 dans cette version."
+  },
+  "Cue non valida, esempio: 21.500.": {
+    "en": "Invalid cue, for example: 21.500.",
+    "es": "Cue no válida, por ejemplo: 21.500.",
+    "fr": "Cue non valide, par exemple : 21.500."
+  },
+  "Progetto StagePad": {
+    "en": "StagePad project",
+    "es": "Proyecto StagePad",
+    "fr": "Projet StagePad"
+  },
+  "Tutti i file": {
+    "en": "All files",
+    "es": "Todos los archivos",
+    "fr": "Tous les fichiers"
+  },
+  "Budget RAM esaurito. Libera uno slot o aumenta il budget RAM nelle Impostazioni.": {
+    "en": "RAM budget exhausted. Clear a slot or increase the RAM budget in Settings.",
+    "es": "Presupuesto de RAM agotado. Vacía un slot o aumenta el presupuesto de RAM en Ajustes.",
+    "fr": "Budget RAM épuisé. Videz un slot ou augmentez le budget RAM dans Paramètres."
+  },
+  "Budget RAM · MiB": {
+    "en": "RAM budget · MiB",
+    "es": "Presupuesto de RAM · MiB",
+    "fr": "Budget RAM · MiB"
+  },
+  "Budget memoria aggiornato.": {
+    "en": "Memory budget updated.",
+    "es": "Presupuesto de memoria actualizado.",
+    "fr": "Budget mémoire mis à jour."
+  },
+  "Default": {
+    "en": "Default",
+    "es": "Predeterminado",
+    "fr": "Par défaut"
+  },
+  "Ripristina soltanto il colore predefinito dello slot.": {
+    "en": "Restore only the slot’s default color.",
+    "es": "Restablece solo el color predeterminado del slot.",
+    "fr": "Rétablit uniquement la couleur par défaut du slot."
+  },
+  "SERATA": {
+    "en": "LIVE",
+    "es": "DIRECTO",
+    "fr": "DIRECT"
+  },
+  "Scorrimento automatico al pad attivato": {
+    "en": "Automatically scroll to the triggered pad",
+    "es": "Desplazamiento automático al pad activado",
+    "fr": "Défilement automatique vers le pad déclenché"
+  },
+  "Solo in Serata. I pad già completamente visibili non spostano la griglia.": {
+    "en": "Live view only. Pads already fully visible do not move the grid.",
+    "es": "Solo en Directo. Los pads ya completamente visibles no desplazan la cuadrícula.",
+    "fr": "Uniquement en mode Direct. Les pads déjà entièrement visibles ne déplacent pas la grille."
+  },
+  "L’opzione è applicata, ma non è stato possibile salvarla.": {
+    "en": "The option was applied, but could not be saved.",
+    "es": "Se ha aplicado la opción, pero no se ha podido guardar.",
+    "fr": "L’option a été appliquée, mais n’a pas pu être enregistrée."
+  },
+  "Progetti": {
+    "en": "Projects",
+    "es": "Proyectos",
+    "fr": "Projets"
+  },
+  "PROGETTI": {
+    "en": "PROJECTS",
+    "es": "PROYECTOS",
+    "fr": "PROJETS"
+  },
+  "Cartella dei progetti": {
+    "en": "Projects folder",
+    "es": "Carpeta de proyectos",
+    "fr": "Dossier des projets"
+  },
+  "Applica cartella": {
+    "en": "Apply folder",
+    "es": "Aplicar carpeta",
+    "fr": "Appliquer le dossier"
+  },
+  "Ripristina la cartella project predefinita. I file esistenti non vengono spostati.": {
+    "en": "Restore the default project folder. Existing files are not moved.",
+    "es": "Restaura la carpeta project predeterminada. Los archivos existentes no se mueven.",
+    "fr": "Rétablit le dossier project par défaut. Les fichiers existants ne sont pas déplacés."
+  },
+  "Cartella progetti aggiornata.": {
+    "en": "Projects folder updated.",
+    "es": "Carpeta de proyectos actualizada.",
+    "fr": "Dossier des projets mis à jour."
+  },
+  "Cartella predefinita ripristinata.": {
+    "en": "Default folder restored.",
+    "es": "Carpeta predeterminada restaurada.",
+    "fr": "Dossier par défaut rétabli."
+  },
+  "Apri progetto": {
+    "en": "Open project",
+    "es": "Abrir proyecto",
+    "fr": "Ouvrir le projet"
+  },
+  "Salva progetto": {
+    "en": "Save project",
+    "es": "Guardar proyecto",
+    "fr": "Enregistrer le projet"
+  },
+  "Nome progetto": {
+    "en": "Project name",
+    "es": "Nombre del proyecto",
+    "fr": "Nom du projet"
+  },
+  "Aggiorna elenco": {
+    "en": "Refresh list",
+    "es": "Actualizar lista",
+    "fr": "Actualiser la liste"
+  },
+  "Torna a Setup": {
+    "en": "Back to Setup",
+    "es": "Volver a Preparación",
+    "fr": "Retour à Préparation"
+  },
+  "Sovrascrivi": {
+    "en": "Overwrite",
+    "es": "Sobrescribir",
+    "fr": "Remplacer"
+  },
+  "Annulla": {
+    "en": "Cancel",
+    "es": "Cancelar",
+    "fr": "Annuler"
+  },
+  "Nessun progetto salvato in questa cartella.": {
+    "en": "No projects saved in this folder.",
+    "es": "No hay proyectos guardados en esta carpeta.",
+    "fr": "Aucun projet enregistré dans ce dossier."
+  },
+  "Apertura progetto…": {
+    "en": "Opening project…",
+    "es": "Abriendo proyecto…",
+    "fr": "Ouverture du projet…"
+  },
+  "Salvataggio progetto…": {
+    "en": "Saving project…",
+    "es": "Guardando proyecto…",
+    "fr": "Enregistrement du projet…"
+  },
+  "Il progetto {0} esiste già. Vuoi sovrascriverlo?": {
+    "en": "Project {0} already exists. Overwrite it?",
+    "es": "El proyecto {0} ya existe. ¿Quieres sobrescribirlo?",
+    "fr": "Le projet {0} existe déjà. Voulez-vous le remplacer ?"
+  },
+  "Progetto salvato: {0}": {
+    "en": "Project saved: {0}",
+    "es": "Proyecto guardado: {0}",
+    "fr": "Projet enregistré : {0}"
+  },
+  "Nome progetto non valido. Usa un nome senza caratteri speciali o percorsi.": {
+    "en": "Invalid project name. Use a name without special characters or paths.",
+    "es": "Nombre de proyecto no válido. Usa un nombre sin caracteres especiales ni rutas.",
+    "fr": "Nom de projet non valide. Utilisez un nom sans caractères spéciaux ni chemins."
+  },
+  "Nome riservato al recupero automatico. Scegli un altro nome.": {
+    "en": "Name reserved for automatic recovery. Choose another name.",
+    "es": "Nombre reservado para la recuperación automática. Elige otro nombre.",
+    "fr": "Nom réservé à la récupération automatique. Choisissez un autre nom."
+  },
+  "Inserisci il percorso completo della cartella.": {
+    "en": "Enter the full folder path.",
+    "es": "Introduce la ruta completa de la carpeta.",
+    "fr": "Saisissez le chemin complet du dossier."
+  },
+  "Salvataggio già in corso.": {
+    "en": "A save is already in progress.",
+    "es": "Ya hay un guardado en curso.",
+    "fr": "Un enregistrement est déjà en cours."
+  },
+  "File salvato, ma stato non aggiornato. Controlla l’elenco progetti.": {
+    "en": "File saved, but state not updated. Check the project list.",
+    "es": "Archivo guardado, pero estado no actualizado. Comprueba la lista de proyectos.",
+    "fr": "Fichier enregistré, mais état non actualisé. Vérifiez la liste des projets."
+  },
+  "L’operazione non ha risposto in tempo. Controlla l’elenco progetti prima di riprovare.": {
+    "en": "The operation did not respond in time. Check the project list before retrying.",
+    "es": "La operación no respondió a tiempo. Comprueba la lista de proyectos antes de reintentar.",
+    "fr": "L’opération n’a pas répondu à temps. Vérifiez la liste des projets avant de réessayer."
+  },
+  "Senza nome": {
+    "en": "Untitled",
+    "es": "Sin título",
+    "fr": "Sans titre"
+  },
+  "Rinomina": {
+    "en": "Rename",
+    "es": "Renombrar",
+    "fr": "Renommer"
+  },
+  "Duplica": {
+    "en": "Duplicate",
+    "es": "Duplicar",
+    "fr": "Dupliquer"
+  },
+  "Elimina": {
+    "en": "Delete",
+    "es": "Eliminar",
+    "fr": "Supprimer"
+  },
+  "Conferma": {
+    "en": "Confirm",
+    "es": "Confirmar",
+    "fr": "Confirmer"
+  },
+  "Copia": {
+    "en": "Copy",
+    "es": "Copia",
+    "fr": "Copie"
+  },
+  "Eliminare il progetto {0}? I file audio restano sul disco.": {
+    "en": "Delete project {0}? Audio files remain on disk.",
+    "es": "¿Eliminar el proyecto {0}? Los archivos de audio permanecen en el disco.",
+    "fr": "Supprimer le projet {0} ? Les fichiers audio restent sur le disque."
+  },
+  "Operazione completata.": {
+    "en": "Operation completed.",
+    "es": "Operación completada.",
+    "fr": "Opération terminée."
+  },
+  "Operazione sui progetti in corso.": {
+    "en": "A project operation is in progress.",
+    "es": "Hay una operación de proyectos en curso.",
+    "fr": "Une opération sur les projets est en cours."
+  },
+  "Operazione non valida.": {
+    "en": "Invalid operation.",
+    "es": "Operación no válida.",
+    "fr": "Opération non valide."
+  },
+  "Scegli un nome diverso nella stessa cartella.": {
+    "en": "Choose a different name in the same folder.",
+    "es": "Elige otro nombre en la misma carpeta.",
+    "fr": "Choisissez un autre nom dans le même dossier."
+  },
+  "Progetto non trovato.": {
+    "en": "Project not found.",
+    "es": "Proyecto no encontrado.",
+    "fr": "Projet introuvable."
+  },
+  "Ultimo show non trovato: ripristinata la copia di recupero.": {
+    "en": "Last show not found: restored the recovery copy.",
+    "es": "Último show no encontrado: se ha restaurado la copia de recuperación.",
+    "fr": "Dernier show introuvable : la copie de récupération a été restaurée."
+  },
+  "Audio, controller, comandi MIDI e OSC": {
+    "en": "Audio, controller, MIDI and OSC commands",
+    "es": "Audio, controlador, comandos MIDI y OSC",
+    "fr": "Audio, contrôleur, commandes MIDI et OSC"
+  },
+  "Azioni alla pressione": {
+    "en": "Actions on press",
+    "es": "Acciones al pulsar",
+    "fr": "Actions à l’appui"
+  },
+  "Comandi MIDI · massimo 16": {
+    "en": "MIDI commands · up to 16",
+    "es": "Comandos MIDI · máximo 16",
+    "fr": "Commandes MIDI · maximum 16"
+  },
+  "Comandi OSC · UDP · massimo 16": {
+    "en": "OSC commands · UDP · up to 16",
+    "es": "Comandos OSC · UDP · máximo 16",
+    "fr": "Commandes OSC · UDP · maximum 16"
+  },
+  "Aggiungi comando MIDI": {
+    "en": "Add MIDI command",
+    "es": "Añadir comando MIDI",
+    "fr": "Ajouter une commande MIDI"
+  },
+  "Aggiungi comando OSC": {
+    "en": "Add OSC command",
+    "es": "Añadir comando OSC",
+    "fr": "Ajouter une commande OSC"
+  },
+  "Rimuovi comando MIDI": {
+    "en": "Remove MIDI command",
+    "es": "Quitar comando MIDI",
+    "fr": "Retirer la commande MIDI"
+  },
+  "Rimuovi comando OSC": {
+    "en": "Remove OSC command",
+    "es": "Quitar comando OSC",
+    "fr": "Retirer la commande OSC"
+  },
+  "Aggiungi argomento": {
+    "en": "Add argument",
+    "es": "Añadir argumento",
+    "fr": "Ajouter un argument"
+  },
+  "Rimuovi": {
+    "en": "Remove",
+    "es": "Quitar",
+    "fr": "Retirer"
+  },
+  "Controller CC 0-127": {
+    "en": "CC controller 0-127",
+    "es": "Controlador CC 0-127",
+    "fr": "Contrôleur CC 0-127"
+  },
+  "Valore CC 0-127": {
+    "en": "CC value 0-127",
+    "es": "Valor CC 0-127",
+    "fr": "Valeur CC 0-127"
+  },
+  "Programma 0-127": {
+    "en": "Program 0-127",
+    "es": "Programa 0-127",
+    "fr": "Programme 0-127"
+  },
+  "Host / IP OSC": {
+    "en": "OSC host / IP",
+    "es": "Host / IP OSC",
+    "fr": "Hôte / IP OSC"
+  },
+  "Porta UDP": {
+    "en": "UDP port",
+    "es": "Puerto UDP",
+    "fr": "Port UDP"
+  },
+  "Percorso OSC": {
+    "en": "OSC address",
+    "es": "Ruta OSC",
+    "fr": "Adresse OSC"
+  },
+  "Intero (i)": {
+    "en": "Integer (i)",
+    "es": "Entero (i)",
+    "fr": "Entier (i)"
+  },
+  "Decimale (f)": {
+    "en": "Float (f)",
+    "es": "Decimal (f)",
+    "fr": "Décimal (f)"
+  },
+  "Testo (s)": {
+    "en": "String (s)",
+    "es": "Texto (s)",
+    "fr": "Texte (s)"
+  },
+  "Vero (T)": {
+    "en": "True (T)",
+    "es": "Verdadero (T)",
+    "fr": "Vrai (T)"
+  },
+  "Falso (F)": {
+    "en": "False (F)",
+    "es": "Falso (F)",
+    "fr": "Faux (F)"
+  },
+  "Ogni pressione invia i comandi selezionati. OSC usa UDP: verifica host, porta e percorso nel ricevitore. Il rilascio chiude le note MIDI Gate.": {
+    "en": "Each press sends the selected commands. OSC uses UDP: check host, port and address on the receiver. Releasing the pad closes MIDI Gate notes.",
+    "es": "Cada pulsación envía los comandos seleccionados. OSC usa UDP: comprueba host, puerto y ruta en el receptor. Al soltar se cierran las notas MIDI Gate.",
+    "fr": "Chaque appui envoie les commandes sélectionnées. OSC utilise UDP : vérifiez hôte, port et adresse du récepteur. Le relâchement ferme les notes MIDI Gate."
+  },
+  "MIDI + OSC": {
+    "en": "MIDI + OSC",
+    "es": "MIDI + OSC",
+    "fr": "MIDI + OSC"
+  },
+  "COMANDO OSC": {
+    "en": "OSC COMMAND",
+    "es": "COMANDO OSC",
+    "fr": "COMMANDE OSC"
+  },
+  "Seleziona almeno un’azione: Audio, MIDI o OSC.": {
+    "en": "Select at least one action: Audio, MIDI or OSC.",
+    "es": "Selecciona al menos una acción: Audio, MIDI u OSC.",
+    "fr": "Sélectionnez au moins une action : Audio, MIDI ou OSC."
+  },
+  "Massimo 16 comandi MIDI e 16 OSC per slot.": {
+    "en": "Up to 16 MIDI and 16 OSC commands per slot.",
+    "es": "Máximo 16 comandos MIDI y 16 OSC por slot.",
+    "fr": "Maximum 16 commandes MIDI et 16 OSC par slot."
+  },
+  "Comando MIDI non valido.": {
+    "en": "Invalid MIDI command.",
+    "es": "Comando MIDI no válido.",
+    "fr": "Commande MIDI non valide."
+  },
+  "Aggiungi almeno un comando MIDI.": {
+    "en": "Add at least one MIDI command.",
+    "es": "Añade al menos un comando MIDI.",
+    "fr": "Ajoutez au moins une commande MIDI."
+  },
+  "Aggiungi almeno un comando OSC.": {
+    "en": "Add at least one OSC command.",
+    "es": "Añade al menos un comando OSC.",
+    "fr": "Ajoutez au moins une commande OSC."
+  },
+  "Comandi dello slot troppo grandi: riduci argomenti o messaggi (massimo 6000 byte).": {
+    "en": "Slot commands are too large: reduce arguments or messages (6000-byte maximum).",
+    "es": "Los comandos del slot son demasiado grandes: reduce argumentos o mensajes (máximo 6000 bytes).",
+    "fr": "Commandes du slot trop volumineuses : réduisez les arguments ou messages (maximum 6000 octets)."
+  },
+  "Destinazione OSC non valida: host e porta 1-65535.": {
+    "en": "Invalid OSC destination: host and port 1-65535.",
+    "es": "Destino OSC no válido: host y puerto 1-65535.",
+    "fr": "Destination OSC non valide : hôte et port 1-65535."
+  },
+  "Indirizzo OSC non valido: usa un percorso come /show/go.": {
+    "en": "Invalid OSC address: use a path such as /show/go.",
+    "es": "Ruta OSC no válida: usa una ruta como /show/go.",
+    "fr": "Adresse OSC non valide : utilisez une adresse comme /show/go."
+  },
+  "Massimo 16 argomenti per comando OSC.": {
+    "en": "Up to 16 arguments per OSC command.",
+    "es": "Máximo 16 argumentos por comando OSC.",
+    "fr": "Maximum 16 arguments par commande OSC."
+  },
+  "Argomento OSC non valido: massimo 1024 caratteri ASCII.": {
+    "en": "Invalid OSC argument: up to 1024 ASCII characters.",
+    "es": "Argumento OSC no válido: máximo 1024 caracteres ASCII.",
+    "fr": "Argument OSC non valide : maximum 1024 caractères ASCII."
+  },
+  "Argomento OSC intero non valido.": {
+    "en": "Invalid OSC integer argument.",
+    "es": "Argumento entero OSC no válido.",
+    "fr": "Argument entier OSC non valide."
+  },
+  "Argomento OSC decimale non valido.": {
+    "en": "Invalid OSC float argument.",
+    "es": "Argumento decimal OSC no válido.",
+    "fr": "Argument décimal OSC non valide."
+  },
+  "Coda OSC piena: comando scartato.": {
+    "en": "OSC queue full: command dropped.",
+    "es": "Cola OSC llena: comando descartado.",
+    "fr": "File OSC pleine : commande abandonnée."
+  },
+  "Comando OSC scaduto: non ripetuto.": {
+    "en": "OSC command expired: not replayed.",
+    "es": "Comando OSC caducado: no se repite.",
+    "fr": "Commande OSC expirée : non répétée."
+  },
+  "Nome vuoto: usa automaticamente il nome della traccia caricata.": {
+    "en": "Empty name: automatically use the loaded track name.",
+    "es": "Nombre vacío: utiliza automáticamente el nombre de la pista cargada.",
+    "fr": "Nom vide : utilise automatiquement le nom de la piste chargée."
+  },
+  "VOLUMI MIDI": {
+    "en": "MIDI VOLUMES",
+    "es": "VOLÚMENES MIDI",
+    "fr": "VOLUMES MIDI"
+  },
+  "Master: canale MIDI": {
+    "en": "Master: MIDI channel",
+    "es": "Máster: canal MIDI",
+    "fr": "Master : canal MIDI"
+  },
+  "Master: CC (-1 = disabilitato)": {
+    "en": "Master: CC (-1 = disabled)",
+    "es": "Máster: CC (-1 = desactivado)",
+    "fr": "Master : CC (-1 = désactivé)"
+  },
+  "Traccia: canale MIDI": {
+    "en": "Track: MIDI channel",
+    "es": "Pista: canal MIDI",
+    "fr": "Piste : canal MIDI"
+  },
+  "Traccia: CC (-1 = disabilitato)": {
+    "en": "Track: CC (-1 = disabled)",
+    "es": "Pista: CC (-1 = desactivado)",
+    "fr": "Piste : CC (-1 = désactivé)"
+  },
+  "LEARN master": {
+    "en": "LEARN master",
+    "es": "LEARN máster",
+    "fr": "LEARN master"
+  },
+  "LEARN traccia": {
+    "en": "LEARN track",
+    "es": "LEARN pista",
+    "fr": "LEARN piste"
+  },
+  "Annulla LEARN": {
+    "en": "Cancel LEARN",
+    "es": "Cancelar LEARN",
+    "fr": "Annuler LEARN"
+  },
+  "Applica assegnazioni MIDI": {
+    "en": "Apply MIDI assignments",
+    "es": "Aplicar asignaciones MIDI",
+    "fr": "Appliquer les affectations MIDI"
+  },
+  "Assegnazioni MIDI aggiornate.": {
+    "en": "MIDI assignments updated.",
+    "es": "Asignaciones MIDI actualizadas.",
+    "fr": "Affectations MIDI mises à jour."
+  },
+  "Muovi il fader o knob da assegnare.": {
+    "en": "Move the fader or knob to assign.",
+    "es": "Mueve el fader o potenciómetro que quieres asignar.",
+    "fr": "Déplacez le fader ou potentiomètre à affecter."
+  },
+  "CC assoluti 0-127. La traccia segue l’ultimo audio avviato ancora in riproduzione.": {
+    "en": "Absolute CC 0-127. Track volume follows the most recently started audio still playing.",
+    "es": "CC absolutos 0-127. El volumen de pista sigue el audio iniciado más recientemente que sigue reproduciéndose.",
+    "fr": "CC absolus 0-127. Le volume de piste suit l’audio lancé le plus récemment et toujours en lecture."
+  },
+  "Assegnazione volume MIDI non valida: canale 1-16 e CC da -1 a 127.": {
+    "en": "Invalid MIDI volume assignment: channel 1-16 and CC from -1 to 127.",
+    "es": "Asignación de volumen MIDI no válida: canal 1-16 y CC de -1 a 127.",
+    "fr": "Affectation de volume MIDI non valide : canal 1-16 et CC de -1 à 127."
+  },
+  "Master e traccia devono usare controlli MIDI diversi.": {
+    "en": "Master and track must use different MIDI controls.",
+    "es": "Máster y pista deben usar controles MIDI diferentes.",
+    "fr": "Master et piste doivent utiliser des contrôles MIDI différents."
+  },
+  "Valore MIDI CC non valido.": {
+    "en": "Invalid MIDI CC value.",
+    "es": "Valor MIDI CC no válido.",
+    "fr": "Valeur MIDI CC non valide."
+  },
+  "Traccia controllata: {0}": {
+    "en": "Controlled track: {0}",
+    "es": "Pista controlada: {0}",
+    "fr": "Piste contrôlée : {0}"
+  },
+  "nessun audio in riproduzione": {
+    "en": "no audio playing",
+    "es": "ningún audio en reproducción",
+    "fr": "aucun audio en lecture"
+  },
+  "App portatile: aggiorna sostituendo StagePad.exe. Progetti e impostazioni restano salvati.": {
+    "en": "Portable app: update by replacing StagePad.exe. Projects and settings remain saved.",
+    "es": "Aplicación portátil: actualiza sustituyendo StagePad.exe. Los proyectos y ajustes se conservan.",
+    "fr": "Application portable : remplacez StagePad.exe pour la mettre à jour. Projets et réglages sont conservés."
+  },
+  "EMERGENZA: pausa tutte le tracce": {
+    "en": "EMERGENCY: pause all tracks",
+    "es": "EMERGENCIA: pausar todas las pistas",
+    "fr": "URGENCE : mettre toutes les pistes en pause"
+  },
+  "In emergenza l’audio viene messo in pausa senza perdere le posizioni. MIDI/OSC seguono le selezioni dello slot.": {
+    "en": "Emergency pauses audio and preserves playback positions. MIDI/OSC follow the slot selections.",
+    "es": "La emergencia pausa el audio y conserva las posiciones. MIDI/OSC siguen las selecciones del slot.",
+    "fr": "L’urgence met l’audio en pause et conserve les positions. MIDI/OSC suivent les choix du slot."
+  },
+  "Attesa prima (ms)": {
+    "en": "Wait before (ms)",
+    "es": "Espera previa (ms)",
+    "fr": "Attente avant (ms)"
+  },
+  "Test ora": {
+    "en": "Test now",
+    "es": "Probar ahora",
+    "fr": "Tester maintenant"
+  },
+  "Comando trasmesso.": {
+    "en": "Command transmitted.",
+    "es": "Comando transmitido.",
+    "fr": "Commande transmise."
+  },
+  "Seleziona un solo comando per il test.": {
+    "en": "Select one command to test.",
+    "es": "Selecciona un solo comando para probar.",
+    "fr": "Sélectionnez une seule commande à tester."
+  },
+  "Ferma audio e sequenze prima del test.": {
+    "en": "Stop audio and sequences before testing.",
+    "es": "Detén el audio y las secuencias antes de probar.",
+    "fr": "Arrêtez l’audio et les séquences avant le test."
+  },
+  "Sequenza annullata.": {
+    "en": "Sequence cancelled.",
+    "es": "Secuencia cancelada.",
+    "fr": "Séquence annulée."
+  },
+  "Modalità master": {
+    "en": "Master mode",
+    "es": "Modo master",
+    "fr": "Mode master"
+  },
+  "Modalità traccia": {
+    "en": "Track mode",
+    "es": "Modo de pista",
+    "fr": "Mode piste"
+  },
+  "Soft takeover master": {
+    "en": "Master soft takeover",
+    "es": "Soft takeover master",
+    "fr": "Reprise progressive master"
+  },
+  "Soft takeover traccia": {
+    "en": "Track soft takeover",
+    "es": "Soft takeover de pista",
+    "fr": "Reprise progressive piste"
+  },
+  "Passo relativo master (%)": {
+    "en": "Master relative step (%)",
+    "es": "Paso relativo master (%)",
+    "fr": "Pas relatif master (%)"
+  },
+  "Passo relativo traccia (%)": {
+    "en": "Track relative step (%)",
+    "es": "Paso relativo de pista (%)",
+    "fr": "Pas relatif piste (%)"
+  },
+  "Assoluto 0-127": {
+    "en": "Absolute 0-127",
+    "es": "Absoluto 0-127",
+    "fr": "Absolu 0-127"
+  },
+  "Relativo: complemento a 2": {
+    "en": "Relative: two’s complement",
+    "es": "Relativo: complemento a 2",
+    "fr": "Relatif : complément à 2"
+  },
+  "Relativo: offset 64": {
+    "en": "Relative: offset 64",
+    "es": "Relativo: offset 64",
+    "fr": "Relatif : décalage 64"
+  },
+  "Relativo: segno e modulo": {
+    "en": "Relative: sign and magnitude",
+    "es": "Relativo: signo y magnitud",
+    "fr": "Relatif : signe et amplitude"
+  },
+  "CC assoluti o encoder relativi. Soft takeover evita salti di volume. La traccia segue l’ultimo audio ancora in riproduzione.": {
+    "en": "Absolute CC or relative encoders. Soft takeover prevents volume jumps. Track control follows the latest audio still playing.",
+    "es": "CC absolutos o encoders relativos. Soft takeover evita saltos de volumen. El control de pista sigue el último audio que sigue sonando.",
+    "fr": "CC absolus ou encodeurs relatifs. La reprise progressive évite les sauts de volume. La piste suit le dernier audio encore en lecture."
+  },
+  "Esporta show con audio": {
+    "en": "Export show with audio",
+    "es": "Exportar show con audio",
+    "fr": "Exporter le show avec audio"
+  },
+  "Importa show": {
+    "en": "Import show",
+    "es": "Importar show",
+    "fr": "Importer un show"
+  },
+  "Pacchetto .stagepad.zip (percorso completo)": {
+    "en": ".stagepad.zip package (full path)",
+    "es": "Paquete .stagepad.zip (ruta completa)",
+    "fr": "Paquet .stagepad.zip (chemin complet)"
+  },
+  "Ferma audio e sequenze prima di gestire il pacchetto.": {
+    "en": "Stop audio and sequences before managing a package.",
+    "es": "Detén el audio y las secuencias antes de gestionar un paquete.",
+    "fr": "Arrêtez l’audio et les séquences avant de gérer un paquet."
+  },
+  "Manutenzione in corso: attendi il completamento.": {
+    "en": "Maintenance in progress: please wait.",
+    "es": "Mantenimiento en curso: espera.",
+    "fr": "Maintenance en cours : veuillez patienter."
+  },
+  "Aggiornamenti": {
+    "en": "Updates",
+    "es": "Actualizaciones",
+    "fr": "Mises à jour"
+  },
+  "Controlla aggiornamenti": {
+    "en": "Check for updates",
+    "es": "Buscar actualizaciones",
+    "fr": "Rechercher des mises à jour"
+  },
+  "Scarica e aggiorna": {
+    "en": "Download and update",
+    "es": "Descargar y actualizar",
+    "fr": "Télécharger et mettre à jour"
+  },
+  "Ripristina versione precedente": {
+    "en": "Restore previous version",
+    "es": "Restaurar versión anterior",
+    "fr": "Restaurer la version précédente"
+  },
+  "Aggiornamenti solo a riproduzione ferma. L’app verrà riavviata; progetti e impostazioni restano conservati.": {
+    "en": "Updates require stopped playback. The app will restart; projects and settings are preserved.",
+    "es": "Las actualizaciones requieren detener la reproducción. La app se reiniciará y conservará proyectos y ajustes.",
+    "fr": "Les mises à jour nécessitent l’arrêt de la lecture. L’app redémarrera en conservant projets et réglages."
+  },
+  "Verifica aggiornamenti…": {
+    "en": "Checking for updates…",
+    "es": "Buscando actualizaciones…",
+    "fr": "Recherche de mises à jour…"
+  },
+  "Nessuna nuova release stabile disponibile.": {
+    "en": "No newer stable release is available.",
+    "es": "No hay una nueva versión estable disponible.",
+    "fr": "Aucune nouvelle version stable disponible."
+  },
+  "Disponibile StagePad {0}.": {
+    "en": "StagePad {0} is available.",
+    "es": "StagePad {0} disponible.",
+    "fr": "StagePad {0} est disponible."
+  },
+  "Preparazione aggiornamento…": {
+    "en": "Preparing update…",
+    "es": "Preparando actualización…",
+    "fr": "Préparation de la mise à jour…"
+  },
+  "Ferma audio e sequenze prima di aggiornare.": {
+    "en": "Stop audio and sequences before updating.",
+    "es": "Detén el audio y las secuencias antes de actualizar.",
+    "fr": "Arrêtez l’audio et les séquences avant la mise à jour."
+  },
+  "Checksum aggiornamento non corrispondente.": {
+    "en": "Update checksum mismatch.",
+    "es": "La suma de verificación no coincide.",
+    "fr": "La somme de contrôle ne correspond pas."
+  },
+  "Versione precedente non disponibile.": {
+    "en": "Previous version is unavailable.",
+    "es": "Versión anterior no disponible.",
+    "fr": "Version précédente indisponible."
+  },
+  "Origine aggiornamento non valida.": {
+    "en": "Invalid update source.",
+    "es": "Origen de actualización no válido.",
+    "fr": "Source de mise à jour invalide."
+  },
+  "La release non contiene StagePad.exe.": {
+    "en": "The release does not contain StagePad.exe.",
+    "es": "La versión no contiene StagePad.exe.",
+    "fr": "La version ne contient pas StagePad.exe."
+  },
+  "Checksum aggiornamento mancante.": {
+    "en": "Update checksum is missing.",
+    "es": "Falta la suma de verificación.",
+    "fr": "Somme de contrôle manquante."
+  },
+  "Eseguibile aggiornamento non valido.": {
+    "en": "Invalid update executable.",
+    "es": "Ejecutable de actualización no válido.",
+    "fr": "Exécutable de mise à jour invalide."
+  },
+  "Versione o prodotto aggiornamento non validi.": {
+    "en": "Invalid update version or product.",
+    "es": "Versión o producto no válido.",
+    "fr": "Version ou produit invalide."
+  },
+  "Avvio aggiornamento non riuscito.": {
+    "en": "Could not start the update.",
+    "es": "No se pudo iniciar la actualización.",
+    "fr": "Impossible de démarrer la mise à jour."
+  },
+  "EMERGENZA": {
+    "en": "EMERGENCY",
+    "es": "EMERGENCIA",
+    "fr": "URGENCE"
+  },
+  "Aggiornamento troppo grande.": {
+    "en": "Update is too large.",
+    "es": "La actualización es demasiado grande.",
+    "fr": "Mise à jour trop volumineuse."
+  },
+  "Risposta aggiornamento troppo grande.": {
+    "en": "Update response is too large.",
+    "es": "La respuesta es demasiado grande.",
+    "fr": "Réponse trop volumineuse."
+  },
+  "Contenuto non valido nel pacchetto.": {
+    "en": "Invalid package content.",
+    "es": "Contenido del paquete no válido.",
+    "fr": "Contenu du paquet invalide."
+  },
+  "Dimensione del pacchetto non valida.": {
+    "en": "Invalid package size.",
+    "es": "Tamaño del paquete no válido.",
+    "fr": "Taille du paquet invalide."
+  },
+  "Il pacchetto contiene riferimenti audio esterni o mancanti.": {
+    "en": "The package references external or missing audio.",
+    "es": "El paquete hace referencia a audio externo o ausente.",
+    "fr": "Le paquet référence des audios externes ou manquants."
+  },
+  "Il pacchetto esiste già: scegli un altro nome.": {
+    "en": "The package already exists: choose another name.",
+    "es": "El paquete ya existe: elige otro nombre.",
+    "fr": "Le paquet existe déjà : choisissez un autre nom."
+  },
+  "Il progetto esiste già: scegli un altro nome.": {
+    "en": "The project already exists: choose another name.",
+    "es": "El proyecto ya existe: elige otro nombre.",
+    "fr": "Le projet existe déjà : choisissez un autre nom."
+  },
+  "Nome audio non valido.": {
+    "en": "Invalid audio filename.",
+    "es": "Nombre de audio no válido.",
+    "fr": "Nom de fichier audio invalide."
+  },
+  "Pacchetto non valido: troppi file.": {
+    "en": "Invalid package: too many files.",
+    "es": "Paquete no válido: demasiados archivos.",
+    "fr": "Paquet invalide : trop de fichiers."
+  },
+  "Pacchetto troppo grande: massimo 8 GiB.": {
+    "en": "Package is too large: maximum 8 GiB.",
+    "es": "Paquete demasiado grande: máximo 8 GiB.",
+    "fr": "Paquet trop volumineux : maximum 8 Gio."
+  },
+  "Percorso non valido nel pacchetto.": {
+    "en": "Invalid path in package.",
+    "es": "Ruta no válida en el paquete.",
+    "fr": "Chemin invalide dans le paquet."
+  },
+  "Inserisci il percorso completo del pacchetto.": {
+    "en": "Enter the full package path.",
+    "es": "Introduce la ruta completa del paquete.",
+    "fr": "Saisissez le chemin complet du paquet."
+  },
+  "Operazione sul pacchetto in corso…": {
+    "en": "Processing package…",
+    "es": "Procesando paquete…",
+    "fr": "Traitement du paquet…"
+  },
+  "Nessuna release selezionata.": {
+    "en": "No release selected.",
+    "es": "Ninguna versión seleccionada.",
+    "fr": "Aucune version sélectionnée."
+  },
+  "Overflow MIDI IN: rilasciati i pad premuti; eventi in eccesso scartati.": {
+    "en": "MIDI IN overflow: held pads released; excess events discarded.",
+    "es": "Desbordamiento MIDI IN: pads pulsados liberados; eventos sobrantes descartados.",
+    "fr": "Débordement MIDI IN : pads maintenus libérés ; événements excédentaires ignorés."
+  },
+  "Evita salti di volume del master": {
+    "en": "Prevent master volume jumps",
+    "es": "Evitar saltos de volumen del master",
+    "fr": "Éviter les sauts de volume master"
+  },
+  "Evita salti di volume della traccia": {
+    "en": "Prevent track volume jumps",
+    "es": "Evitar saltos de volumen de la pista",
+    "fr": "Éviter les sauts de volume de la piste"
+  },
+  "Con fader assoluti, il volume cambia solo quando il controllo raggiunge il valore attuale. Utile per evitare sbalzi quando fader e volume non coincidono.": {
+    "en": "With absolute faders, volume changes only when the control reaches the current value. This prevents sudden jumps when fader and volume do not match.",
+    "es": "Con faders absolutos, el volumen solo cambia cuando el control alcanza el valor actual. Evita saltos cuando el fader y el volumen no coinciden.",
+    "fr": "Avec des faders absolus, le volume change uniquement lorsque le contrôle atteint la valeur actuelle. Cela évite les sauts lorsque fader et volume ne correspondent pas."
+  },
+  "Le opzioni anti-salto agiscono sui fader assoluti. Il passo relativo serve solo agli encoder relativi. La traccia segue l’ultimo audio ancora in riproduzione.": {
+    "en": "Jump prevention applies to absolute faders. Relative step only applies to relative encoders. Track control follows the latest audio still playing.",
+    "es": "Las opciones antisaltos se aplican a faders absolutos. El paso relativo solo se aplica a encoders relativos. El control de pista sigue el último audio que sigue sonando.",
+    "fr": "La prévention des sauts concerne les faders absolus. Le pas relatif concerne uniquement les encodeurs relatifs. La piste suit le dernier audio encore en lecture."
+  }
+}
