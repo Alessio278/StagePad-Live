@@ -6,7 +6,7 @@
 
 [Italiano](docs/README.it.md) · **English** · [Español](docs/README.es.md) · [Français](docs/README.fr.md)
 
-Windows x64 · MIT · 1–100 slots · Audio + MIDI + OSC · IT / EN / ES / FR
+Windows x64 · MIT · 1-100 slots · Audio + MIDI + OSC · IT / EN / ES / FR
 
 StagePad puts audio tracks, MIDI and OSC messages on a grid of playable slots. Prepare
 materials in **Setup**, switch to **Live** for performance, and trigger slots with
@@ -76,10 +76,10 @@ badge sits directly beside STAGEPAD; the same logo is used for Windows icons.
 
 | Feature | Details |
 | --- | --- |
-| Playable slots | 1–100 active slots; one audio voice per slot |
+| Playable slots | 1-100 active slots; one audio voice per slot |
 | Two workspaces | Separate Setup and Live grids, up to 10×10; scrollable, readable cells |
 | Audio | Play, pause, stop, gain, configurable fades and a master control |
-| Playback modes | One shot / retrigger, Hold, protected playback, play–pause–resume |
+| Playback modes | One shot / retrigger, Hold, protected playback, play-pause-resume |
 | MIDI input | Note On/Off, MIDI Learn, independent input routing |
 | MIDI output | Note pulses or gates, plus the implemented MSC GO/STOP/RESUME formats |
 | Track view | Waveform, double-click seek, elapsed/total/remaining time |
@@ -133,6 +133,21 @@ software may require a separately installed virtual MIDI port. CC, Program
 Change, MIDI clock and automatic MIDI thru are **not implemented**. The MSC
 addressing modes have specific limits; see the [MIDI guide](docs/MIDI.en.md).
 
+## Emergency slots and sequence controls
+
+Enable **EMERGENCY: pause all tracks** in a slot’s settings. Pressing its pad pauses every playing/fading audio track, including protected tracks, preserving positions. The slot does not play its own audio. Select MIDI and/or OSC to send its emergency messages. Pending output sequences are cancelled and active MIDI notes are released before the slot’s own messages. The setting is saved with the show and works with mouse or mapped MIDI input. Use Play to resume an individual paused track; normal pad modes keep their existing retrigger behavior. STOP ALL still stops and resets positions. Emergency controls pause software audio; they do not guarantee receipt by external equipment.
+
+Use ↑/↓ to reorder MIDI/OSC commands, **Wait before (ms)** to insert delays and **Test now** to transmit one command while playback is stopped. Tests skip the configured delay; MIDI note tests use a timed Pulse. Each output list runs separately. Maximum delay: 30 seconds per command and 60 seconds per list. Releasing a pad cancels future Gate notes; STOP cancels its future commands. Keep emergency delays at zero for immediate transmission.
+
+In Settings, master/track volume mappings support absolute CC, three relative encoder encodings and **soft takeover**, which waits for an absolute fader to reach/cross the current volume. Relative step is configurable. Input loss releases held pads; reconnect never replays triggers.
+
+In the project browser, **Export show with audio** creates a `.stagepad.zip` package containing a show and its original audio files. **Import show** accepts a full package path or a package in the project folder, and creates a separately named show without overwriting. Stop audio/sequences before importing/exporting. Packages support up to 8 GiB of original media.
+
+**Settings → Updates** checks stable releases from `Alessio278/StagePad-Live`. Download/install is allowed only while idle and preserves user data. The download is checked against the release SHA-256, a backup is retained and a failed startup triggers rollback. The previous version can also be restored from Settings. The repository and published release assets must exist for online updates; this source package does not publish them automatically. Manual EXE replacement remains supported.
+
+
+The MIDI volume options are **Prevent master volume jumps** and **Prevent track volume jumps**. With absolute faders, control begins when the fader reaches the current volume. Version 0.13.1 adds readable white wrapping labels and inline help.
+
 ## Beta status and known limits
 
 This is a beta, not a hardware-certified show system. Automated tests cover the
@@ -174,18 +189,3 @@ and the [Windows checklist](docs/TEST-COMPLETI.md).
 
 StagePad is distributed under the [MIT License](LICENSE). Third-party notices
 are in [licenses](licenses/) and available from the app’s **Licenses** button.
-
-## Emergency slots and sequence controls
-
-Enable **EMERGENCY: pause all tracks** in a slot’s settings. Pressing its pad pauses every playing/fading audio track, including protected tracks, preserving positions. The slot does not play its own audio. Select MIDI and/or OSC to send its emergency messages. Pending output sequences are cancelled and active MIDI notes are released before the slot’s own messages. The setting is saved with the show and works with mouse or mapped MIDI input. Use Play to resume an individual paused track; normal pad modes keep their existing retrigger behavior. STOP ALL still stops and resets positions. Emergency controls pause software audio; they do not guarantee receipt by external equipment.
-
-Use ↑/↓ to reorder MIDI/OSC commands, **Wait before (ms)** to insert delays and **Test now** to transmit one command while playback is stopped. Tests skip the configured delay; MIDI note tests use a timed Pulse. Each output list runs separately. Maximum delay: 30 seconds per command and 60 seconds per list. Releasing a pad cancels future Gate notes; STOP cancels its future commands. Keep emergency delays at zero for immediate transmission.
-
-In Settings, master/track volume mappings support absolute CC, three relative encoder encodings and **soft takeover**, which waits for an absolute fader to reach/cross the current volume. Relative step is configurable. Input loss releases held pads; reconnect never replays triggers.
-
-In the project browser, **Export show with audio** creates a `.stagepad.zip` package containing a show and its original audio files. **Import show** accepts a full package path or a package in the project folder, and creates a separately named show without overwriting. Stop audio/sequences before importing/exporting. Packages support up to 8 GiB of original media.
-
-**Settings → Updates** checks stable releases from `Alessio278/StagePad-Live`. Download/install is allowed only while idle and preserves user data. The download is checked against the release SHA-256, a backup is retained and a failed startup triggers rollback. The previous version can also be restored from Settings. The repository and published release assets must exist for online updates; this source package does not publish them automatically. Manual EXE replacement remains supported.
-
-
-The MIDI volume options are **Prevent master volume jumps** and **Prevent track volume jumps**. With absolute faders, control begins when the fader reaches the current volume. Version 0.13.1 adds readable white wrapping labels and inline help.
