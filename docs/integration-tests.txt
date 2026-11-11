@@ -1,0 +1,284 @@
+PASS: coordinator master 100% at startup
+PASS: device selector fallback uses friendly name
+PASS: accepted grid
+PASS: invalid grid preserves current layout
+PASS: accepted configure
+PASS: accepted load
+PASS: serialized protocol project snapshot roundtrip (in-process transport)
+PASS: waveform serialized separately
+PASS: accepted learn
+PASS: learn does not trigger audio or lights
+PASS: controller unplug preserves playback
+PASS: accepted stop
+PASS: accepted settings
+PASS: MIDI hold release end-to-end
+PASS: accepted settings
+PASS: protected MIDI retrigger does not restart or stop audio
+PASS: protected rejects pause
+PASS: accepted stop
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: accepted pad-up
+PASS: Note ON and timed OFF while audio plays
+PASS: accepted pad-down
+PASS: MIDI output exception never stops audio
+PASS: accepted stop
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: MSC-only sends SysEx without starting audio
+PASS: accepted settings
+PASS: missing audio is reported
+PASS: missing audio does not block light command
+PASS: accepted settings
+PASS: accepted play
+PASS: accepted grid
+PASS: setup grid command leaves show layout unchanged
+PASS: accepted lock
+PASS: SHOW LOCK protects setup layout
+PASS: SHOW LOCK protects custom layout
+PASS: accepted seek
+PASS: manual seek under SHOW LOCK sends no light commands
+PASS: accepted pause
+PASS: accepted seek
+PASS: coordinator seek preserves paused state and exact cursor
+PASS: show lock enforced in engine for learn, clear and routing
+PASS: accepted master
+PASS: accepted panic
+PASS: accepted lock
+PASS: accepted save-project
+PASS: atomic project save keeps routing, grid and file paths
+PASS: accepted load-project
+PASS: project restore never autoplays
+PASS: corrupt project open reports actual failure
+PASS: corrupt JSON preserves current project
+PASS: accepted load
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: blocked MIDI native call cannot stall audio coordinator or render
+PASS: accepted panic
+PASS: PANIC audio works while MIDI output is blocked
+PASS: automatic last-project recovery written
+PASS: accepted settings
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: accepted pad-down
+PASS: accepted pad-up
+PASS: shared gate does not release another held slot
+PASS: accepted pad-up
+PASS: last shared gate sends one Note Off
+PASS: accepted pad-down
+PASS: accepted configure
+PASS: accepted configure
+PASS: busy MIDI port and routing changes preserve live audio
+PASS: accepted panic
+PASS: stale pre-PANIC trigger rejected by coordinator
+PASS: stale pre-PANIC seek rejected by coordinator
+PASS: invalid seek position rejected
+PASS: accepted load
+PASS: failed replacement never plays old cached audio under a new file mapping
+PASS: seek budget failure preserves source and reservation
+PASS: streaming seek preview contains exact destination PCM
+PASS: seek preview charged against shared memory budget
+PASS: read-ahead catches destination beyond prepared second
+PASS: source and seek preview reservations fully released
+PASS: accepted panic
+PASS: accepted slot-count
+PASS: both grids expand to 10x10 for 100 slots
+PASS: coordinator rejects grid above 10x10
+PASS: coordinator enforces 1-100 slot count
+PASS: accepted settings
+PASS: accepted load
+PASS: accepted pad-down
+PASS: slot count cannot change during playback
+PASS: accepted seek
+PASS: accepted panic
+PASS: accepted lock
+PASS: SHOW LOCK protects slot count
+PASS: accepted lock
+PASS: accepted save-project
+PASS: slot 100 persists on disk
+PASS: IPC serializes all 100 slot states
+PASS: accepted slot-count
+PASS: hidden slots cannot play and retain audio path
+PASS: accepted slot-count
+PASS: reactivating hidden slot restores its configuration
+PASS: accepted panic
+PASS: project save returns failure when disk destination cannot be written
+PASS: failed save preserves previous project association
+PASS: successful save reply means file is already committed to disk
+PASS: saved show name persists in document and live state
+PASS: startup restores last show identity and configuration
+PASS: portable manual projects do not contain local session paths
+PASS: accepted duplicate-project
+PASS: duplicate preserves project and audio references
+PASS: duplicate refuses to overwrite an existing project
+PASS: accepted rename-project
+PASS: rename updates current show without reloading audio
+PASS: rename refuses to overwrite another project
+PASS: accepted lock
+PASS: show lock blocks project deletion
+PASS: accepted lock
+PASS: manual project management protects automatic recovery
+PASS: rename cannot move a project and break relative audio paths
+PASS: accepted load-project
+PASS: accepted delete-project
+PASS: delete preserves audio files and loaded slot configuration
+PASS: legacy recovery folder remains readable after project-folder rename
+PASS: new project folder takes precedence without removing legacy data
+PASS: corrupt new recovery falls back safely to legacy copy
+PASS: default project directory uses project rather than recovery
+PASS: startup keeps recovered edits and last show path together
+PASS: missing original show falls back to recovered configuration with a warning
+PASS: deleted current show stays detached after restart
+PASS: corrupt latest session falls back to backup
+PASS: startup remains compatible with legacy recovery without session metadata
+PASS: accepted configure
+PASS: accepted load
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: audio only when selected: Audio
+PASS: MIDI disabled produces no output: Audio
+PASS: OSC disabled produces no packets: Audio
+PASS: accepted midi-up
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: CC and Program Change in multi-command batch: Midi
+PASS: audio only when selected: Midi
+PASS: OSC disabled produces no packets: Midi
+PASS: accepted midi-up
+PASS: pad release sends both gate Note Offs: Midi
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: CC and Program Change in multi-command batch: Both
+PASS: audio only when selected: Both
+PASS: OSC disabled produces no packets: Both
+PASS: accepted midi-up
+PASS: pad release sends both gate Note Offs: Both
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: two real UDP OSC packets from MIDI pad: Osc
+PASS: audio only when selected: Osc
+PASS: MIDI disabled produces no output: Osc
+PASS: accepted midi-up
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: two real UDP OSC packets from MIDI pad: AudioOsc
+PASS: audio only when selected: AudioOsc
+PASS: MIDI disabled produces no output: AudioOsc
+PASS: accepted midi-up
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: two real UDP OSC packets from MIDI pad: MidiOsc
+PASS: CC and Program Change in multi-command batch: MidiOsc
+PASS: audio only when selected: MidiOsc
+PASS: accepted midi-up
+PASS: pad release sends both gate Note Offs: MidiOsc
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted midi-down
+PASS: two real UDP OSC packets from MIDI pad: All
+PASS: CC and Program Change in multi-command batch: All
+PASS: audio only when selected: All
+PASS: accepted midi-up
+PASS: pad release sends both gate Note Offs: All
+PASS: accepted panic
+PASS: accepted pad-down
+PASS: blocked MIDI driver does not block audio or either OSC message
+PASS: accepted pad-up
+PASS: accepted panic
+PASS: accepted clear
+PASS: accepted settings
+PASS: missing audio remains an explicit error with all outputs enabled
+PASS: missing audio does not block multiple OSC commands
+PASS: accepted pad-up
+PASS: accepted save-project
+PASS: all output selections and command lists persist to disk
+PASS: accepted panic
+PASS: accepted load-project
+PASS: project reopen never transmits configured OSC commands automatically
+PASS: PANIC cancels OSC batch waiting on DNS
+PASS: fresh OSC command works after PANIC without replaying the cancelled batch
+PASS: OSC hostname resolves to IPv4 receiver when localhost has both address families
+PASS: accepted panic
+PASS: accepted settings
+PASS: accepted load
+PASS: accepted load
+PASS: automatic title keeps explicit mode after replacing audio
+PASS: accepted settings
+PASS: accepted load
+PASS: accepted settings
+PASS: accepted clear
+PASS: dynamic, custom and cleared slot titles behave correctly
+PASS: accepted learn-volume
+PASS: learn consumes first CC without a master volume jump
+PASS: accepted learn-volume
+PASS: same controller cannot be assigned to both volumes
+PASS: accepted load
+PASS: accepted load
+PASS: accepted settings
+PASS: accepted settings
+PASS: accepted play
+PASS: master CC leaves track volume independent
+PASS: track CC leaves master independent
+PASS: accepted play
+PASS: other playing track volume preserved
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: accepted pad-up
+PASS: accepted pause
+PASS: accepted stop
+PASS: current-track CC with no playing audio changes no slot
+PASS: accepted lock
+PASS: SHOW LOCK protects controller assignment
+PASS: accepted lock
+PASS: accepted panic
+PASS: accepted save-project
+PASS: independent fader assignments and auto titles persist in project
+PASS: accepted midi-volume-controls
+PASS: disabled CC mapping no longer changes volume
+PASS: accepted settings
+PASS: accepted settings
+PASS: accepted play
+PASS: accepted play
+PASS: accepted pad-down
+PASS: accepted pad-up
+PASS: emergency retains Hold cursor after physical release
+PASS: EMERGENCY slot transmits its own OSC command while pausing all audio
+PASS: EMERGENCY slot transmits MIDI independently of missing local audio
+PASS: accepted pad-up
+PASS: accepted panic
+PASS: accepted settings
+PASS: input USB disconnect releases held audio without a stuck Hold
+PASS: USB reconnect never replays held trigger
+PASS: portable show roundtrip preserves media bytes and Emergency slot
+PASS: portable show stores relative audio paths
+PASS: portable import never overwrites an existing show
+PASS: portable import rejects traversal and removes staging files
+PASS: OSC delay in one slot does not block another slot
+PASS: cancel slot prevents pending OSC from being transmitted
+PASS: OSC command test reports actual local UDP transmission and skips saved delay
+PASS: accepted settings
+PASS: accepted pad-down
+PASS: MIDI command respects saved delay
+PASS: MIDI sequence preserves exact configured order
+PASS: accepted pad-up
+PASS: accepted pad-down
+PASS: accepted stop
+PASS: STOP cancels delayed MIDI commands
+PASS: MIDI test acknowledges actual send after earlier PANIC epochs and skips saved delay
+PASS: invalid update checksum leaves installed executable intact
+PASS: atomic update stores previous executable
+PASS: rollback restores previous executable bytes
+PASS: stable GitHub release resolves allowed executable and checksum
+PASS: updater never offers same version
+PASS: bounded shutdown terminates real unresponsive child processes
+PASS: cleanup does not terminate external descendants of an application process
+283 integration checks passed with simulated hardware. Native IPC, Windows drivers and WPF are NOT covered.

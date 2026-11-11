@@ -1,0 +1,49 @@
+PASS: install accepted
+PASS: installation acknowledged
+PASS: play advances in frames
+PASS: pause preserves exact cursor
+PASS: resume continues exact cursor
+PASS: stop resets cursor
+PASS: 16 simultaneous voices
+PASS: finite output and clipping guard
+PASS: bounded control queue
+PASS: panic survives saturated queue and cancels delayed starts
+PASS: device loss freezes cursor
+PASS: device recovery resumes cursor
+PASS: one source exception preserves other voices
+PASS: starvation is visible without false cursor advance
+PASS: stop remains effective when the source has no buffered frames
+PASS: zero managed allocations in 1000 steady render blocks
+PASS: disk source preloaded head
+PASS: head to read-ahead boundary
+PASS: read-ahead refill after discontinuity
+PASS: immediate restart from resident head
+PASS: streaming memory estimate matches reservation
+PASS: SPSC concurrent ordering over 200000 commands
+PASS: master defaults to 100 percent
+PASS: protected ignores repeated pad and release
+PASS: mouse stop still stops protected mode
+PASS: hold releases through fade and resets cursor
+PASS: pad toggle pauses at exact sample
+PASS: pad toggle resumes exact sample
+PASS: MIDI note on velocity zero means release
+PASS: MIDI channel and data encoding
+PASS: dot2 manual GO vector cue 37.2 executor 5 page 1
+PASS: dot2 manual default RESUME vector
+PASS: MSC invariant cue decimals
+PASS: project JSON roundtrip and defaults
+PASS: duplicate pad assignments rejected
+PASS: offline waveform aggregates stereo peaks and clamps display
+PASS: fade-in duration is independent of slot volume
+PASS: early stop fades from current envelope over configured duration
+PASS: fade-out completes and stops
+PASS: display compensates age of engine timestamp, not GUI receipt time
+PASS: elapsed and remaining change together at one second boundary
+PASS: fractional track duration never desynchronizes elapsed and remaining
+PASS: paused display never extrapolates
+PASS: stale display prediction is bounded to 500 milliseconds
+PASS: track end sets remaining to zero including fractional final second
+PASS: retrigger uses new engine position without previous monotonic clamp
+PASS: last countdown reaches zero without waiting for a later Ended snapshot
+PASS: display clock formats hours consistently
+48 checks passed. Windows/WASAPI/hardware tests are NOT covered by this suite.

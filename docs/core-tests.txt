@@ -1,0 +1,204 @@
+PASS: install accepted
+PASS: installation acknowledged
+PASS: play advances in frames
+PASS: pause preserves exact cursor
+PASS: resume continues exact cursor
+PASS: stop resets cursor
+PASS: 16 simultaneous voices
+PASS: finite output and clipping guard
+PASS: bounded control queue
+PASS: panic survives saturated queue and cancels delayed starts
+PASS: device loss freezes cursor
+PASS: device recovery resumes cursor
+PASS: one source exception preserves other voices
+PASS: starvation is visible without false cursor advance
+PASS: stop remains effective when the source has no buffered frames
+PASS: zero managed allocations in 1000 steady render blocks
+PASS: disk source preloaded head
+PASS: head to read-ahead boundary
+PASS: read-ahead refill after discontinuity
+PASS: immediate restart from resident head
+PASS: streaming memory estimate matches reservation
+PASS: SPSC concurrent ordering over 200000 commands
+PASS: master defaults to 100 percent
+PASS: protected ignores repeated pad and release
+PASS: mouse stop still stops protected mode
+PASS: hold releases through fade and resets cursor
+PASS: pad toggle pauses at exact sample
+PASS: pad toggle resumes exact sample
+PASS: MIDI note on velocity zero means release
+PASS: MIDI channel and data encoding
+PASS: dot2 manual GO vector cue 37.2 executor 5 page 1
+PASS: dot2 manual default RESUME vector
+PASS: MSC invariant cue decimals
+PASS: project JSON roundtrip and defaults
+PASS: duplicate pad assignments rejected
+PASS: offline waveform aggregates stereo peaks and clamps display
+PASS: fade-in duration is independent of slot volume
+PASS: early stop fades from current envelope over configured duration
+PASS: fade-out completes and stops
+PASS: display compensates age of engine timestamp, not GUI receipt time
+PASS: elapsed and remaining change together at one second boundary
+PASS: fractional track duration never desynchronizes elapsed and remaining
+PASS: paused display never extrapolates
+PASS: stale display prediction is bounded to 500 milliseconds
+PASS: track end sets remaining to zero including fractional final second
+PASS: retrigger uses new engine position without previous monotonic clamp
+PASS: last countdown reaches zero without waiting for a later Ended snapshot
+PASS: display clock formats hours consistently
+PASS: forward seek preserves playback
+PASS: backward seek changes cursor at callback boundary
+PASS: paused seek stays paused at exact destination
+PASS: resume after paused seek starts at destination
+PASS: stopped seek cues silently
+PASS: pad starts from manually cued position
+PASS: protected mode permits deliberate mouse seek
+PASS: seek preview joins normal source in one callback
+PASS: PANIC cancels stale seek while acknowledging buffer retirement
+PASS: seek-capable render remains allocation-free
+PASS: setup layout persists independently of live layout
+PASS: custom grid persists with all 16 slots
+PASS: grid cannot hide slots by providing fewer than 16 cells
+PASS: setup grid cannot hide slots
+PASS: legacy setup defaults to 4x4
+PASS: legacy project without grid defaults to 4x4
+PASS: palette has exactly 20 distinct colors
+PASS: all palette colors pass project validation
+PASS: color wheel HSV roundtrip preserves 4096 RGB samples including grays and black
+PASS: color wheel hue wraps and center is neutral
+PASS: short title remains stationary
+PASS: long title pauses at start
+PASS: long title scrolls at 28 units per second
+PASS: long title shows final characters during end pause
+PASS: long title returns toward start
+PASS: long title repeats from start
+PASS: horizontal wheel scrolls right
+PASS: horizontal wheel scrolls left
+PASS: trackpad fractional delta is preserved
+PASS: 100 slots fit both 10x10 grids
+PASS: 100 default MIDI notes remain valid and distinct
+PASS: 100-slot JSON roundtrip
+PASS: shrinking slots preserves hidden settings and file paths for reactivation
+PASS: slot count 0 is rejected
+PASS: slot count 101 is rejected
+PASS: grid dimensions cannot exceed 10
+PASS: grid dimensions cannot exceed 10
+PASS: legacy 16x1 layout migrates within 10x10
+PASS: all 100 voices operate including slot 100
+PASS: 100-voice render has zero managed allocations after warmup
+PASS: PANIC stops all 100 voices
+PASS: four interface languages are available
+PASS: localization catalog complete for en
+PASS: format placeholders preserved for en
+PASS: localization catalog complete for es
+PASS: format placeholders preserved for es
+PASS: localization catalog complete for fr
+PASS: format placeholders preserved for fr
+PASS: settings label translates in all target languages
+PASS: unknown user text is preserved
+PASS: translated error preserves user path
+PASS: visible triggered pad leaves viewport unchanged
+PASS: offscreen pad to right scrolls only enough to reveal it
+PASS: offscreen pad to left scrolls back into view
+PASS: last row is revealed vertically without overshooting
+PASS: partially clipped pad becomes fully visible
+PASS: oversized pad already spanning viewport does not cause jumps
+PASS: offscreen oversized pad aligns its leading edge
+PASS: follow scrolling clamps to content extent
+PASS: unarranged viewport does not scroll
+PASS: existing language-only settings keep language and enable follow by default
+PASS: changing language preserves OFF and preferences roundtrip
+PASS: changing follow preference preserves language
+PASS: unknown saved language falls back without resetting follow preference
+PASS: integrated save appends JSON extension
+PASS: integrated save accepts existing JSON extension
+PASS: integrated project name rejected: ..
+PASS: integrated project name rejected: ../escape
+PASS: integrated project name rejected: folder/file
+PASS: integrated project name rejected: folder\file
+PASS: integrated project name rejected: CON
+PASS: integrated project name rejected: CON.txt
+PASS: integrated project name rejected: Show.
+PASS: integrated project name rejected: last-project
+PASS: integrated project name rejected: 
+PASS: integrated project name rejected: a:b
+PASS: project directory preference roundtrips with language and follow setting
+PASS: changing other preferences preserves custom project directory
+PASS: reset directory restores dynamic default instead of hardcoded username
+PASS: absolute custom project directory accepted
+PASS: relative project directory is rejected
+PASS: slot editor opens 650x950 to the right when space permits
+PASS: slot editor opens to the left when right side is too narrow
+PASS: slot editor stays above the taskbar work-area boundary
+PASS: slot editor supports monitors with negative screen coordinates
+PASS: slot editor shrinks only when screen work area cannot contain requested size
+PASS: slot editor clamps inside screen when neither side fully fits
+PASS: slot editor respects a work area with a top toolbar
+PASS: main window opens centered at 1250x960 pixels
+PASS: main window centers on a monitor left of the primary screen
+PASS: main window centering respects taskbar work area offset
+PASS: main window height fits a shorter screen
+PASS: main window fits smaller work areas without going offscreen
+PASS: independent action combination Audio
+PASS: independent action combination Midi
+PASS: independent action combination Both
+PASS: independent action combination Osc
+PASS: independent action combination AudioOsc
+PASS: independent action combination MidiOsc
+PASS: independent action combination All
+PASS: legacy single MIDI slot retains behavior without OSC
+PASS: OSC empty message exact wire vector
+PASS: OSC address patterns are transmitted unchanged
+PASS: OSC integer float string and boolean exact big-endian wire vector
+PASS: OSC preserves signed 32-bit minimum
+PASS: MIDI CC and Program Change exact status and payload
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: invalid OSC input rejected before network dispatch
+PASS: multi-output slot survives JSON roundtrip
+PASS: empty enabled output or oversized command list rejected
+PASS: empty enabled output or oversized command list rejected
+PASS: empty enabled output or oversized command list rejected
+PASS: empty enabled output or oversized command list rejected
+PASS: empty enabled output or oversized command list rejected
+PASS: 16 MIDI commands fit per-slot snapshot budget
+PASS: 16 MIDI and 16 OSC commands can be combined in one slot
+PASS: slot requires at least one selected action
+PASS: automatic title follows Windows audio filename dynamically
+PASS: custom Slot prefix is not treated as an automatic name
+PASS: legacy track-derived names migrate to automatic mode
+PASS: empty title resets to automatic mode and empty-slot fallback
+PASS: CC input decodes channel controller and zero value
+PASS: invalid or conflicting fader binding rejected
+PASS: invalid or conflicting fader binding rejected
+PASS: invalid or conflicting fader binding rejected
+PASS: same CC number on distinct channels can control separate volumes
+PASS: EMERGENCY cancels queued trigger and pauses immediately without losing cursor
+PASS: Hold release after EMERGENCY preserves paused cursor
+PASS: manual Play resumes after EMERGENCY
+PASS: EMERGENCY bypasses saturated audio command queue
+PASS: fresh trigger immediately following PANIC survives same callback
+PASS: EMERGENCY flag survives project serialization
+PASS: soft takeover suppresses mismatched fader jumps
+PASS: soft takeover activates when fader crosses current volume
+PASS: soft takeover resets on track change
+PASS: GUI volume adjustment rearms soft takeover
+PASS: relative encoder increments and decrements RelativeTwosComplement
+PASS: relative encoder clamps volume RelativeTwosComplement
+PASS: relative encoder increments and decrements RelativeBinaryOffset
+PASS: relative encoder clamps volume RelativeBinaryOffset
+PASS: relative encoder increments and decrements RelativeSignMagnitude
+PASS: relative encoder clamps volume RelativeSignMagnitude
+PASS: invalid MIDI delay rejected
+PASS: invalid OSC delay rejected
+PASS: invalid MIDI delay rejected
+PASS: invalid OSC delay rejected
+203 checks passed. Windows/WASAPI/hardware tests are NOT covered by this suite.
