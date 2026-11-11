@@ -1,3 +1,0 @@
-  StagePad.Core -> /workspace/scratch/25f84c7cf6ed/StagePad/StagePad.Core/bin/Release/net10.0/StagePad.Core.dll
-  StagePad.App -> /workspace/scratch/25f84c7cf6ed/StagePad/StagePad.App/bin/Release/net10.0-windows/win-x64/StagePad.dll
-  StagePad.App -> /workspace/scratch/25f84c7cf6ed/artifacts/0132-standalone/
