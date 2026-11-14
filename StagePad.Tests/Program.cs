@@ -392,6 +392,157 @@ foreach(int badDelay in new[]{-1,30001})
     bool delayRejected=false;try{Projects.ValidateMidi(new(){DelayMs=badDelay});}catch(InvalidDataException){delayRejected=true;}Check(delayRejected,"invalid MIDI delay rejected");
     delayRejected=false;try{OscCodec.Validate(new(){DelayMs=badDelay});}catch(InvalidDataException){delayRejected=true;}Check(delayRejected,"invalid OSC delay rejected");
 }
+
+var markerA=new AudioMarker{Seconds=1,Label="Ingresso",Color="#42CBA5"};
+var markerB=new AudioMarker{Seconds=2,Label="Cambio",Color="#EAB760"};
+var markerZero=new AudioMarker{Seconds=0,Label="Via",Color="#AC8DFF"};
+var markerList=AudioMarkers.Change([],"marker-add",markerB,null,10);
+markerList=AudioMarkers.Change(markerList,"marker-add",markerA,null,10);
+Check(markerList[0].Id==markerA.Id && markerList[1].Id==markerB.Id,"markers are added and sorted by exact time");
+var movedMarker=markerA with{Seconds=3,Label="Nuovo ingresso",Color="#FF6688"};
+markerList=AudioMarkers.Change(markerList,"marker-edit",movedMarker,markerA.Id,10);
+Check(markerList[1]==movedMarker && markerList[0]==markerB,"marker edit preserves identity and reorders changed time");
+markerList=AudioMarkers.Change(markerList,"marker-delete",null,markerA.Id,10);
+Check(markerList.Length==1 && markerList[0]==markerB,"marker delete removes only its selected identity");
+var markerCopy=System.Text.Json.JsonSerializer.Deserialize<SlotSettings>(System.Text.Json.JsonSerializer.Serialize(new SlotSettings{Markers=[markerA,markerB]},Projects.Json),Projects.Json)!;
+Check(markerCopy.Markers.SequenceEqual(new[]{markerA,markerB}),"marker color label time and ID survive show JSON roundtrip");
+Check(System.Text.Json.JsonSerializer.Deserialize<SlotSettings>("{}",Projects.Json)!.Markers.Length==0,"legacy slots without markers remain compatible");
+foreach(var badMarkers in new AudioMarker[]?[]{null,Enumerable.Range(0,33).Select(i=>new AudioMarker{Seconds=i}).ToArray(),[markerA,markerA],[markerA with{Seconds=double.NaN}],[markerA with{Seconds=double.PositiveInfinity}],[markerA with{Seconds=-1}],[markerA with{Label="  "}],[markerA with{Label="bad\nlabel"}],[markerA with{Label=new string('x',65)}],[markerA with{Color="red"}],[markerA with{Id="invalid"}]})
+{
+    bool rejectedMarkers=false;try{AudioMarkers.Validate(badMarkers);}catch(InvalidDataException){rejectedMarkers=true;}Check(rejectedMarkers,"invalid or oversized marker data rejected");
+}
+bool outsideMarker=false;try{AudioMarkers.Validate([markerA],.5);}catch(InvalidDataException){outsideMarker=true;}Check(outsideMarker,"marker beyond clip duration rejected");
+foreach(var markerTime in new[]{0.0,.001,61.234,3661.789,31536000.0})Check(AudioMarkers.TryParse(AudioMarkers.Format(markerTime),out var parsedMarkerTime) && Math.Abs(markerTime-parsedMarkerTime)<.00001,"marker millisecond formatting and parsing roundtrip");
+foreach(var invalidTime in new[]{"NaN","Infinity","-1","1:60","01:02:60.1","1e2","1:2:3:4"})Check(!AudioMarkers.TryParse(invalidTime,out _),"invalid marker time rejected");
+var cueTracker=new StagePad.App.MarkerFeedback();
+cueTracker.Observe("track",[markerA,markerB],.9,true,false,1000,1000);
+cueTracker.Observe("track",[markerA,markerB],1.02,true,false,1120,1120);
+Check(cueTracker.Active?.Id==markerA.Id && cueTracker.Illuminated(1120,true),"marker crossing starts matching frame/time feedback");
+int pulseStarts=0;bool previouslyLit=false;
+for(int ms=0;ms<=StagePad.App.MarkerFeedback.DurationMs;ms++)
+{
+    bool lit=cueTracker.Illuminated(1120+ms,true);
+    if(lit && !previouslyLit)pulseStarts++;
+    previouslyLit=lit;
+}
+Check(pulseStarts==7 && !previouslyLit,"marker feedback produces exactly seven fast pulses then switches off");
+Check(cueTracker.Illuminated(1269,true) && !cueTracker.Illuminated(1270,true) && !cueTracker.Illuminated(1379,true) && cueTracker.Illuminated(1380,true),"marker pulse uses 150 ms on and 110 ms off");
+Check(cueTracker.Illuminated(1400,false),"reduced-motion feedback stays steady instead of flashing");
+Check(cueTracker.Illuminated(2450,false),"marker feedback remains visible beyond one second");
+Check(cueTracker.InProgress(1270) && !cueTracker.Illuminated(1270,true),"marker owns the player chrome even during dark gaps so red playback cannot leak through");
+cueTracker.Observe("track",[markerA,markerB],1.9,true,false,2940,2940);
+Check(cueTracker.Active==null,"marker feedback expires after seven pulses in 1.82 seconds");
+cueTracker.Observe("track",[markerA,markerB],3,true,false,2200,2200);
+Check(cueTracker.Active==null,"forward seek does not flash skipped markers");
+cueTracker.Observe("track",[markerA,markerB],.8,true,false,2300,2300);
+cueTracker.Observe("track",[markerA,markerB],1.01,true,false,2510,2510);
+Check(cueTracker.Active?.Id==markerA.Id,"marker crossing rearms after a backward seek");
+cueTracker.Observe("track",[markerA,markerB],1.01,false,false,2610,2610);
+Check(cueTracker.Active==null,"pause clears marker flashing");
+cueTracker.Observe("other",[markerA,markerB],1.5,true,false,2700,2700);
+Check(cueTracker.Active==null,"selecting already-playing audio never replays earlier cues");
+cueTracker.Observe("start",[markerZero],.01,true,false,2800,2800);
+Check(cueTracker.Active?.Id==markerZero.Id,"marker at zero fires on initial playback");
+cueTracker.Reset();cueTracker.Observe("start",[markerZero],.01,true,false,2900,2900);
+Check(cueTracker.Active==null,"explicit seek reset suppresses a stale initial cue");
+var endTracker=new StagePad.App.MarkerFeedback();endTracker.Observe("end",[markerB],1.9,true,false,3000,3000);endTracker.Observe("end",[markerB],2,false,false,3100,3100,true);
+Check(endTracker.Active?.Id==markerB.Id,"marker at track end retains its one-second cue");
+endTracker.Observe("end",[markerB],2,false,false,3200,4200,true);Check(endTracker.Active==null,"stale engine state cannot keep a marker active");
+// Loop validation, exact PCM cursor wrap and realtime guarantees.
+var validLoop=new MarkerLoop(true,markerA.Id,markerB.Id);
+Check(MarkerLoops.Frames(validLoop,[markerA,markerB],3)==(48000L,96000L),"loop endpoints resolve existing marker identities to exact frames");
+foreach(var invalidLoop in new[]{new MarkerLoop(true),new MarkerLoop(true,markerA.Id,markerA.Id),new MarkerLoop(true,markerB.Id,markerA.Id),new MarkerLoop(true,"missing",markerB.Id)})
+{
+    bool badLoopRejected=false;try{MarkerLoops.Validate(invalidLoop,[markerA,markerB]);}catch(InvalidDataException){badLoopRejected=true;}Check(badLoopRejected,"missing same or reversed marker loop rejected");
+}
+bool tinyLoop=false;try{MarkerLoops.Validate(new(true,markerA.Id,markerB.Id),[markerA,markerB with{Seconds=1.01}]);}catch(InvalidDataException){tinyLoop=true;}Check(tinyLoop,"loops shorter than 50 ms rejected");
+var loopJson=System.Text.Json.JsonSerializer.Deserialize<SlotSettings>(System.Text.Json.JsonSerializer.Serialize(new SlotSettings{Markers=[markerA,markerB],MarkerLoop=validLoop},Projects.Json),Projects.Json)!;
+Check(loopJson.MarkerLoop==validLoop,"loop enabled state and marker references persist in show JSON");
+Check(System.Text.Json.JsonSerializer.Deserialize<SlotSettings>("{}",Projects.Json)!.MarkerLoop==null,"older shows default to no loop");
+var region=new LoopRegion(new SeekBuffer(2400,Enumerable.Repeat(.1f,9600).ToArray()));
+var loopMixer=new Mixer();loopMixer.Post(new(AudioOp.Install,Source:new ThrowingSource(),Loop:region));loopMixer.Post(new(AudioOp.Seek,Frame:2400));loopMixer.Post(new(AudioOp.Play));
+for(int n=1;n<=100;n++)
+{
+    loopMixer.Render(output);var view=loopMixer.View(0);
+    Check(view.Frame==2400+(n*1024)%4800 && view.LoopPass==n*1024/4800 && view.State==VoiceState.Playing && view.Starvations==0,"loop wraps within a block using only prepared PCM");
+}
+Check(loopMixer.CallbackFaults==0 && output.Any(v=>v>0),"resident loop never calls throwing source ReadAt");
+long loopAllocated=GC.GetAllocatedBytesForCurrentThread();for(int n=0;n<1000;n++)loopMixer.Render(output);
+Check(GC.GetAllocatedBytesForCurrentThread()==loopAllocated,"zero managed allocations across 1000 looping audio blocks");
+long pausedLoopFrame=loopMixer.View(0).Frame;loopMixer.Post(new(AudioOp.Pause));loopMixer.Render(output);
+Check(loopMixer.View(0).Frame==pausedLoopFrame && output.All(v=>v==0),"pause preserves loop position and emits silence");
+loopMixer.Post(new(AudioOp.Play));loopMixer.Render(output);Check(loopMixer.View(0).State==VoiceState.Playing,"loop resumes after pause");
+loopMixer.Post(new(AudioOp.Stop));for(int n=0;n<3;n++)loopMixer.Render(output);Check(loopMixer.View(0).State==VoiceState.Stopped && loopMixer.View(0).Frame==0,"STOP exits active loop without a stuck background voice");
+loopMixer.Post(new(AudioOp.Play));loopMixer.Panic();loopMixer.Render(output);Check(loopMixer.View(0).State==VoiceState.Stopped,"PANIC cancels loop and queued play");
+foreach(var op in new[]{AudioOp.Play,AudioOp.Trigger})
+{
+    var directLoop=new Mixer();directLoop.Post(new(AudioOp.Install,Source:new ThrowingSource(),Loop:region));directLoop.Post(new(op));directLoop.Render(output);
+    Check(directLoop.View(0).Frame==3424 && directLoop.CallbackFaults==0 && directLoop.View(0).Starvations==0,"Play and MIDI trigger start directly in prepared loop without reading intro");
+    directLoop.Post(new(AudioOp.Pause));directLoop.Post(new(AudioOp.Stop));directLoop.Render(output);directLoop.Post(new(AudioOp.Seek,Frame:100));directLoop.Post(new(op));directLoop.Render(output);
+    Check(directLoop.View(0).Frame==3424 && directLoop.CallbackFaults==0,"cued position outside loop cannot make a fresh start play the intro");
+}
+var introMixer=new Mixer();introMixer.Post(new(AudioOp.Install,Source:new MemorySource(Enumerable.Repeat(.1f,9600).ToArray()),Loop:new LoopRegion(new SeekBuffer(2400,Enumerable.Repeat(.1f,4800).ToArray()))));introMixer.Post(new(AudioOp.Play));
+introMixer.Render(new float[12000]);Check(introMixer.View(0).Frame==3600 && introMixer.View(0).LoopPass==2 && introMixer.View(0).State==VoiceState.Playing,"play starts directly at loop start and a loop ending at EOF wraps within oversized blocks");
+introMixer.Post(new(AudioOp.Loop,Ticket:91));introMixer.Render(new float[4000]);Check(introMixer.AppliedTicket==91 && introMixer.View(0).State==VoiceState.Ended,"disabling loop retires buffer and allows normal track end");
+var loopClock=StagePad.App.UiPlaybackClock.Read(1.95,3,true,false,1000,1200,1,2);
+Check(Math.Abs(loopClock.Position-1.15)<.00001,"presentation clock wraps inside marker loop");
+Check(Math.Abs(StagePad.App.UiPlaybackClock.Read(1.95,2,true,false,1000,1200,1,2).Position-1.15)<.00001,"presentation interpolation preserves overshoot for loop ending at EOF");
+var startLoopFeedback=new StagePad.App.MarkerFeedback();startLoopFeedback.Observe("loop-start",[markerA,markerB],0,false,false,1000,1000,loopStart:markerA);startLoopFeedback.Observe("loop-start",[markerA,markerB],1.02,true,false,1120,1120,loopStart:markerA);
+Check(startLoopFeedback.Active==null,"initial Play in an active loop never flashes the first marker");
+var wrapTracker=new StagePad.App.MarkerFeedback();wrapTracker.Observe("loop",[markerA,markerB],1.9,true,false,1000,1000,loopPass:0,loopEnd:markerB);wrapTracker.Observe("loop",[markerA,markerB],1.02,true,false,1120,1120,loopPass:1,loopEnd:markerB);
+Check(wrapTracker.Active==null,"loop wrap does not flash either boundary marker and leaves slow red feedback");
+var innerCue=markerA with{Id=Guid.NewGuid().ToString("N"),Seconds=1.1};
+var innerTracker=new StagePad.App.MarkerFeedback();innerTracker.Observe("inner-loop",[markerA,innerCue,markerB],1.9,true,false,1000,1000,loopEnd:markerB,loopStart:markerA);innerTracker.Observe("inner-loop",[markerA,innerCue,markerB],1.15,true,false,1250,1250,loopPass:1,loopEnd:markerB,loopStart:markerA);
+Check(innerTracker.Active==null,"interior markers in an active loop never produce colored feedback");
+innerTracker.Observe("inner-loop",[markerA,innerCue,markerB],1.3,true,false,1400,1400,loopPass:1,loopEnd:markerB,loopStart:markerA);
+Check(!innerTracker.InProgress(1400) && !innerTracker.Illuminated(1400,true),"active loop suppresses all colored flashes throughout playback");
+innerTracker.Observe("inner-loop",[markerA,innerCue,markerB],1.4,true,false,1500,1500);
+Check(innerTracker.Active==null,"removing loop does not flash markers that were previously crossed");
+innerTracker.Observe("inner-loop",[markerA,innerCue,markerB],2.01,true,false,2120,2120);
+Check(innerTracker.Active?.Id==markerB.Id,"normal colored feedback resumes for future crossings after loop removal");
+var triggerCue=markerA with{Seconds=.01,MidiTrigger=new(){Kind=MidiKind.ControlChange,Controller=7,ControlValue=88},OscTrigger=new(){Address="/cue",Arguments=[new(OscArgumentType.Int,"7")]}};
+var triggerRoundtrip=System.Text.Json.JsonSerializer.Deserialize<AudioMarker[]>(System.Text.Json.JsonSerializer.Serialize(new[]{triggerCue},Projects.Json),Projects.Json)!;
+Check(AudioMarkers.Same([triggerCue],triggerRoundtrip),"trigger metadata roundtrip is structurally equal across IPC snapshots");
+AudioMarkers.Validate(triggerRoundtrip,1);
+foreach(var invalidTrigger in new[]{triggerCue with{MidiTrigger=new(){Behavior=NoteBehavior.Gate}},triggerCue with{MidiTrigger=new(){DelayMs=20}},triggerCue with{OscTrigger=new(){DelayMs=20}},triggerCue with{OscTrigger=new(){Port=0}}})
+{
+    bool invalidCue=false;try{AudioMarkers.Validate([invalidTrigger]);}catch(InvalidDataException){invalidCue=true;}Check(invalidCue,"marker trigger rejects gates delays and invalid destinations");
+}
+var triggerMixer=new Mixer();triggerMixer.Post(new(AudioOp.Install,Source:new MemorySource(new float[48000*2]),Markers:[triggerCue],MarkerVersion:17,SignalEpoch:23));triggerMixer.Post(new(AudioOp.Play,SignalEpoch:23));triggerMixer.Render(output);
+Check(triggerMixer.TryReadMarker(out var firstSignal) && firstSignal.Marker.Id==triggerCue.Id && firstSignal.Version==17 && firstSignal.SignalEpoch==23 && !triggerMixer.TryReadMarker(out _),"audio callback emits one bounded marker signal with version and cancellation stamps");
+triggerMixer.Post(new(AudioOp.Seek,Frame:40000,SignalEpoch:24));triggerMixer.Render(output);Check(!triggerMixer.TryReadMarker(out _),"manual seek never emits skipped trigger signals");
+triggerMixer.Post(new(AudioOp.Seek,Frame:0,SignalEpoch:25));triggerMixer.Render(output);Check(triggerMixer.TryReadMarker(out var repeatSignal) && repeatSignal.SignalEpoch==25,"backward seek rearms future trigger crossing");
+var zeroCue=triggerCue with{Seconds=0};var boundaryCue=triggerCue with{Id=Guid.NewGuid().ToString("N"),Seconds=.05};
+var triggerLoop=new Mixer();triggerLoop.Post(new(AudioOp.Install,Source:new MemorySource(new float[4800]),Loop:new LoopRegion(new SeekBuffer(0,new float[4800])),Markers:[zeroCue,boundaryCue]));triggerLoop.Post(new(AudioOp.Play));triggerLoop.Render(new float[9600]);
+var orderedSignals=new List<string>();while(triggerLoop.TryReadMarker(out var e))orderedSignals.Add(e.Marker.Id);
+Check(orderedSignals.SequenceEqual(new[]{zeroCue.Id,boundaryCue.Id,zeroCue.Id,boundaryCue.Id,zeroCue.Id}),"loop marker trigger order includes each end and next start exactly once");
+long triggerAlloc=GC.GetAllocatedBytesForCurrentThread();for(int i=0;i<1000;i++)triggerLoop.Render(output);Check(GC.GetAllocatedBytesForCurrentThread()==triggerAlloc && triggerLoop.MarkerDrops>0 && triggerLoop.CallbackFaults==0,"trigger queue saturation stays bounded and never allocates or blocks audio");
+triggerLoop.Panic();Check(firstSignal.Epoch!=triggerLoop.EventEpoch,"PANIC invalidates earlier marker signal epochs");
+var captureProject=new ProjectDocument{MarkerCapture=new(16,126)};Projects.Validate(captureProject);
+Check(System.Text.Json.JsonSerializer.Deserialize<ProjectDocument>(System.Text.Json.JsonSerializer.Serialize(captureProject,Projects.Json),Projects.Json)!.MarkerCapture==captureProject.MarkerCapture,"marker capture MIDI key persists in project JSON");
+Check(System.Text.Json.JsonSerializer.Deserialize<ProjectDocument>("{}",Projects.Json)!.MarkerCapture==null,"older shows default to disabled marker MIDI key");
+foreach(var badCapture in new[]{new MarkerCaptureBinding(0,1),new(17,1),new(1,-1),new(1,128)})
+{
+    bool rejectedCapture=false;try{Projects.Validate(new(){MarkerCapture=badCapture});}catch(InvalidDataException){rejectedCapture=true;}Check(rejectedCapture,"invalid marker capture channel or note rejected");
+}
+var captureSlots=(SlotSettings[])captureProject.Slots.Clone();captureSlots[0]=captureSlots[0] with{PadChannel=16,PadNote=126};bool conflictedCapture=false;
+try{Projects.Validate(captureProject with{Slots=captureSlots});}catch(InvalidDataException){conflictedCapture=true;}Check(conflictedCapture,"marker capture key cannot collide with a slot including emergency slots");
+var expectedWave=new StagePad.App.WaveformIdentity("engine-a",2,10);
+Check(StagePad.App.WaveformIdentity.Accepts(expectedWave,true,"engine-a",2,10,true,[.2f,.8f]),"waveform accepts complete data for exact source identity");
+foreach(var invalidWave in new (bool Ok,string Instance,int Slot,int Revision,bool Ready)[]{(Ok:true,Instance:"engine-b",Slot:2,Revision:10,Ready:true),(true,"engine-a",3,10,true),(true,"engine-a",2,9,true),(true,"engine-a",2,10,false),(false,"engine-a",2,10,true)})
+    Check(!StagePad.App.WaveformIdentity.Accepts(expectedWave,invalidWave.Ok,invalidWave.Instance,invalidWave.Slot,invalidWave.Revision,invalidWave.Ready,[.5f]),"waveform rejects changed source slot generation engine or incomplete response");
+foreach(var invalidPeaks in new float[]?[]{null,[],[float.NaN],[float.PositiveInfinity],[-.1f],[1.1f]})Check(!StagePad.App.WaveformIdentity.Accepts(expectedWave,true,"engine-a",2,10,true,invalidPeaks),"empty or invalid waveform never becomes a permanently loaded cache entry");
+string tinyWave=Path.Combine(Path.GetTempPath(),"stagepad-tiny-wave-"+Guid.NewGuid()+".pcm");
+try
+{
+    using(var stream=File.Create(tinyWave))stream.Write(MemoryMarshal.AsBytes(new float[]{.5f,.5f}.AsSpan()));
+    Check(WavePeaks.Build(tinyWave).SequenceEqual(new[]{.5f}),"single-frame audio has a full waveform bin instead of 1023 empty bins");
+    using(var stream=File.Create(tinyWave))stream.Write(MemoryMarshal.AsBytes(new float[]{.5f,.5f,.7f,.7f}.AsSpan()));
+    Check(WavePeaks.Build(tinyWave).SequenceEqual(new[]{.5f,.7f}),"very short clips retain both timeline edges without empty padding");
+}
+finally{File.Delete(tinyWave);}
+Check(StagePad.App.UiPreferences.Parse("{}").AutoSaveProjects,"auto-save defaults to enabled for existing settings");
+var autoPrefs=new StagePad.App.UiPreferences(AutoSaveProjects:false);Check(!StagePad.App.UiPreferences.Parse(autoPrefs.ToJson()).AutoSaveProjects,"auto-save preference roundtrips independently of show data");
 Console.WriteLine($"{passed} checks passed. Windows/WASAPI/hardware tests are NOT covered by this suite.");
 
 sealed class ThrowingSource : IAudioSource { public long Frames => 48000; public long ResidentBytes => 0; public string? Error => null; public int ReadAt(long p, Span<float> s) => throw new IOException("Simulated"); public void Dispose() { } }

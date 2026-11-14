@@ -32,22 +32,23 @@ internal static class CommandForm
 internal sealed class MidiCommandEditor : ContentControl
 {
     private readonly MidiSettings original;
+    private readonly bool markerTrigger;
     private readonly StackPanel body=new();
     private readonly Dictionary<string,TextBox> texts=[];
     private readonly Dictionary<string,ComboBox> choices=[];
     private readonly List<(FrameworkElement Row,MidiKind[] Kinds)> rows=[];
-    public MidiCommandEditor(MidiSettings value,Action remove,Action<int>? move=null,Func<MidiSettings,Task<Reply>>? test=null)
+    public MidiCommandEditor(MidiSettings value,Action remove,Action<int>? move=null,Func<MidiSettings,Task<Reply>>? test=null,bool markerTrigger=false)
     {
-        original=value;Content=CommandForm.Card(body);
+        this.markerTrigger=markerTrigger;original=value;Content=CommandForm.Card(body);
         body.Children.Add(CommandForm.Button("Rimuovi comando MIDI",remove));
         CommandForm.Tools(body,move,test==null?null:()=>test(Read()));
-        Text("Attesa prima (ms)",value.DelayMs,Enum.GetValues<MidiKind>());
+        if(!markerTrigger)Text("Attesa prima (ms)",value.DelayMs,Enum.GetValues<MidiKind>());
         Choice("Protocollo",value.Kind,null,v=>v switch{MidiKind.ControlChange=>"Control Change",MidiKind.ProgramChange=>"Program Change",_=>v.ToString()});
-        Text("Canale OUT 1–16",value.Channel,[MidiKind.Note,MidiKind.ControlChange,MidiKind.ProgramChange]);
-        Text("Nota OUT 0–127",value.Note,[MidiKind.Note]);Text("Velocity 1–127",value.Velocity,[MidiKind.Note]);
-        Choice("Nota",value.Behavior,[MidiKind.Note],v=>v==NoteBehavior.Pulse?"Impulso con Note Off automatico":"Note On premendo / Off al rilascio");Text("Durata impulso ms",value.PulseMs,[MidiKind.Note]);
+        Text("Canale OUT 1-16",value.Channel,[MidiKind.Note,MidiKind.ControlChange,MidiKind.ProgramChange]);
+        Text("Nota OUT 0-127",value.Note,[MidiKind.Note]);Text("Velocity 1-127",value.Velocity,[MidiKind.Note]);
+        if(!markerTrigger)Choice("Nota",value.Behavior,[MidiKind.Note],v=>v==NoteBehavior.Pulse?"Impulso con Note Off automatico":"Note On premendo / Off al rilascio");Text("Durata impulso ms",value.PulseMs,[MidiKind.Note]);
         Text("Controller CC 0-127",value.Controller,[MidiKind.ControlChange]);Text("Valore CC 0-127",value.ControlValue,[MidiKind.ControlChange]);Text("Programma 0-127",value.Program,[MidiKind.ProgramChange]);
-        Choice("Comando MSC",value.Command,[MidiKind.MSC]);Text("Device ID 0–127",value.DeviceId,[MidiKind.MSC]);Text("Command format 1 / 2 / 127",value.CommandFormat,[MidiKind.MSC]);Text("Cue per GO",value.Cue,[MidiKind.MSC]);
+        Choice("Comando MSC",value.Command,[MidiKind.MSC]);Text("Device ID 0-127",value.DeviceId,[MidiKind.MSC]);Text("Command format 1 / 2 / 127",value.CommandFormat,[MidiKind.MSC]);Text("Cue per GO",value.Cue,[MidiKind.MSC]);
         Choice("Indirizzamento",value.Address,[MidiKind.MSC],v=>v switch{MscAddress.Default=>"Predefinito / Default",MscAddress.ExecDotPage=>"Exec.Page",_=>"Exec Page (spazio)"});Text("Executor",value.Executor,[MidiKind.MSC]);
         choices["Protocollo"].SelectionChanged+=(_,_)=>Update();Update();L.Apply(this);
     }
@@ -59,13 +60,13 @@ internal sealed class MidiCommandEditor : ContentControl
     private int N(string label)=>int.Parse(texts[label].Text,CultureInfo.InvariantCulture);
     public MidiSettings Read()
     {
-        var kind=(MidiKind)choices["Protocollo"].SelectedValue;var value=original with{Kind=kind,DelayMs=N("Attesa prima (ms)")};
+        var kind=(MidiKind)choices["Protocollo"].SelectedValue;var value=original with{Kind=kind,DelayMs=markerTrigger?0:N("Attesa prima (ms)")};
         value=kind switch
         {
-            MidiKind.Note=>value with{Channel=N("Canale OUT 1–16"),Note=N("Nota OUT 0–127"),Velocity=N("Velocity 1–127"),PulseMs=N("Durata impulso ms"),Behavior=(NoteBehavior)choices["Nota"].SelectedValue},
-            MidiKind.ControlChange=>value with{Channel=N("Canale OUT 1–16"),Controller=N("Controller CC 0-127"),ControlValue=N("Valore CC 0-127")},
-            MidiKind.ProgramChange=>value with{Channel=N("Canale OUT 1–16"),Program=N("Programma 0-127")},
-            _=>value with{Command=(MscCommand)choices["Comando MSC"].SelectedValue,DeviceId=N("Device ID 0–127"),CommandFormat=N("Command format 1 / 2 / 127"),Cue=texts["Cue per GO"].Text.Trim().Replace(',','.'),Address=(MscAddress)choices["Indirizzamento"].SelectedValue,Executor=N("Executor"),Page=1}
+            MidiKind.Note=>value with{Channel=N("Canale OUT 1-16"),Note=N("Nota OUT 0-127"),Velocity=N("Velocity 1-127"),PulseMs=N("Durata impulso ms"),Behavior=markerTrigger?NoteBehavior.Pulse:(NoteBehavior)choices["Nota"].SelectedValue},
+            MidiKind.ControlChange=>value with{Channel=N("Canale OUT 1-16"),Controller=N("Controller CC 0-127"),ControlValue=N("Valore CC 0-127")},
+            MidiKind.ProgramChange=>value with{Channel=N("Canale OUT 1-16"),Program=N("Programma 0-127")},
+            _=>value with{Command=(MscCommand)choices["Comando MSC"].SelectedValue,DeviceId=N("Device ID 0-127"),CommandFormat=N("Command format 1 / 2 / 127"),Cue=texts["Cue per GO"].Text.Trim().Replace(',','.'),Address=(MscAddress)choices["Indirizzamento"].SelectedValue,Executor=N("Executor"),Page=1}
         };
         Projects.ValidateMidi(value);return value;
     }
@@ -76,12 +77,12 @@ internal sealed class OscCommandEditor : ContentControl
     private readonly StackPanel arguments=new();
     private readonly List<(FrameworkElement Row,ComboBox Type,TextBox Value)> values=[];
     private readonly Button add;
-    public OscCommandEditor(OscCommand value,Action remove,Action<int>? move=null,Func<OscCommand,Task<Reply>>? test=null)
+    public OscCommandEditor(OscCommand value,Action remove,Action<int>? move=null,Func<OscCommand,Task<Reply>>? test=null,bool markerTrigger=false)
     {
         var body=new StackPanel();Content=CommandForm.Card(body);
         body.Children.Add(CommandForm.Button("Rimuovi comando OSC",remove));
         CommandForm.Tools(body,move,test==null?null:()=>test(Read()));
-        delay=CommandForm.Text(value.DelayMs);body.Children.Add(CommandForm.Row("Attesa prima (ms)",delay));
+        delay=CommandForm.Text(markerTrigger?0:value.DelayMs);if(!markerTrigger)body.Children.Add(CommandForm.Row("Attesa prima (ms)",delay));
         host=CommandForm.Text(value.Host,253);port=CommandForm.Text(value.Port,5);address=CommandForm.Text(value.Address,512);
         body.Children.Add(CommandForm.Row("Host / IP OSC",host));body.Children.Add(CommandForm.Row("Porta UDP",port));body.Children.Add(CommandForm.Row("Percorso OSC",address));
         body.Children.Add(arguments);add=CommandForm.Button("Aggiungi argomento",()=>AddArgument(new()));body.Children.Add(add);

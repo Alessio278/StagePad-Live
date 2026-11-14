@@ -1,178 +1,133 @@
-<img src="../StagePad.App/Assets/StagePad.png" width="72" alt="StagePad logo">
+<h1><img src="../StagePad.App/Assets/StagePad.svg" width="58" alt="StagePad Live logo" align="center"> StagePad Live</h1>
 
-# StagePad
+**Lanzador de audio y controlador de cues MIDI/OSC de código abierto para espectáculos en Windows.**
 
-**Lanzador de audio y disparador MIDI/OSC de código abierto para Windows.**
+[![Release](https://img.shields.io/github/v/release/Alessio278/StagePad-Live?label=release&color=239f88)](https://github.com/Alessio278/StagePad-Live/releases) [![Windows build](https://github.com/Alessio278/StagePad-Live/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Alessio278/StagePad-Live/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../LICENSE)
 
-[Italiano](README.it.md) · [English](../README.md) · **Español** · [Français](README.fr.md)
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-0078D4)](#requisitos-y-límites) ![.NET](https://img.shields.io/badge/.NET-10%20%7C%20runtime%20included-512BD4?logo=dotnet) ![Audio MIDI OSC](https://img.shields.io/badge/control-Audio%20%2B%20MIDI%20%2B%20OSC-239f88) ![Languages](https://img.shields.io/badge/languages-IT%20EN%20ES%20FR-6f42c1)
 
-Windows x64 · MIT · 1–100 slots · Audio + MIDI + OSC · IT / EN / ES / FR
+[English](../README.md) - [Italiano](README.it.md) - [Español](README.es.md) - [Français](README.fr.md)
 
-Prepara pistas y mensajes MIDI/OSC en **Preparación** y pasa a **Directo** para
-activarlos desde una cuadrícula con el ratón o un controlador MIDI. StagePad
-está pensado para música en vivo, teatro, ensayos, instalaciones sonoras y
-flujos de trabajo MIDI compatibles.
+## Contenido
 
-Created by **Alessio Natalucci**.
+- [Presentación](#presentación)
+- [Inicio rápido](#inicio-rápido)
+- [Funciones](#funciones)
+- [Marcadores y bucles](#marcadores-y-bucles)
+- [Shows y guardado automático](#shows-y-guardado-automático)
+- [MIDI y OSC](#midi-y-osc)
+- [Actualizaciones](#actualizaciones)
+- [Requisitos y límites](#requisitos-y-límites)
+- [Compilación y pruebas](#compilación-y-pruebas)
+- [Contribuir y licencia](#contribuir-y-licencia)
 
-[Descargar para Windows](https://github.com/Alessio278/StagePad-Live/releases) · [Guía MIDI](MIDI.es.md) · [Cambios](../CHANGELOG.md) · [Informar de un problema](https://github.com/Alessio278/StagePad-Live/issues)
+- [Aviso de Windows SmartScreen](#aviso-de-windows-smartscreen)
 
-La configuración del slot se abre junto a su pad: a la derecha si cabe, o a la izquierda. El tamaño inicial solicitado es **650×950 píxeles de pantalla**, reducido solo si el área disponible del monitor es menor. Las etiquetas y el desplazamiento se adaptan a ventanas estrechas y DPI altos.
+## Presentación
 
+Prepara audio y comandos en **Preparación** y actívalos en **Directo** con ratón o controlador MIDI. Para conciertos, teatro, ensayos e instalaciones. No requiere cuenta, activación ni comprobación de licencia online.
 
-La ventana principal se abre centrada a **1250×960 píxeles**, ajustándose a pantallas pequeñas. **Show: nombre del proyecto** precede al estado del audio. La lista se desplaza también en una ventana normal. Selecciona un proyecto para **Renombrar**, **Duplicar** o **Eliminar**. La eliminación requiere confirmación y conserva los archivos de audio. Renombrar y Duplicar no sobrescriben otros proyectos. SHOW LOCK protege estas acciones. Al eliminar el proyecto abierto, su configuración sigue en memoria y puede guardarse otra vez.
-
-
-Al iniciar, StagePad restaura automáticamente el último show y los cambios recientes recuperados, manteniendo su archivo asociado. La etiqueta **Show** permanece verde. La lista conserva el fondo oscuro durante la confirmación de eliminación. Si falta el archivo original, se recupera la configuración y se muestra un aviso.
-
-## Nombres automáticos, volúmenes MIDI y actualizaciones
-
-Deja **Nombre** vacío en los ajustes del slot para seguir el nombre del archivo de audio sin extensión. Al cargar otra pista se actualiza el título. Escribe un título para mantenerlo fijo y bórralo para recuperar el nombre automático.
-
-En **⚙ Ajustes → VOLÚMENES MIDI** asigna canal/CC separados al **máster** y al volumen de la **pista actual en reproducción**. Usa cada botón **LEARN** y mueve su fader/knob, o introduce valores y pulsa **Aplicar asignaciones MIDI**. Se admiten CC absolutos 0-127; `-1` desactiva la asignación. El mismo CC en canales distintos está permitido. Las asignaciones se guardan en el show.
-
-Se controla el audio iniciado más recientemente que sigue reproduciéndose. Los botones solo MIDI/OSC y la selección de slots no cambian el destino del fader. Si la pista se detiene o pausa, se controla la siguiente más reciente aún en reproducción. Sin audio activo no se modifica ningún slot.
-
-El cierre avisa directamente al supervisor y limita la espera de los módulos. Al abrir otra vez se activa una instancia visible; una instancia invisible bloqueada puede recuperarse, limitada a StagePad del mismo usuario y sesión de Windows.
-
-**Actualización portátil:** cierra StagePad, sustituye solo `StagePad.exe` y vuelve a abrirlo. Se conservan proyectos, ajustes, asignaciones y recuperación. Consulta [las instrucciones](UPDATE.es.md).
-
-## Acciones combinadas Audio, MIDI y OSC
-
-En los ajustes del slot selecciona **Audio**, **MIDI** y/o **OSC** en **Acciones al pulsar**. Están disponibles las siete combinaciones. El pad MIDI asociado y el botón en pantalla ejecutan la misma selección.
-
-Añade hasta **16 comandos MIDI** y **16 comandos OSC** por slot. MIDI admite Note (Pulso/Gate), MSC, Control Change y Program Change. Todos usan la salida MIDI seleccionada en Preparación; los campos CC y Program Change indican valores 0-127.
-
-Cada comando OSC tiene host/IP, puerto UDP, ruta y argumentos: entero, decimal, texto ASCII, verdadero o falso. Ejemplo: `127.0.0.1`, puerto `8000`, ruta `/show/go`, entero `1`. Cada comando puede dirigirse a otro receptor. Consulta la [guía OSC](OSC.es.md).
-
-Audio, MIDI y OSC son independientes: un audio ausente no impide los comandos y una salida MIDI bloqueada no detiene OSC ni audio. Las listas se envían en el orden visible; la sincronización entre medios depende de los receptores. Al soltar el pad se cierran todas las notas Gate. STOP ALL cancela OSC pendiente y libera notas MIDI. Los diagnósticos cuentan envíos UDP locales; comprueba la respuesta en el receptor.
-
-Los proyectos y la recuperación guardan selecciones, comandos y destinos. Se mantiene el comportamiento de los proyectos anteriores. Límites: 16 argumentos por mensaje OSC y 6000 bytes de configuración de comandos por slot.
-
-## Proyectos dentro de la aplicación
-
-**Abrir / Guardar** muestra una vista interna, sin diálogo de selección de archivos.
-Selecciona un proyecto para abrirlo o escribe un nombre y guarda. La confirmación
-para sobrescribir se muestra en la misma vista. Actualizar lista muestra los
-proyectos JSON; los archivos de recuperación automática no aparecen en la lista manual.
-
-En **⚙ Ajustes → Proyectos**, introduce la ruta completa y pulsa **Aplicar carpeta**.
-**Predeterminado** restaura `%LOCALAPPDATA%\StagePad\project` para el usuario de
-Windows actual. Cambiar la carpeta no mueve los archivos existentes. La recuperación
-usa ahora `project\last-project.json` y sigue leyendo los datos antiguos de
-`recovery`, que se conservan. Mantén juntos los proyectos y sus archivos de audio.
-
-En **⚙ Ajustes → Directo**, **Desplazamiento automático al pad activado** se puede
-activar/desactivar; está activado por defecto y se recuerda en este PC. Un pad
-recién activado fuera de la vista se muestra con el movimiento mínimo necesario,
-horizontal o vertical. Los pads completamente visibles no mueven la cuadrícula.
-Funciona también con MIDI, sin tomar el foco ni enviar comandos adicionales.
-No actúa en Preparación ni sigue continuamente la reproducción.
-
-El logo es la **S blanca más grande sobre un cuadrado verde menta redondeado**. LIVE verde
-queda junto a STAGEPAD; el mismo símbolo se utiliza en los iconos de Windows.
-
-## Funciones
-
-- **1–100 slots activos**, una voz de audio por slot.
-- Cuadrículas independientes de Preparación y Directo, hasta **10×10**, con
-  celdas legibles y desplazamiento.
-- Reproducción, pausa, parada, volumen, fundidos y master; modos de inicio/reinicio,
-  Hold, reproducción protegida y reproducir/pausar/reanudar.
-- MIDI IN Note On/Off con Learn; MIDI OUT con pulsos o gate y los formatos
-  MSC GO/STOP/RESUME implementados.
-- Forma de onda con salto mediante doble clic y tiempos transcurrido/total/restante.
-- Bloqueo, Stop All, pantalla completa y títulos largos con desplazamiento.
-- Colores por slot, fondos suaves y rueda de color dentro de **Configurar slot**.
-- Italiano, inglés, español y francés desde **⚙ Ajustes**.
-- Proyectos JSON con guardado y recuperación; el audio permanece en sus archivos.
-
-Sin cuenta, activación ni comprobación de licencia en línea. La aplicación
-funciona sin conexión después de descargarla. La primera compilación necesita
-Internet para obtener las dependencias.
+Created by **Alessio Natalucci**. Producto: **StagePad Live**. Ejecutable portátil: `StagePad.exe`.
 
 ## Inicio rápido
 
-1. Abre **Releases** y descarga `StagePad.exe` de los archivos de la versión.
-2. Cierra cualquier versión anterior y ejecuta el archivo. La distribución para
-   Windows x64 incluye el runtime: no necesitas instalar .NET para utilizarla.
-3. En **Preparación**, elige la salida de audio, empieza con **40 ms**, pulsa
-   **Aplicar** y utiliza **Prueba de audio · −24 dB**.
-4. Elige el número de slots y **Filas / Columnas**. Carga las pistas y espera a LISTO.
-5. En **Configurar**, ajusta nombre, color, acción, modo, fundidos, pad y MIDI OUT.
-6. Selecciona MIDI IN / OUT. Pulsa **LEARN** y después el pad físico para asignarlo;
-   esa pulsación no activa el slot.
-7. Guarda el proyecto y pasa a **Directo**. **F11** activa pantalla completa y
-   **Esc** permite salir. Activa el bloqueo para proteger la configuración.
+1. Descarga y extrae el ZIP Windows de [Releases](https://github.com/Alessio278/StagePad-Live/releases). Ejecuta `StagePad.exe`.
+2. Selecciona la salida de audio; empieza con **40 ms** y realiza la prueba.
+3. Configura 1-100 slots y cuadrículas de hasta **10 x 10**. Carga las pistas y espera.
+4. Ajusta acciones, modo, título, color y fades. **LEARN** asigna un pad sin dispararlo.
+5. Usa Nuevo show, Abrir, Guardar o Guardar como. El guardado automático está activado.
+6. Cambia a Directo y activa SHOW LOCK. **F11**: pantalla completa. STOP ALL detiene y cancela salidas pendientes.
 
-El idioma inicial es italiano. Abre **⚙ → Lingua dell’interfaccia** y elige
-**Español**. El cambio es inmediato, también en los editores abiertos, se guarda
-en este PC y no reinicia el audio. Memoria de audio y Diagnóstico están en Ajustes,
-con Abrir registros y Licencias; el presupuesto de RAM se guarda en el proyecto.
-Los colores se configuran solo en cada slot.
+El engranaje permite elegir italiano, inglés, español o francés sin reiniciar el audio.
 
-**Restablecer** recupera los valores del editor; **Aplicar al slot** los guarda.
-El audio cargado y el volumen se conservan. Reducir los slots oculta los últimos
-sin borrar sus ajustes ni las rutas de audio.
+## Funciones
 
-**Predeterminado** junto al selector de color restablece solo el color del slot, con vista previa inmediata. Guarda con **Aplicar al slot**.
+| Área | Funciones |
+| --- | --- |
+| Pads | 1-100 slots y dos cuadrículas independientes hasta 10 x 10 |
+| Audio | Play, pausa, stop, retrigger, Hold, modo protegido y alternar pausa |
+| Mezcla | Volúmenes de slot y máster, fades y presupuesto RAM |
+| Salidas | Audio, MIDI y OSC independientes o combinados |
+| Reproductor | Forma de onda, salto con doble clic y tiempos sincronizados |
+| Marcadores | Tiempo, etiqueta, color, MIDI/OSC y bucle |
+| Shows | Navegador integrado, Nuevo/Abrir/Guardar, renombrar, duplicar, eliminar |
+| Guardado | Automático en segundo plano, copia anterior y recuperación |
+| Directo | Show Lock, emergencia y desplazamiento automático opcional |
+| Interfaz | Cuatro idiomas, colores por slot y títulos desplazables |
 
-## Compatibilidad
+Un slot de EMERGENCIA pausa todos los audios conservando posiciones y puede enviar MIDI/OSC. STOP ALL también restablece posiciones. Comprueba la respuesta de los receptores externos.
 
-WAV PCM/float y OGG Vorbis tienen decodificadores incluidos. MP3, FLAC, M4A/AAC y
-otros formatos de Windows dependen de los códecs Media Foundation instalados.
-Se admite audio mono y estéreo; no OGG Opus, DRM ni audio multicanal.
+## Marcadores y bucles
 
-MIDI no está vinculado a una marca: utiliza controladores Note On/Off y destinos
-que reconozcan los mensajes configurados. Para conectar otros programas puede
-ser necesario instalar un puerto MIDI virtual. No se implementan CC, Program
-Change, MIDI clock ni MIDI thru automático. Consulta los límites MSC en la
-[guía MIDI](MIDI.es.md).
+**+ Marcador** inserta inmediatamente en la posición actual del cursor, también con un bucle aplicado. En **Gestionar marcadores**, el campo Posición sigue los movimientos del cursor si no tiene el foco; seleccionar un marcador existente muestra inicialmente su posición guardada. Doble clic para saltar. Máximo **32 marcadores** y datos limitados por pista.
 
-## Beta y límites
+Selecciona dos **marcadores existentes** para el bucle, con fin al menos 50 ms después del inicio. Usa **Aplicar bucle** / **Quitar bucle**, sin casilla. Detén el slot para aplicar o quitar el bucle; quítalo antes de mover/eliminar los extremos. Play comienza directamente en el marcador inicial; pausa conserva la posición. Los demás marcadores siguen siendo editables durante el bucle. Intervalo preparado en RAM dentro del presupuesto; rampas de 5 ms en los bordes.
 
-Los tests automáticos cubren el motor y la integración simulada. La interfaz WPF,
-WASAPI, los dispositivos MIDI reales, las reconexiones y las sesiones largas
-requieren pruebas en tu PC Windows. Cien slots no garantizan cien streams
-simultáneos con cualquier equipo.
+Cada marcador puede enviar MIDI, OSC o ambos, también en cada vuelta. Envío inmediato y Note Off automático. Los saltos manuales no envían cues omitidos ni el de la posición de destino.
 
-- El ejecutable no tiene firma digital; Windows puede mostrar avisos del editor.
-- Prepara las pistas antes del espectáculo: la RAM y la caché de disco son limitadas.
-- La mezcla aplica recorte de seguridad, no un limitador musical.
-- PANIC detiene el audio y libera las notas MIDI registradas; no reinicia ni
-  detiene universalmente los equipos externos.
-- Los proyectos no incluyen el audio: conserva juntos el proyecto y sus archivos.
-- Los diálogos de archivos y los errores del sistema siguen el idioma de Windows.
+En el bucle, el marco rojo pulsa lentamente (ciclo de 1,6 segundos); sin destellos de colores. Fuera del bucle, el marco es rojo durante la reproducción; al pasar un marcador, marco y tiempos emiten **7 destellos rápidos** de su color: 150 ms encendido / 110 ms apagado, **1,82 segundos** en total, con un halo más intenso. Sin animaciones de Windows, color fijo.
 
-## Compilar y contribuir
+LEARN de inserción en Ajustes permite usar un botón Note On/Off libre para crear marcadores en la pista seleccionada en reproducción. No actúa en Directo, pausa, stop, carga ni Show Lock. Mantener pulsado no crea duplicados. Asignación guardada en el show.
 
-Instala **.NET SDK 10 x64**, según `global.json`, y ejecuta `Build.ps1` o abre
-`Compila.cmd` desde la carpeta principal. Tras los tests, encontrarás
-`artifacts\win-x64\StagePad.exe`.
+Durante la reproducción, **+ Marcador** inserta sin abrir el editor. Con un bucle aplicado, desde el primer Play y al cruzar cualquier marcador solo aparece el pulso rojo lento, también al reiniciar el bucle. Los comandos MIDI/OSC siguen activos. Fuera del bucle, el rojo se suspende durante toda la secuencia de siete destellos, incluso en los intervalos apagados, y vuelve al terminar.
+
+## Shows y guardado automático
+
+Guardar actualiza el show; Guardar como permite otra copia. Doble clic o Intro para abrir. **Más acciones** conserva renombrar, duplicar, eliminar, importar y exportar. Antes de cambiar con modificaciones pendientes puedes guardar, descartar o cancelar. Detén audio y secuencias antes de abrir o crear otro show.
+
+Guardado automático activado y configurable: escribe en segundo plano tras unos **1,5 segundos** sin cambios, también durante reproducción. Los shows sin nombre reciben un nombre provisional único. El asterisco indica cambios pendientes. Escrituras atómicas, copia `.bak`, reintentos tras errores y guardado final con espera limitada al cerrar; se mantiene la recuperación.
+
+Datos: `%LOCALAPPDATA%\StagePad`. Shows: `%LOCALAPPDATA%\StagePad\project`. Directorio configurable en Ajustes; Default restaura la ruta. Cambiarla no mueve archivos.
+
+Al iniciar se recupera el último show sin arrancar audio. Migración de datos antiguos sin sobrescribir shows. `backups\legacy-data` puede contener audio referenciado: debe conservarse.
+
+JSON referencia archivos de audio. Exportar con audio crea `.stagepad.zip`; Importar crea un show independiente. Hasta 8 GiB de medios originales.
+
+## MIDI y OSC
+
+Audio, MIDI y OSC se eligen por slot y se envían independientemente. Un audio ausente no bloquea otras salidas.
+
+Hasta **16 comandos MIDI** y **16 OSC** por slot. Note Pulse/Gate, CC, Program Change y los formatos MSC implementados. Pads Note On/Off; volúmenes máster/pista mediante CC separados con LEARN, encoders relativos y soft takeover. Sin reloj MIDI, MIDI thru ni Gate por marcador.
+
+OSC UDP con host, puerto, ruta y argumentos tipados. Puertos virtuales y receptores se configuran aparte. El contador de envíos no confirma recepción. Orden, retrasos y pruebas individuales en ajustes de slot. Una reconexión no repite comandos.
+
+[Guía MIDI](MIDI.es.md) - [Guía OSC](OSC.es.md).
+
+## Actualizaciones
+
+Ajustes > Actualizaciones consulta releases estables. Instalación en reposo con comprobación SHA-256, producto/versión, copia y restauración si falla el arranque. También puedes cerrar y sustituir `StagePad.exe` sin perder datos.
+
+Build sin firma: Windows puede mostrar SmartScreen. Sin certificaciones de hardware o seguridad declaradas. [Guía](UPDATE.es.md).
+
+## Requisitos y límites
+
+- Escritorio **Windows 10/11 x64**, sin builds macOS/Linux.
+- Runtime incluido; para compilar, .NET SDK 10 de `global.json`.
+- WAV y OGG Vorbis incluidos; otros formatos como MP3/FLAC/AAC dependen de Media Foundation. Mono/estéreo; sin DRM, multicanal u OGG Opus.
+- Prepara el audio. 100 slots no garantizan 100 streams simultáneos.
+- Clipping de protección, no limitador musical.
+- Prueba drivers, latencia, reconexiones y duración con tus equipos.
+
+## Compilación y pruebas
+
+En Windows, instala .NET SDK 10 x64 y ejecuta:
 
 ```powershell
-dotnet run --project StagePad.Tests -c Release
-dotnet run --project StagePad.IntegrationTests -c Release
+.\Build.ps1
 ```
 
-`--stress` es una prueba diagnóstica adicional, no una certificación del equipo.
-Se aceptan informes, traducciones y contribuciones: [CONTRIBUTING](../CONTRIBUTING.md).
-Consulta [VERIFICA](VERIFICA.md) y [TEST-COMPLETI](TEST-COMPLETI.md) para las pruebas.
+Verifica el repositorio, ejecuta pruebas de núcleo e integración simulada, compila, comprueba **WPF nativo** y genera ZIP/checksums. Los fallos bloquean el paquete y la release estable.
 
-Licencia [MIT](../LICENSE). Avisos de terceros en [licenses](../licenses/) y en
-el botón **Licencias** de la aplicación.
+[Verificación](VERIFICA.md) - [Checklist Windows](TEST-COMPLETI.md) - [Publicación](GITHUB-SETUP.md). Las pruebas simuladas en otras plataformas no implican soporte de escritorio.
 
-## Slots EMERGENCIA y secuencias
+## Contribuir y licencia
 
-Activa **EMERGENCIA: pausar todas las pistas** en los ajustes de un slot. Su pad pausa todos los audios activos, incluidos los protegidos, conservando las posiciones y sin reproducir su propio archivo. Selecciona MIDI y/o OSC para enviar sus mensajes. Cancela las secuencias pendientes y libera las notas MIDI activas antes de enviar sus propios comandos. Funciona con ratón o pad MIDI y se guarda en el show. Usa Play para reanudar una pista; los pads conservan su modo normal. STOP ALL detiene y reinicia las posiciones. Comprueba la recepción en los dispositivos externos.
+Se aceptan informes, traducciones y cambios. [CONTRIBUTING](../CONTRIBUTING.md), [SECURITY](../SECURITY.md), [Changelog](../CHANGELOG.md).
 
-↑/↓ reordenan comandos; **Espera previa (ms)** añade retardos; **Probar ahora** transmite un comando con la reproducción detenida, sin retardo y con Pulse para notas MIDI. Las listas MIDI/OSC son independientes. Máximo: 30 segundos por comando y 60 por lista. Soltar cancela notas Gate futuras; STOP cancela los comandos futuros del slot. Usa retardo cero para emergencias inmediatas.
+Licencia [MIT](../LICENSE). Avisos de dependencias en [licenses](../licenses/) y en la app. Software y código son distribuibles según sus licencias.
 
-Los volúmenes master/pista admiten CC absolutos, tres formatos de encoder relativo, paso ajustable y soft takeover para evitar saltos. La pérdida de entrada libera pads pulsados; la reconexión no repite disparos.
+## Aviso de Windows SmartScreen
 
-**Exportar show con audio** crea `.stagepad.zip` con audio original; **Importar show** acepta una ruta completa o un paquete en la carpeta de proyectos. Importa con otro nombre sin sobrescribir. Detén audio/secuencias antes. Límite: 8 GiB de medios.
+StagePad Live se distribuye actualmente sin certificado de firma digital. Al iniciar el EXE descargado, Windows puede mostrar **«Windows protegió su PC»** y **«Editor desconocido»**. Esta advertencia por sí sola no es una detección de malware ni garantiza que el archivo sea seguro.
 
-**Ajustes → Actualizaciones** consulta versiones estables de `Alessio278/StagePad-Live`. Instala solo en reposo, conserva datos, verifica SHA-256 y guarda la versión anterior. Si falla el arranque, restaura la copia anterior; también hay restauración manual. Requiere repositorio y versiones publicados con los archivos necesarios. Este paquete no publica versiones por sí solo. Sigue disponible la sustitución manual del EXE.
-
-
-Las opciones son **Evitar saltos de volumen del master** y **Evitar saltos de volumen de la pista**. Con faders absolutos, el control comienza al alcanzar el volumen actual. La versión 0.13.1 añade etiquetas blancas legibles y ayuda debajo.
+Descarga las versiones solo del [repositorio oficial](https://github.com/Alessio278/StagePad-Live/releases) y compara el SHA-256 del archivo con el `SHA256.txt` publicado. Una coincidencia confirma que el archivo corresponde al publicado; no sustituye un análisis de seguridad. Si confías en su procedencia y decides continuar, Windows puede ofrecer **Más información > Ejecutar de todas formas**. En equipos administrados esta opción puede estar bloqueada.

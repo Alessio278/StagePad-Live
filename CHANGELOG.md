@@ -2,13 +2,50 @@
 
 Development-build history, reconstructed from retained documentation and build delivery records.
 Entries describe versions created during development; they do not imply a separate public GitHub release for every build.
-Original release dates are omitted where they could not be verified. Reconstruction updated: 2026-11-11.
+Original release dates are omitted where they could not be verified. Reconstruction updated: 2026-11-13.
 
 IT: storico delle build di sviluppo ricostruito dai documenti conservati e dalle consegne. Le voci non implicano pubblicazioni GitHub distinte. Non sono state inventate date, versioni mancanti o release per le sole fasi di progetto.
 
 EN: each recoverable numbered build has its own entry. Unnumbered prototypes are kept separate.
 ES: cada build numerada recuperable tiene su propia entrada; los prototipos sin número se indican aparte.
 FR: chaque build numérotée retrouvée dispose de sa propre entrée ; les prototypes sans numéro restent séparés.
+
+## 1.0.0 - 2026-11-13
+
+First stable release of StagePad Live. Prepared release; publication is tracked by GitHub Releases, not implied by this file.
+
+- Consolidated marker editing, MIDI/OSC cues, marker-to-marker loops and Setup-only marker capture LEARN.
+- Integrated New/Open/Save/Save as, complete show management, background auto-save, failed-write recovery and standard AppData storage.
+- An applied loop shows only slow red visual feedback from the first Play, suppressing all colored marker flashes while keeping marker MIDI/OSC output.
+- Playing + Marker inserts without opening a window; loop wraps suppress boundary flashes; colored cues own the frame for seven pulses over 1.82 seconds before red playback feedback returns.
+- Unified dark rounded checkbox template with mint checks, keyboard focus and disabled/indeterminate states.
+- Loops start directly at their first marker; slow red feedback remains exclusive while a loop is applied. Explicit Apply/Remove controls replace the checkbox.
+- Quick marker insertion commits immediately and refreshes the list with a loop applied; the new-marker time field follows the cursor.
+- Marker feedback now produces seven fast synchronized frame/time flashes with a stronger halo, then restores the usual player frame.
+- Fixed the cursor on an empty player and the light intersection of horizontal/vertical scrollbars.
+- Normalized maintained long dash punctuation to ASCII hyphens; retained all four interface languages.
+- Rebuilt README headers, contents and truthful badges; refreshed all four language guides and release/checklist documentation.
+- Stable publication is gated on Windows build, core/integration tests and native WPF checks. No hardware certification is implied.
+
+## 0.14.4 - development build
+
+- Normal StagePad executable/storage; migration from isolated development data without replacing named shows. Simplified project browser, New show, Save/Save as and background auto-save for named/unnamed shows with atomic backup and bounded final save.
+
+## 0.14.3 - development build
+
+- Update window accessible in the development build; waveform source/revision validation, full-width layout and very-short-clip rendering; loop checkbox alignment and marker LEARN spacing.
+
+## 0.14.2 - development build
+
+- Dedicated MIDI LEARN key for inserting markers on selected playing audio in Setup; held-note suppression, Show Lock and Live-mode guards; saved show binding.
+
+## 0.14.1 - development build
+
+- Stronger 1.6-second marker feedback; compact player; loops between existing markers; MIDI/OSC output per marker and loop pass; bounded event queue outside the audio callback.
+
+## 0.14.0 - development build
+
+- Editable marker position, label and color; double-click marker seek; player frame and time feedback; show persistence and isolated evaluation build.
 
 ## 0.13.2 - beta
 
@@ -161,7 +198,7 @@ FR: chaque build numérotée retrouvée dispose de sa propre entrée ; les proto
 
 ## 0.8.0 - beta
 
-- 1–100 active slots, independent Setup/Live grids up to 10×10.
+- 1-100 active slots, independent Setup/Live grids up to 10×10.
 - Hidden tail slots retain saved settings and audio paths.
 - Engine, MIDI dispatch, seek, project persistence and PANIC extended to slot 100.
 - Removed redundant grid headings; added discreet creator credit.

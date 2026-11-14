@@ -1,15 +1,11 @@
-# Aggiornare StagePad senza reinstallare
+# StagePad Live - aggiornamenti portatili
 
-1. Chiudi la vecchia versione di StagePad e attendi qualche secondo.
-2. Estrai il nuovo pacchetto Windows e copia `StagePad.exe` nella cartella in cui tieni l’app, sostituendo il vecchio EXE.
-3. Avvia il nuovo `StagePad.exe`.
+Chiudi l’app prima di sostituire `StagePad.exe` con l’eseguibile di una release stabile più recente. Impostazioni, show, recupero e riferimenti audio restano in `%LOCALAPPDATA%\StagePad` o nella directory scelta. Lo ZIP Windows include il runtime.
 
-Non serve un installer né reinstallare dipendenze: l’EXE include il runtime necessario.
+Impostazioni > Aggiornamenti controlla le release stabili di `Alessio278/StagePad-Live`. Servono l’asset `StagePad.exe` e SHA-256 corrispondente, oppure `SHA256.txt`. Audio/sequenze devono essere fermi. Prodotto/versione verificati, copia precedente conservata e tentativo di rollback se l’avvio fallisce. Ripristino precedente disponibile nelle impostazioni.
 
-Progetti, impostazioni, mappature e ultimo show restano salvati in `%LOCALAPPDATA%\StagePad` e nell’eventuale cartella progetti personalizzata. Non cancellare queste cartelle durante l’aggiornamento. I file audio originali restano nei loro percorsi.
+Prima di una versione principale conserva show e audio originali. L’esportazione dello show include i media; il solo JSON no. I dati di sviluppo vengono recuperati senza sovrascrivere show; gli audio archiviati in `backups\legacy-data` devono restare disponibili se referenziati.
 
-Se la vecchia versione è rimasta invisibile in background e impedisce la sostituzione, puoi avviare il nuovo EXE da un’altra cartella: la 0.12.0 tenta di recuperare l’istanza bloccata dello stesso utente/sessione. Un’istanza ancora visibile viene invece riportata in primo piano: chiudila prima di aggiornare.
+Build non firmata. SmartScreen è separato dai controlli di integrità. Serve rete per verificare aggiornamenti, non per la riproduzione ordinaria.
 
-Il pacchetto GitHub contiene i sorgenti per chi vuole compilare il programma; per usarlo o aggiornarlo basta il pacchetto Windows.
-
-Nel browser progetti **Esporta show con audio** crea un pacchetto `.stagepad.zip` con lo show e i suoi file audio originali. **Importa show** accetta il percorso completo del pacchetto o un pacchetto nella cartella progetti e crea uno show con nome separato senza sovrascrivere. Ferma audio e sequenze prima dell’operazione. Limite dei media originali: 8 GiB.
+[Guida](README.it.md)

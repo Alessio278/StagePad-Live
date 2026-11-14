@@ -1,15 +1,11 @@
-# Mettre à jour StagePad sans réinstallation
+# StagePad Live - mises à jour portables
 
-1. Fermez l’ancienne version et attendez quelques secondes.
-2. Extrayez le nouveau paquet Windows et remplacez l’ancien `StagePad.exe` dans le dossier de l’application.
-3. Lancez le nouveau `StagePad.exe`.
+Fermez l’app et remplacez `StagePad.exe` par celui d’une release stable plus récente. Paramètres, shows, récupération et références audio restent dans `%LOCALAPPDATA%\StagePad` ou le dossier choisi. Runtime inclus.
 
-L’EXE inclut son runtime : aucun installateur ni réinstallation des dépendances n’est nécessaire.
+Paramètres > Mises à jour consulte `Alessio278/StagePad-Live`. Asset `StagePad.exe` et SHA-256 ou `SHA256.txt` requis. Installation avec audio/séquences arrêtés, contrôle produit/version, copie précédente et restauration si le démarrage échoue.
 
-Projets, réglages, affectations et dernier show restent dans `%LOCALAPPDATA%\StagePad` et le dossier de projets configuré. Conservez ces dossiers. Les fichiers audio d’origine gardent leurs emplacements.
+Conservez shows et audios avant une version majeure. Exporter un show inclut les médias ; copier le JSON seul non. Migration sans écraser les shows ; gardez `backups\legacy-data` s’il contient des audios référencés.
 
-Si une ancienne instance invisible bloque le remplacement, lancez le nouvel EXE depuis un autre dossier. La version 0.12.0 tente de récupérer les instances bloquées du même utilisateur/session. Une instance visible est remise au premier plan : fermez-la avant la mise à jour.
+Build non signée. SmartScreen est distinct des contrôles d’intégrité. Réseau nécessaire aux mises à jour, pas à la lecture.
 
-Le paquet GitHub contient les sources ; le paquet Windows suffit pour utiliser ou mettre à jour l’application.
-
-**Exporter le show avec audio** crée un `.stagepad.zip` avec les audios originaux ; **Importer un show** accepte un chemin complet ou un paquet du dossier projets, sous un nouveau nom sans écrasement. Arrêtez audio/séquences avant cette opération. Limite : 8 GiB de médias.
+[Guide](README.fr.md)

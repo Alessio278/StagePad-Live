@@ -1,15 +1,13 @@
-# OSC / MIDI / Audio - StagePad 0.12.0
+# StagePad Live - OSC
 
-Open a slot’s settings and select **Audio**, **MIDI** and/or **OSC** under **Actions on press**. Any of the seven non-empty combinations is supported. A mapped MIDI pad or an on-screen pad executes the same selection.
+Select OSC in slot settings, add a command and enter host/IP, UDP port 1-65535 and a path beginning with `/`. Example: `127.0.0.1`, port `8000`, `/show/go`, integer argument `1`.
 
-Add up to **16 MIDI commands** and **16 OSC commands** per slot. MIDI supports Note (Pulse/Gate), MSC, Control Change and Program Change. All MIDI commands use the output selected in Setup. Program numbers and CC values use the displayed 0-127 range.
+Arguments: int32, float32, ASCII string, true or false. Up to 16 arguments per message and 16 commands per slot; command data is bounded. Each command can have its own receiver. Configure matching addresses and types in the receiving application.
 
-For each OSC command enter a host/IP, UDP port and OSC address, then add typed arguments: integer, float, ASCII string, true or false. Example: host `127.0.0.1`, port `8000`, address `/show/go`, integer `1`. Each command can target a different receiver. See [OSC guide](OSC.en.md).
+Use arrows for order, delays for timing and Test now for one immediate command while stopped. Maximum delay: 30 seconds per command and 60 per list. MIDI and OSC lists run independently; cross-output timing depends on receivers.
 
-Audio, MIDI and OSC are dispatched independently. Missing audio does not suppress MIDI/OSC; blocked MIDI does not block OSC or audio. Commands in each output list are sent in list order; timing between audio, MIDI and UDP depends on their receivers. Releasing the pad closes all configured MIDI Gate notes. STOP ALL cancels queued OSC commands and releases MIDI notes. UDP sends are counted in Settings diagnostics; the count confirms local transmission. Test the receiving software to confirm its response.
+A marker can send one immediate OSC command each playback crossing, including loops. Seeking skips output cues. STOP/STOP ALL cancel pending sequences; reconnect does not replay old cues.
 
-The selected outputs, command lists, destinations and arguments are saved with the project and recovery. Existing projects retain their original single-MIDI behavior. Slots accept at most 16 arguments per OSC message and a combined command data limit of 6000 bytes.
+OSC uses UDP: the sent counter confirms local transmission, not receipt. Configure firewalls/network interfaces yourself and test the actual receiver. No discovery, acknowledgement or remote equipment safety guarantee is provided.
 
-OSC format reference: https://opensoundcontrol.stanford.edu/spec-1_0.html
-
-UDP sends each command once. Messages older than one second in queue/DNS are dropped and never replayed after reconnection. STOP ALL cannot recall an already transmitted message. The receiver must accept the configured argument types, especially T/F.
+[README](../README.md)

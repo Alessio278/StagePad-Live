@@ -16,6 +16,12 @@ internal sealed class SettingsWindow : Window
     private readonly StackPanel volumeControls=new();
     private readonly TextBlock controlledTrack=new(){Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};
     private readonly TextBox masterChannel=new(){Text="1"},masterCc=new(){Text="-1"},trackChannel=new(){Text="1"},trackCc=new(){Text="-1"};
+    private readonly StackPanel markerControls=new();
+    private readonly TextBlock markerAssignment=new(){Foreground=Brushes.MediumAquamarine,TextWrapping=TextWrapping.Wrap};
+    private readonly Button learnMarker=new(){Content="LEARN inserimento marker",Margin=new Thickness(0,8,0,10)};
+    private readonly Button clearMarker=new(){Content="Rimuovi assegnazione marker",Margin=new Thickness(0,0,0,6)};
+    private bool markerMappingSaving;
+    private CheckBox? automaticSave;
     private readonly Button learnMaster=new(){Content="LEARN master"},learnTrack=new(){Content="LEARN traccia"};
     private (MidiCcBinding Master,MidiCcBinding Track)? shownBindings;
     private readonly ComboBox masterMode=CommandForm.Choice(MidiControlMode.Absolute,ModeCaption),trackMode=CommandForm.Choice(MidiControlMode.Absolute,ModeCaption);
@@ -59,6 +65,24 @@ internal sealed class SettingsWindow : Window
             UpdateNotice();
         }
         follow.Checked+=(_,_)=>SaveFollow();follow.Unchecked+=(_,_)=>SaveFollow();
+        Section(body,"MARKER MIDI (SETUP)");body.Children.Add(markerControls);
+        markerControls.Children.Add(new TextBlock{Text="Un tasto MIDI per inserire marker sulla traccia selezionata in riproduzione. In Serata non modifica lo show. Scegli un tasto non assegnato agli slot.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12,Margin=new Thickness(0,0,0,8)});
+        markerControls.Children.Add(markerAssignment);L.Preserve(markerAssignment);
+        markerControls.Children.Add(learnMarker);markerControls.Children.Add(clearMarker);
+        async Task MarkerCommand(bool clear)
+        {
+            if(markerMappingSaving)return;markerMappingSaving=true;markerControls.IsEnabled=false;
+            try
+            {
+                bool enabled=state?.MarkerLearn!=true;
+                var reply=await send(new(clear?"clear-marker-learn":"learn-marker",Flag:enabled));
+                notice=reply.Ok?(clear?"Assegnazione marker rimossa.":enabled?"Premi il tasto MIDI da assegnare ai marker.":"LEARN marker annullato."):reply.Error??"Comando non riuscito.";
+            }
+            catch(Exception ex){notice=ex.Message;}
+            finally{markerMappingSaving=false;markerControls.IsEnabled=state?.MarkerSetup==true && state?.ShowLocked!=true;UpdateNotice();}
+        }
+        learnMarker.Click+=async(_,_)=>await MarkerCommand(false);clearMarker.Click+=async(_,_)=>await MarkerCommand(true);
+        Closed+=async(_,_)=>{try{await send(new("learn-marker",Flag:false));}catch(Exception ex){Log.Warn("marker-learn",ex.Message);}};
         Section(body,"VOLUMI MIDI");body.Children.Add(volumeControls);
         volumeControls.Children.Add(CommandForm.Row("Master: canale MIDI",masterChannel));volumeControls.Children.Add(CommandForm.Row("Master: CC (-1 = disabilitato)",masterCc));
         volumeControls.Children.Add(CommandForm.Row("Modalità master",masterMode));volumeControls.Children.Add(masterPickup);volumeControls.Children.Add(PickupHelp());volumeControls.Children.Add(CommandForm.Row("Passo relativo master (%)",masterStep));volumeControls.Children.Add(learnMaster);
@@ -85,6 +109,15 @@ internal sealed class SettingsWindow : Window
         }
         learnMaster.Click+=async(_,_)=>await Learn("master");learnTrack.Click+=async(_,_)=>await Learn("track");
         Section(body,"PROGETTI");
+        automaticSave=new CheckBox{Content=new TextBlock{Text="Salvataggio automatico degli show",Foreground=Brushes.White,TextWrapping=TextWrapping.Wrap},IsChecked=L.AutoSaveProjects,Foreground=Brushes.White,Margin=new Thickness(0,0,0,12)};body.Children.Add(automaticSave);
+        async Task SaveAutomaticOption()
+        {
+            bool enabled=automaticSave.IsChecked==true;
+            bool stored=L.SetAutoSaveProjects(enabled);
+            var reply=await send(new("autosave-settings",Path:L.ProjectDirectory,Flag:enabled));
+            notice=!reply.Ok?reply.Error??"Comando non riuscito.":!stored?"L’opzione è applicata, ma non è stato possibile salvarla.":"";UpdateNotice();
+        }
+        automaticSave.Checked+=async(_,_)=>await SaveAutomaticOption();automaticSave.Unchecked+=async(_,_)=>await SaveAutomaticOption();
         body.Children.Add(new TextBlock { Text="Cartella dei progetti",FontSize=12,Margin=new Thickness(0,0,0,7) });
         var directory=new TextBox { Text=L.ProjectDirectory,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,0,0,8) };body.Children.Add(directory);
         var directoryActions=new StackPanel { Orientation=Orientation.Horizontal };
@@ -118,7 +151,7 @@ internal sealed class SettingsWindow : Window
         Section(body,"DIAGNOSTICA");body.Children.Add(diagnostics);
         var actions=new Grid { Margin=new Thickness(0,14,0,0) };actions.ColumnDefinitions.Add(new());actions.ColumnDefinitions.Add(new());
         var logs=new Button { Content="Apri log",Margin=new Thickness(0,0,6,0) };var licenses=new Button { Content="Licenze",Margin=new Thickness(6,0,0,0) };Grid.SetColumn(licenses,1);actions.Children.Add(logs);actions.Children.Add(licenses);body.Children.Add(actions);
-        body.Children.Add(new TextBlock { Text="STAGEPAD LIVE · 0.13.2",FontSize=10,Foreground=Brushes.SlateGray,Margin=new Thickness(0,18,0,0) });
+        body.Children.Add(new TextBlock { Text="STAGEPAD LIVE · "+AppUpdates.Current.ToString(3),FontSize=10,Foreground=Brushes.SlateGray,Margin=new Thickness(0,18,0,0) });
         body.Children.Add(new TextBlock{Text="App portatile: aggiorna sostituendo StagePad.exe. Progetti e impostazioni restano salvati.",FontSize=11,Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,8,0,0)});
         body.Children.Add(CommandForm.Button("Aggiornamenti",()=>{if(openUpdates!=null)_=openUpdates();}));
         logs.Click+=async(_,_)=>{try{await openLogs();}catch(Exception ex){notice=ex.Message;UpdateNotice();}};
@@ -160,8 +193,14 @@ internal sealed class SettingsWindow : Window
     private void UpdateNotice()=>status.Text=L.Message(notice);
     public void Update(StateInfo current)
     {
+        bool previousMarkerLearn=state?.MarkerLearn==true;var previousMarkerBinding=state?.Project?.MarkerCapture;
         string? previousLearn=state?.VolumeLearn;state=current;
+        if(previousMarkerLearn && !current.MarkerLearn && previousMarkerBinding!=current.Project?.MarkerCapture)notice="Tasto marker assegnato.";
+        markerControls.IsEnabled=current.MarkerSetup && !current.ShowLocked && !markerMappingSaving;
+        L.Bind(learnMarker,ContentControl.ContentProperty,current.MarkerLearn?"Annulla LEARN":"LEARN inserimento marker");
+        markerAssignment.Text=current.MarkerLearn?L.T("Premi il tasto MIDI da assegnare ai marker."):current.Project?.MarkerCapture is {} capture?L.F("Canale {0} - nota {1}",capture.Channel,capture.Note):L.T("Nessun tasto marker assegnato.");
         if(previousLearn!=null && current.VolumeLearn==null)notice="Assegnazioni MIDI aggiornate.";
+        if(automaticSave!=null)automaticSave.IsEnabled=!current.ShowLocked;
         volumeControls.IsEnabled=!current.ShowLocked && !mappingSaving;
         memoryControls.IsEnabled=!current.ShowLocked && !saving;
         if(!memory.IsKeyboardFocusWithin && !saving)memory.Text=(current.Project?.MemoryMiB??512).ToString(CultureInfo.InvariantCulture);

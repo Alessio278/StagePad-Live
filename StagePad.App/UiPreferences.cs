@@ -1,6 +1,6 @@
 using System.Text.Json;
 namespace StagePad.App;
-internal sealed record UiPreferences(string Language="it",bool FollowTriggeredSlot=true,string? ProjectDirectory=null)
+internal sealed record UiPreferences(string Language="it",bool FollowTriggeredSlot=true,string? ProjectDirectory=null,bool AutoSaveProjects=true)
 {
     public static UiPreferences Parse(string json)
     {
@@ -10,7 +10,8 @@ internal sealed record UiPreferences(string Language="it",bool FollowTriggeredSl
             value.GetString() is {} code && LocalizationCatalog.Languages.Contains(code))language=code;
         if(root.TryGetProperty("followTriggeredSlot",out var enabled) && enabled.ValueKind is JsonValueKind.True or JsonValueKind.False)follow=enabled.GetBoolean();
         string? directory=root.TryGetProperty("projectDirectory",out var folder) && folder.ValueKind==JsonValueKind.String?folder.GetString():null;
-        return new(language,follow,string.IsNullOrWhiteSpace(directory)?null:directory);
+        bool autoSave=!root.TryGetProperty("autoSaveProjects",out var auto) || auto.ValueKind!=JsonValueKind.False;
+        return new(language,follow,string.IsNullOrWhiteSpace(directory)?null:directory,autoSave);
     }
-    public string ToJson()=>JsonSerializer.Serialize(new{language=Language,followTriggeredSlot=FollowTriggeredSlot,projectDirectory=ProjectDirectory});
+    public string ToJson()=>JsonSerializer.Serialize(new{language=Language,followTriggeredSlot=FollowTriggeredSlot,projectDirectory=ProjectDirectory,autoSaveProjects=AutoSaveProjects});
 }

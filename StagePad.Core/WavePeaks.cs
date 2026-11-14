@@ -5,9 +5,11 @@ public static class WavePeaks
     // Offline PCM analysis only. Never invoked on a render or UI thread.
     public static float[] Build(string pcm, int bins = 1024)
     {
+        if(bins is <1 or >16384)throw new ArgumentOutOfRangeException(nameof(bins));
         using var input = File.OpenRead(pcm);
         long frames = input.Length / 8;
         if (frames == 0) return [];
+        bins=(int)Math.Min(bins,frames);
         var peaks = new float[bins]; var samples = new float[32768]; long frame = 0;
         while (input.Position < input.Length)
         {

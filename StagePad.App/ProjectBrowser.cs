@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Markup;
+using System.Windows.Input;
 namespace StagePad.App;
 internal sealed class ProjectBrowser : Border
 {
@@ -13,6 +14,7 @@ internal sealed class ProjectBrowser : Border
     private readonly ComboBox packages=new(){Margin=new Thickness(0,5,0,5)};
     private readonly StackPanel packagePanel=new(){Visibility=Visibility.Collapsed};
     private readonly TextBox name=new(){MaxLength=110,Margin=new Thickness(0,5,0,8)};
+    private readonly TextBlock autosaveStatus=new(){Foreground=Brushes.MediumAquamarine,FontSize=12,Margin=new Thickness(0,4,0,4)};
     private readonly TextBlock location=new(){TextTrimming=TextTrimming.CharacterEllipsis,FontSize=11,Foreground=Brushes.LightSlateGray};
     private readonly TextBlock message=new(){TextWrapping=TextWrapping.Wrap,Foreground=Brushes.Orange,Margin=new Thickness(0,6,0,0)};
     private readonly TextBlock editLabel=new(){Foreground=Brushes.White};
@@ -22,6 +24,15 @@ internal sealed class ProjectBrowser : Border
     private readonly Func<Request,Task<Reply>> send;
     private readonly Action leave;
     private readonly bool saveMode;
+    private string? currentPath;
+    private StateInfo? state;
+    private readonly TextBox saveName=new(){MaxLength=100,Margin=new Thickness(0,5,8,8)};
+    private readonly Button newShow=new(){Content="Nuovo show"},more=new(){Content="Altre operazioni"};
+    private readonly StackPanel navigation=new(){Visibility=Visibility.Collapsed,Margin=new Thickness(0,10,0,6)};
+    private readonly TextBox pendingName=new(){MaxLength=100,Margin=new Thickness(0,7,0,7)};
+    private readonly Button saveContinue=new(){Content="Salva e continua"};
+    private Request? pendingNavigation;
+    private string? pendingOverwrite,navigationSavePath;
     private bool busy,listing,locked;
     private int refreshSerial;
     private string? editOperation,editSource,overwritePath;
@@ -29,7 +40,7 @@ internal sealed class ProjectBrowser : Border
     private object[] noticeArguments=[];
     public ProjectBrowser(Func<Request,Task<Reply>> send,Action leave,bool saveMode,string? currentPath)
     {
-        this.send=send;this.leave=leave;this.saveMode=saveMode;
+        this.send=send;this.leave=leave;this.saveMode=saveMode;this.currentPath=currentPath;
         ApplyProjectListStyle();
         Background=new SolidColorBrush(Color.FromRgb(16,27,40));CornerRadius=new CornerRadius(13);Padding=new Thickness(12);
         // The surrounding view may be short at high display scaling. Keep a useful list
@@ -38,11 +49,29 @@ internal sealed class ProjectBrowser : Border
         var root=new StackPanel();scroll.Content=root;
         var header=new DockPanel();root.Children.Add(header);
         var refresh=new Button {Content="Aggiorna elenco",HorizontalAlignment=HorizontalAlignment.Right};DockPanel.SetDock(refresh,Dock.Right);header.Children.Add(refresh);
-        header.Children.Add(new TextBlock {Text=saveMode?"Salva progetto":"Apri progetto",FontSize=21,Foreground=Brushes.White});root.Children.Add(location);root.Children.Add(projects);
-        var actions=new WrapPanel();root.Children.Add(actions);
-        foreach(var button in new[]{open,save,rename,duplicate,delete,export,import}){button.Margin=new Thickness(0,0,6,6);actions.Children.Add(button);}
+        header.Children.Add(new TextBlock{Text=saveMode?"Salva show con nome":"Apri show",FontSize=21,Foreground=Brushes.White});root.Children.Add(location);root.Children.Add(autosaveStatus);L.Preserve(autosaveStatus);
+        var primary=new DockPanel{Margin=new Thickness(0,10,0,4)};root.Children.Add(primary);
+        newShow.Margin=new Thickness(0,0,8,0);DockPanel.SetDock(newShow,Dock.Left);primary.Children.Add(newShow);
         open.Visibility=saveMode?Visibility.Collapsed:Visibility.Visible;save.Visibility=saveMode?Visibility.Visible:Visibility.Collapsed;
-        var back=new Button {Content="Torna a Setup",Margin=new Thickness(0,0,0,6)};actions.Children.Add(back);
+        DockPanel.SetDock(open,Dock.Right);DockPanel.SetDock(save,Dock.Right);primary.Children.Add(open);primary.Children.Add(save);
+        if(saveMode){saveName.Text=string.IsNullOrWhiteSpace(currentPath)?"Show":Path.GetFileNameWithoutExtension(currentPath);primary.Children.Add(saveName);}
+        root.Children.Add(projects);
+        var actions=new WrapPanel();root.Children.Add(actions);more.Margin=new Thickness(0,0,8,6);actions.Children.Add(more);
+        var back=new Button{Content="Chiudi",Margin=new Thickness(0,0,0,6)};actions.Children.Add(back);
+        more.Click+=(_,_)=>
+        {
+            var menu=new ContextMenu{Background=new SolidColorBrush(Color.FromRgb(15,25,38)),Foreground=Brushes.White};
+            foreach(var (caption,operation,enabled) in new[]{("Rinomina","rename-project",rename.IsEnabled),("Duplica","duplicate-project",duplicate.IsEnabled),("Elimina","delete-project",delete.IsEnabled),("Esporta show con audio","export-show",export.IsEnabled),("Importa show","import-show",import.IsEnabled)})
+            {var item=new MenuItem{Header=L.T(caption),IsEnabled=enabled};item.Click+=(_,_)=>Begin(operation);menu.Items.Add(item);}
+            menu.PlacementTarget=more;menu.IsOpen=true;
+        };
+        newShow.Click+=async(_,_)=>await BeginNewShow();
+        root.Children.Add(navigation);navigation.Children.Add(new TextBlock{Text="Salvare le modifiche prima di continuare?",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.White});navigation.Children.Add(pendingName);
+        var navActions=new WrapPanel();navigation.Children.Add(navActions);navActions.Children.Add(saveContinue);
+        saveContinue.Margin=new Thickness(0,0,8,6);saveContinue.Click+=async(_,_)=>await SaveBeforeNavigation();
+        navActions.Children.Add(CommandForm.Button("Scarta e continua",async()=>{if(pendingNavigation is {} pending)await Navigate(pending,true);}));
+        navActions.Children.Add(CommandForm.Button("Annulla",CancelNavigation));
+        pendingName.TextChanged+=(_,_)=>{pendingOverwrite=null;L.Bind(saveContinue,ContentControl.ContentProperty,"Salva e continua");};
         root.Children.Add(editor);editor.Children.Add(editLabel);
         packagePanel.Children.Add(new TextBlock{Text="Pacchetto .stagepad.zip (percorso completo)",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.White});packagePanel.Children.Add(packages);packagePanel.Children.Add(packagePath);editor.Children.Add(packagePanel);
         packages.SelectionChanged+=(_,_)=>{if(packages.SelectedItem is string path)packagePath.Text=path;};editor.Children.Add(name);
@@ -51,14 +80,17 @@ internal sealed class ProjectBrowser : Border
         name.Text=string.IsNullOrWhiteSpace(currentPath)?"Show":Path.GetFileNameWithoutExtension(currentPath);
         L.Preserve(location);L.Preserve(message);L.Preserve(editLabel);
         SizeChanged+=(_,_)=>ResizeList();
-        projects.SelectionChanged+=(_,_)=>{if(editOperation==null && saveMode && projects.SelectedItem is Entry e)name.Text=Path.GetFileNameWithoutExtension(e.FileName);UpdateActions();};
-        projects.MouseDoubleClick+=async(_,_)=>{if(!saveMode && editOperation==null)await Open();};
+        projects.SelectionChanged+=(_,_)=>{if(editOperation==null && saveMode && projects.SelectedItem is Entry e)saveName.Text=Path.GetFileNameWithoutExtension(e.FileName);UpdateActions();};
+        projects.MouseDoubleClick+=async(_,e)=>{if(!saveMode && editOperation==null && ItemsControl.ContainerFromElement(projects,e.OriginalSource as DependencyObject) is ListBoxItem)await Open();};
         name.TextChanged+=(_,_)=>{overwritePath=null;L.Bind(confirm,ContentControl.ContentProperty,"Conferma");};
-        open.Click+=async(_,_)=>await Open();save.Click+=(_,_)=>Begin("save-project");
+        open.Click+=async(_,_)=>await Open();save.Click+=async(_,_)=>await SaveFromField();
         rename.Click+=(_,_)=>Begin("rename-project");duplicate.Click+=(_,_)=>Begin("duplicate-project");delete.Click+=(_,_)=>Begin("delete-project");
         export.Click+=(_,_)=>Begin("export-show");import.Click+=(_,_)=>Begin("import-show");
         confirm.Click+=async(_,_)=>await Confirm();cancel.Click+=(_,_)=>EndEdit();
         back.Click+=(_,_)=>{if(!busy)leave();};refresh.Click+=async(_,_)=>{if(!busy){EndEdit();await Refresh();}};
+        saveName.KeyDown+=async(_,e)=>{if(e.Key==Key.Return){e.Handled=true;await SaveFromField();}};
+        projects.KeyDown+=async(_,e)=>{if(e.Key==Key.Return && !saveMode){e.Handled=true;await Open();}};
+        PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){e.Handled=true;if(pendingNavigation!=null)CancelNavigation();else if(editOperation!=null)EndEdit();else if(!busy)leave();}};
         Loaded+=async(_,_)=>{await Refresh();ResizeList();};
         L.Apply(this);UpdateActions();
     }
@@ -108,7 +140,7 @@ internal sealed class ProjectBrowser : Border
             """);
         projects.Resources=resources;projects.Style=(Style)resources["ProjectList"];
     }
-    private void ResizeList()=>projects.Height=Math.Max(130,ActualHeight-(editor.Visibility==Visibility.Visible?290:170));
+    private void ResizeList()=>projects.Height=Math.Max(130,ActualHeight-(navigation.Visibility==Visibility.Visible?350:editor.Visibility==Visibility.Visible?330:190));
     public async Task Refresh()
     {
         int stamp=++refreshSerial;string directory=L.ProjectDirectory;location.Text=directory;location.ToolTip=directory;listing=true;UpdateActions();
@@ -123,25 +155,26 @@ internal sealed class ProjectBrowser : Border
             });
             if(stamp!=refreshSerial)return;
             packages.ItemsSource=await Task.Run(()=>Directory.GetFiles(directory,"*.stagepad.zip"));
-            projects.ItemsSource=entries;if(entries.Length>0 && !saveMode)projects.SelectedIndex=0;
+            projects.ItemsSource=entries;if(entries.Length>0){projects.SelectedItem=entries.FirstOrDefault(e=>string.Equals(e.Path,currentPath,StringComparison.OrdinalIgnoreCase));if(projects.SelectedItem==null && !saveMode)projects.SelectedIndex=0;}
             Notice(entries.Length==0?"Nessun progetto salvato in questa cartella.":"");
         }
         catch(Exception ex){if(stamp==refreshSerial){projects.ItemsSource=null;Notice(ex.Message);}}
         finally{if(stamp==refreshSerial){listing=false;UpdateActions();}}
     }
-    public void Update(StateInfo state){locked=state.ShowLocked;UpdateActions();RefreshNotice();if(editOperation!=null)editLabel.Text=editOperation=="delete-project"?L.F("Eliminare il progetto {0}? I file audio restano sul disco.",Path.GetFileNameWithoutExtension(editSource)??""):L.T("Nome progetto");}
+    public void Update(StateInfo state){this.state=state;autosaveStatus.Text=state.ProjectSaving?L.T("Salvataggio in corso…"):state.ProjectDirty?L.T(state.AutoSaveEnabled?"Auto-save in attesa…":"Modifiche non salvate"):state.LastSavedAt>0?L.F("Salvato alle {0}",DateTimeOffset.FromUnixTimeSeconds(state.LastSavedAt).ToLocalTime().ToString("T")):L.T(state.AutoSaveEnabled?"Auto-save attivo":"Auto-save disattivato");currentPath=state.ProjectPath;locked=state.ShowLocked;UpdateActions();RefreshNotice();if(editOperation!=null)editLabel.Text=editOperation=="delete-project"?L.F("Eliminare il progetto {0}? I file audio restano sul disco.",Path.GetFileNameWithoutExtension(editSource)??""):L.T("Nome progetto");}
     private void Notice(string key,params object[] arguments){notice=key;noticeArguments=arguments;RefreshNotice();}
     private void RefreshNotice()=>message.Text=noticeArguments.Length==0?L.Message(notice):L.F(notice,noticeArguments);
     private void UpdateActions()
     {
-        bool ready=!busy && !listing,selected=projects.SelectedItem is Entry;
+        bool ready=!busy && !listing && pendingNavigation==null,selected=projects.SelectedItem is Entry;
+        newShow.IsEnabled=ready && !locked;more.IsEnabled=ready;saveName.IsEnabled=ready;navigation.IsEnabled=!busy && !listing && state?.ProjectSaving!=true;
         open.IsEnabled=ready && !locked && selected && editOperation==null;save.IsEnabled=ready;
         rename.IsEnabled=duplicate.IsEnabled=delete.IsEnabled=export.IsEnabled=ready && !locked && selected;import.IsEnabled=ready && !locked;
         confirm.IsEnabled=ready && (editOperation=="save-project" || !locked);name.IsEnabled=ready;projects.IsEnabled=ready && editOperation==null;
     }
     private void Begin(string operation)
     {
-        if(busy || listing || (locked && operation!="save-project"))return;
+        if(busy || listing || pendingNavigation!=null || (locked && operation!="save-project"))return;
         if(operation is not ("save-project" or "import-show") && projects.SelectedItem is not Entry)return;
         editOperation=operation;editSource=(projects.SelectedItem as Entry)?.Path;overwritePath=null;
         if(operation!="save-project")name.Text=Path.GetFileNameWithoutExtension(editSource)+(operation=="duplicate-project"?" - "+L.T("Copia"):"");
@@ -153,12 +186,53 @@ internal sealed class ProjectBrowser : Border
         editor.BringIntoView();if(operation!="delete-project"){name.Focus();name.SelectAll();}
     }
     private void EndEdit(){packagePanel.Visibility=Visibility.Collapsed;editOperation=null;editSource=null;overwritePath=null;editor.Visibility=Visibility.Collapsed;Notice("");UpdateActions();ResizeList();}
+    public async Task BeginNewShow()=>await RequestNavigation(new("new-project"));
     private async Task Open()
     {
         if(!open.IsEnabled || projects.SelectedItem is not Entry entry)return;
-        busy=true;UpdateActions();Notice("Apertura progetto…");
-        try{var reply=await send(new("load-project",Path:entry.Path));if(reply.Ok)leave();else Notice(reply.Error??"Comando non riuscito.");}
+        await RequestNavigation(new("load-project",Path:entry.Path));
+    }
+    private async Task RequestNavigation(Request request)
+    {
+        if(busy || locked || listing && request.Op!="new-project")return;
+        if(state?.ProjectDirty==true){PromptNavigation(request);return;}
+        await Navigate(request,false);
+    }
+    private void PromptNavigation(Request request)
+    {
+        EndEdit();pendingNavigation=request;navigationSavePath=currentPath;pendingOverwrite=null;pendingName.Text=currentPath==null?"Show":Path.GetFileNameWithoutExtension(currentPath);navigation.Visibility=Visibility.Visible;Notice("");UpdateActions();ResizeList();navigation.BringIntoView();
+    }
+    private void CancelNavigation(){pendingNavigation=null;navigation.Visibility=Visibility.Collapsed;Notice("");UpdateActions();ResizeList();}
+    private async Task Navigate(Request request,bool discard)
+    {
+        busy=true;UpdateActions();
+        try
+        {
+            var reply=await send(request with{Flag=discard,Epoch=discard?state?.ProjectRevision??0:0});
+            if(reply.Ok){pendingNavigation=null;leave();}
+            else if(reply.Error=="Salva le modifiche prima di continuare, oppure scegli di scartarle.")PromptNavigation(request);
+            else Notice(reply.Error??"Comando non riuscito.");
+        }
         catch(Exception ex){Notice(ex.Message);}finally{busy=false;UpdateActions();}
+    }
+    private async Task SaveBeforeNavigation()
+    {
+        if(busy || pendingNavigation is not {} request)return;
+        try
+        {
+            string target=navigationSavePath??Path.Combine(L.ProjectDirectory,ProjectDirectoryPolicy.FileName(pendingName.Text));
+            if(!string.Equals(target,currentPath,StringComparison.OrdinalIgnoreCase) && File.Exists(target) && pendingOverwrite!=target){pendingOverwrite=target;Notice("Il progetto {0} esiste già. Vuoi sovrascriverlo?",Path.GetFileName(target));L.Bind(saveContinue,ContentControl.ContentProperty,"Conferma sovrascrittura e continua");return;}
+            busy=true;UpdateActions();var reply=await send(new("save-project",Path:target));busy=false;
+            if(reply.Ok)await Navigate(request,false);else Notice(reply.Error??"Comando non riuscito.");
+        }
+        catch(Exception ex){Notice(ex.Message);}finally{busy=false;UpdateActions();}
+    }
+    private async Task SaveFromField()
+    {
+        if(busy || listing || pendingNavigation!=null)return;
+        name.Text=saveName.Text;editOperation="save-project";editSource=null;overwritePath=null;
+        await Confirm();
+        if(editOperation!=null){editor.Visibility=Visibility.Visible;UpdateActions();ResizeList();}
     }
     private async Task Confirm()
     {
@@ -180,7 +254,7 @@ internal sealed class ProjectBrowser : Border
             {overwritePath=destination;Notice("Il progetto {0} esiste già. Vuoi sovrascriverlo?",Path.GetFileName(destination));L.Bind(confirm,ContentControl.ContentProperty,"Sovrascrivi");return;}
             busy=true;UpdateActions();
             var reply=await send(new(operation,Path:operation=="save-project"?destination:editSource,TargetPath:operation=="save-project"?null:destination));
-            if(reply.Ok){EndEdit();await Refresh();Notice("Operazione completata.");}else Notice(reply.Error??"Comando non riuscito.");
+            if(reply.Ok){EndEdit();if(operation=="save-project"){leave();return;}await Refresh();Notice("Operazione completata.");}else Notice(reply.Error??"Comando non riuscito.");
         }
         catch(Exception ex){Notice(ex.Message);}finally{busy=false;UpdateActions();}
     }

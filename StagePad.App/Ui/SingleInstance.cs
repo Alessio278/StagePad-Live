@@ -4,7 +4,7 @@ using System.Security.Principal;
 namespace StagePad.App;
 internal sealed class SingleInstance : IDisposable
 {
-    private readonly Mutex mutex=new(false,"Local\\StagePad-Phase1-"+Environment.UserName);
+    private readonly Mutex mutex=new(false,BuildFlavor.MutexName);
     private bool owns;
     [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr window);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
@@ -56,9 +56,9 @@ internal sealed class SingleInstance : IDisposable
             try
             {
                 if(p.Id==self.Id || p.SessionId!=self.SessionId)continue;
-                if(!p.ProcessName.StartsWith("StagePad",StringComparison.OrdinalIgnoreCase))continue;
+                if(!p.ProcessName.StartsWith(BuildFlavor.ProcessPrefix,StringComparison.OrdinalIgnoreCase))continue;
                 string? file=p.MainModule?.FileName;
-                if(file==null || FileVersionInfo.GetVersionInfo(file).ProductName?.StartsWith("StagePad Live",StringComparison.Ordinal)!=true)continue;
+                if(file==null || FileVersionInfo.GetVersionInfo(file).ProductName?.StartsWith(BuildFlavor.ProductPrefix,StringComparison.Ordinal)!=true)continue;
                 if(!OpenProcessToken(p.Handle,8,out token))continue;
                 using var owner=new WindowsIdentity(token);
                 if(sid==null || owner.User?.Value!=sid)continue;

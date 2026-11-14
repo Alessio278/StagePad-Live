@@ -1,9 +1,10 @@
 namespace StagePad.Core;
 
 public enum VoiceState { Empty, Ready, Playing, Paused, Stopped, Ended, Error, Stopping }
-public enum AudioOp { Install, Play, Pause, Stop, Volume, Master, Test, Configure, Trigger, Release, Seek }
-public readonly record struct AudioCommand(AudioOp Op, int Slot = 0, float Value = 0, IAudioSource? Source = null, long Ticket = 0, int Epoch = 0, PlayMode Mode = PlayMode.OneShot, int FadeInMs = 5, int FadeOutMs = 5, long Frame = 0, SeekBuffer? Seek = null);
-public readonly record struct VoiceView(VoiceState State, long Frame, long Frames, float Volume, long Starvations);
+public enum AudioOp { Install, Play, Pause, Stop, Volume, Master, Test, Configure, Trigger, Release, Seek, Loop, Markers }
+public readonly record struct AudioCommand(AudioOp Op, int Slot = 0, float Value = 0, IAudioSource? Source = null, long Ticket = 0, int Epoch = 0, PlayMode Mode = PlayMode.OneShot, int FadeInMs = 5, int FadeOutMs = 5, long Frame = 0, SeekBuffer? Seek = null, LoopRegion? Loop = null, AudioMarker[]? Markers=null,int MarkerVersion=0,int SignalEpoch=0);
+public readonly record struct MarkerSignal(int Slot,int Index,AudioMarker Marker,int Version,int SignalEpoch,int Epoch,long Tick);
+public readonly record struct VoiceView(VoiceState State, long Frame, long Frames, float Volume, long Starvations, long LoopPass=0);
 
 /// <summary>Single producer/control thread; single consumer/audio callback.</summary>
 public sealed class SpscQueue<T> where T : struct
@@ -43,6 +44,11 @@ public sealed class Mixer
         public PlayMode Mode;
         public int FadeIn = 240, FadeOut = 240;
         public SeekBuffer? Seek;
+        public LoopRegion? Loop;
+        public long LoopPass;
+        public AudioMarker[] Markers=[];
+        public int MarkerVersion,SignalEpoch,EventEpoch;
+        public bool EmitInitial;
         public bool Cued,EmergencyPaused;
         public float SeekGain = 1;
     }
@@ -54,6 +60,22 @@ public sealed class Mixer
     private long appliedTicket;
     private readonly float[] testTone = MakeTestTone();
     private int testFrame = -1;
+    private readonly SpscQueue<MarkerSignal> markerSignals=new(512);
+    private long markerDrops;
+    public int EventEpoch=>Volatile.Read(ref epoch);
+    public long MarkerDrops=>Volatile.Read(ref markerDrops);
+    public bool TryReadMarker(out MarkerSignal signal)=>markerSignals.TryRead(out signal);
+    private void Markers(Voice voice,int slot,long from,long to,bool includeStart=false)
+    {
+        if((VoiceState)voice.State!=VoiceState.Playing)return;
+        for(int i=0;i<voice.Markers.Length;i++)
+        {
+            var marker=voice.Markers[i];if(marker.MidiTrigger==null && marker.OscTrigger==null)continue;
+            long frame=(long)Math.Round(marker.Seconds*Rate);
+            if((frame>from || includeStart && frame==from) && frame<=to)
+                if(!markerSignals.TryWrite(new(slot,i,marker,voice.MarkerVersion,voice.SignalEpoch,voice.EventEpoch,Environment.TickCount64)))Interlocked.Increment(ref markerDrops);
+        }
+    }
     private static float[] MakeTestTone()
     {
         var data = new float[Rate];
@@ -77,7 +99,7 @@ public sealed class Mixer
         var v = voices[slot];
         var src = Volatile.Read(ref v.Source);
         return new((VoiceState)Volatile.Read(ref v.State), Volatile.Read(ref v.Frame), src?.Frames ?? 0,
-            Volatile.Read(ref v.Volume), Volatile.Read(ref v.Starvations));
+            Volatile.Read(ref v.Volume), Volatile.Read(ref v.Starvations),Volatile.Read(ref v.LoopPass));
     }
     private void Controls()
     {
@@ -97,10 +119,12 @@ public sealed class Mixer
             if (c.Op == AudioOp.Master) { master = Math.Clamp(c.Value, 0, 1); continue; }
             if ((uint)c.Slot >= Projects.MaxSlots) continue;
             var v = voices[c.Slot];
+            if(c.Op is AudioOp.Install or AudioOp.Play or AudioOp.Trigger or AudioOp.Stop or AudioOp.Pause or AudioOp.Seek || c.Op==AudioOp.Release && v.Mode==PlayMode.Hold)v.SignalEpoch=c.SignalEpoch;
+            if(c.Op is AudioOp.Install or AudioOp.Play or AudioOp.Trigger or AudioOp.Seek)v.EventEpoch=c.Epoch;
             switch (c.Op)
             {
                 case AudioOp.Install:
-                    v.Frame = 0; v.Gain = 0; v.Envelope = 0; v.Starvations = 0; v.Seek=null;v.Cued=false;v.EmergencyPaused=false;v.SeekGain=1;
+                    v.Frame = 0; v.Gain = 0; v.Envelope = 0; v.Starvations = 0;v.Loop=c.Loop;v.LoopPass=0;v.Markers=c.Markers??[];v.MarkerVersion=c.MarkerVersion;v.EmitInitial=false; v.Seek=null;v.Cued=false;v.EmergencyPaused=false;v.SeekGain=1;
                     Volatile.Write(ref v.Source, c.Source);
                     Volatile.Write(ref v.State, (int)(c.Source == null ? VoiceState.Empty : VoiceState.Ready));
                     break;
@@ -110,7 +134,7 @@ public sealed class Mixer
                     if (v.Source == null) break;
                     if (v.Mode == PlayMode.Protected && (VoiceState)v.State is VoiceState.Playing or VoiceState.Paused or VoiceState.Stopping) break;
                     if (v.Mode == PlayMode.TogglePause && (VoiceState)v.State == VoiceState.Playing) { v.State = (int)VoiceState.Paused; break; }
-                    if (v.Mode != PlayMode.TogglePause || (VoiceState)v.State != VoiceState.Paused) { if(!v.Cued)v.Frame=0; v.Gain=v.Volume;v.Envelope=0;v.SeekGain=1; }
+                    if (v.Mode != PlayMode.TogglePause || (VoiceState)v.State != VoiceState.Paused) StartVoice(v);
                     v.Cued=false;
                     v.EmergencyPaused=false;v.State = (int)VoiceState.Playing; break;
                 case AudioOp.Release:
@@ -124,7 +148,7 @@ public sealed class Mixer
                 case AudioOp.Play:
                     if (v.Source != null)
                     {
-                        if ((VoiceState)v.State != VoiceState.Paused) { if(!v.Cued)v.Frame=0;v.Gain=v.Volume;v.Envelope=0;v.SeekGain=1; }
+                        if ((VoiceState)v.State != VoiceState.Paused) StartVoice(v);
                         v.Cued=false;
                         v.EmergencyPaused=false;v.State = (int)VoiceState.Playing;
                     }
@@ -139,17 +163,27 @@ public sealed class Mixer
                     break;
                 case AudioOp.Seek:
                     if(v.Source==null)break;
-                    v.Frame=Math.Clamp(c.Frame,0,v.Source.Frames);v.Seek=c.Seek;v.Starvations=0;
+                    v.EmitInitial=false;v.Frame=Math.Clamp(c.Frame,0,v.Source.Frames);v.Seek=c.Seek;v.Starvations=0;
                     v.Source.Hint(v.Frame);
                     if((VoiceState)v.State is VoiceState.Playing or VoiceState.Paused)v.SeekGain=0;
                     else if((VoiceState)v.State!=VoiceState.Paused){v.State=(int)VoiceState.Stopped;v.Cued=true;v.Envelope=0;}
                     break;
+                case AudioOp.Markers:v.Markers=c.Markers??[];v.MarkerVersion=c.MarkerVersion;v.SignalEpoch=c.SignalEpoch;break;
+                case AudioOp.Loop: v.Loop=c.Loop;break;
                 case AudioOp.Volume: v.Volume = Math.Clamp(c.Value, 0, 1); break;
             }
             // After this acknowledgement, the callback no longer references the old source.
             if (c.Ticket > 0) Volatile.Write(ref appliedTicket, c.Ticket);
         }
         ApplyPanic();
+    }
+    private static void StartVoice(Voice v)
+    {
+        v.EmitInitial=!v.Cued;
+        if(!v.Cued){v.Frame=v.Loop?.Start??0;v.Seek=null;}
+        else if(v.Loop is {} loop && (v.Frame<loop.Start || v.Frame>=loop.End))
+        {v.Frame=loop.Start;v.Seek=null;v.EmitInitial=true;}
+        v.Gain=v.Volume;v.Envelope=0;v.SeekGain=1;
     }
     private void ApplyPanic()
     {
@@ -183,34 +217,64 @@ public sealed class Mixer
                 int samples = Math.Min(scratch.Length, output.Length - offset) & ~1;
                 if (samples == 0) break;
                 var target = output.Slice(offset, samples);
-                foreach (var v in voices)
+                for(int voiceIndex=0;voiceIndex<voices.Length;voiceIndex++)
                 {
+                    var v=voices[voiceIndex];
                     if ((VoiceState)v.State is not (VoiceState.Playing or VoiceState.Stopping) || v.Source == null) continue;
                     try
                     {
-                        v.Source.Hint(v.Frame);
-                        int frames=v.Seek?.ReadAt(v.Frame,scratch.AsSpan(0,samples))??0;
-                        if(frames<samples/2 && v.Frame+frames<v.Source.Frames)
-                            frames+=v.Source.ReadAt(v.Frame+frames,scratch.AsSpan(frames*2,samples-frames*2));
-                        // A silent/starved source must not prevent the operator stopping it.
-                        if (frames == 0 && (VoiceState)v.State == VoiceState.Stopping)
-                        { v.Frame = 0; v.Envelope = 0; v.Gain = 0; v.State = (int)VoiceState.Stopped; continue; }
-                        if (frames < samples / 2 && v.Frame + frames < v.Source.Frames) v.Starvations++;
-                        for (int i = 0; i < frames; i++)
+                        int done=0;
+                        while(done<samples/2)
                         {
-                            // 5 ms attack and gain smoothing. No dynamic allocation or locks.
-                            bool stopping = (VoiceState)v.State == VoiceState.Stopping;
-                            v.Envelope = stopping ? Math.Max(0, v.Envelope - v.ReleaseStep) : Math.Min(1, v.Envelope + 1f / v.FadeIn);
-                            v.Gain += Math.Clamp(v.Volume - v.Gain, -1f / 240, 1f / 240);
-                            int j = i * 2;
-                            v.SeekGain=Math.Min(1,v.SeekGain+1f/240);
-                            float amplitude = v.Gain * v.Envelope * v.SeekGain;
-                            target[j] += scratch[j] * amplitude; target[j + 1] += scratch[j + 1] * amplitude;
+                            var loop=v.Loop;
+                            if(loop!=null && v.Frame>=loop.End){v.Frame=loop.Start;v.Seek=null;v.LoopPass++;}
+                            int wanted=samples/2-done;
+                            if(loop!=null)wanted=(int)Math.Min(wanted,loop.End-v.Frame);
+                            bool resident=loop!=null && v.Frame>=loop.Start;
+                            if(loop!=null && !resident)wanted=(int)Math.Min(wanted,loop.Start-v.Frame);
+                            int frames;
+                            if(resident)frames=loop!.Buffer.ReadAt(v.Frame,scratch.AsSpan(0,wanted*2));
+                            else
+                            {
+                                v.Source.Hint(v.Frame);
+                                frames=v.Seek?.ReadAt(v.Frame,scratch.AsSpan(0,wanted*2))??0;
+                                if(frames<wanted && v.Frame+frames<v.Source.Frames)
+                                    frames+=v.Source.ReadAt(v.Frame+frames,scratch.AsSpan(frames*2,(wanted-frames)*2));
+                            }
+                            // Never wait for a source. Stop remains effective during starvation.
+                            if(frames==0 && (VoiceState)v.State==VoiceState.Stopping)
+                            {v.Frame=0;v.Envelope=0;v.Gain=0;v.State=(int)VoiceState.Stopped;break;}
+                            if(frames<wanted && v.Frame+frames<v.Source.Frames)v.Starvations++;
+                            if(frames>0)
+                            {
+                                if(v.EmitInitial){Markers(v,voiceIndex,v.Frame,v.Frame,true);v.EmitInitial=false;}
+                                Markers(v,voiceIndex,v.Frame,v.Frame+frames);
+                            }
+                            for(int i=0;i<frames;i++)
+                            {
+                                bool stopping=(VoiceState)v.State==VoiceState.Stopping;
+                                v.Envelope=stopping?Math.Max(0,v.Envelope-v.ReleaseStep):Math.Min(1,v.Envelope+1f/v.FadeIn);
+                                v.Gain+=Math.Clamp(v.Volume-v.Gain,-1f/240,1f/240);
+                                v.SeekGain=Math.Min(1,v.SeekGain+1f/240);
+                                float edge=1;
+                                if(loop!=null)
+                                {
+                                    long frame=v.Frame+i;
+                                    // Bounded 5 ms edge ramps reduce clicks without allocating or blocking.
+                                    if(frame>=loop.Start)edge=Math.Min(edge,(frame-loop.Start+1)/240f);
+                                    edge=Math.Min(edge,(loop.End-frame)/240f);
+                                }
+                                float amplitude=v.Gain*v.Envelope*v.SeekGain*edge;
+                                int j=i*2,k=(done+i)*2;
+                                target[k]+=scratch[j]*amplitude;target[k+1]+=scratch[j+1]*amplitude;
+                            }
+                            if((VoiceState)v.State==VoiceState.Stopping && v.Envelope<=.000001f)
+                            {v.Frame=0;v.State=(int)VoiceState.Stopped;break;}
+                            v.Frame+=frames;done+=frames;
+                            if(loop!=null && v.Frame>=loop.End){v.Frame=loop.Start;v.Seek=null;v.LoopPass++;Markers(v,voiceIndex,v.Frame,v.Frame,true);}
+                            if(v.Frame>=v.Source.Frames){v.State=(int)VoiceState.Ended;break;}
+                            if(frames<wanted)break;
                         }
-                        if ((VoiceState)v.State == VoiceState.Stopping && v.Envelope <= 0.000001f)
-                        { v.Frame = 0; v.State = (int)VoiceState.Stopped; continue; }
-                        v.Frame += frames;
-                        if (v.Frame >= v.Source.Frames) v.State = (int)VoiceState.Ended;
                         if (v.Source.Error != null) v.State = (int)VoiceState.Error;
                     }
                     catch { v.State = (int)VoiceState.Error; Interlocked.Increment(ref callbackFaults); }

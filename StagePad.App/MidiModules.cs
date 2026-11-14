@@ -192,7 +192,7 @@ internal sealed class MidiOutputModule(string audioPipe) : MidiModule(audioPipe)
             while (Interlocked.CompareExchange(ref panicEpoch, r.Epoch, current) != current);
             return new(true);
         }
-        if (r.Op is "send" or "release" or "cancel-slot")
+        if (r.Op is "send" or "release" or "cancel-slot" or "cancel-markers")
         {
             if (r.Settings == null && r.Op == "send") return new(false, "Parametri MIDI mancanti.");
             if (r.Settings != null){var list=SlotActions.MidiList(r.Settings);if(list.Length>16)return new(false,"Massimo 16 comandi MIDI e 16 OSC per slot.");foreach(var m in list)Projects.ValidateMidi(m);}
@@ -239,6 +239,13 @@ internal sealed class MidiOutputModule(string audioPipe) : MidiModule(audioPipe)
             if (r.Op == "send" && r.Timestamp > 0 && Environment.TickCount64 - r.Timestamp > 500) { error = "Comando scaduto, non ripetuto.";if(r.Flag)TestResult(r.Origin,error); continue; }
             if(r.Epoch>epoch)
             {scheduled.Clear();foreach(var id in tests.Keys)if(id!=r.Origin)TestResult(id,"Sequenza annullata.");gates.Clear();pulses.Clear();foreach(int key in outstanding.ToArray())if(output!=null)Off(key);epoch=r.Epoch;}
+            if(r.Op=="cancel-markers")
+            {
+                int first=MarkerTriggers.Scope(r.Slot,0);
+                scheduled.RemoveAll(p=>p.Slot>=first && p.Slot<first+AudioMarkers.Maximum);
+                foreach(int slot in gates.Keys.Select(k=>k.Slot).Where(s=>s>=first && s<first+AudioMarkers.Maximum).Distinct().ToArray())Release(slot);
+                continue;
+            }
             if(r.Op is "release" or "cancel-slot")
             {
                 scheduled.RemoveAll(p=>p.Slot==r.Slot && (r.Op=="cancel-slot" || p.Settings.Kind==MidiKind.Note && p.Settings.Behavior==NoteBehavior.Gate));

@@ -77,7 +77,9 @@ namespace StagePad.App
             if (File.ReadAllText(original) == "CORRUPT") throw new InvalidDataException("Corrupt simulated audio");
             var samples = new float[48000 * 2 * 40];
             if (!budget.Reserve(samples.LongLength * 4)) throw new InvalidOperationException("Budget exhausted");
-            return new OwnedSource(new MemorySource(samples), Path.Combine(cache, Guid.NewGuid() + ".unused"), budget, [0,.5f,1,.5f,0]);
+            Directory.CreateDirectory(cache);string pcm=Path.Combine(cache,Guid.NewGuid()+".pcm");
+            using(var stream=File.Create(pcm))stream.Write(System.Runtime.InteropServices.MemoryMarshal.AsBytes(samples.AsSpan()));
+            return new OwnedSource(new MemorySource(samples),pcm,budget,[0,.5f,1,.5f,0]);
         }
     }
 }

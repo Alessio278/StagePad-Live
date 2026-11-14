@@ -1,15 +1,11 @@
-# Actualizar StagePad sin reinstalar
+# StagePad Live - actualizaciones portátiles
 
-1. Cierra la versión anterior y espera unos segundos.
-2. Extrae el nuevo paquete Windows y sustituye el antiguo `StagePad.exe` en tu carpeta de la aplicación.
-3. Inicia el nuevo `StagePad.exe`.
+Cierra la app y sustituye `StagePad.exe` por el de una release estable más reciente. Ajustes, shows, recuperación y referencias de audio permanecen en `%LOCALAPPDATA%\StagePad` o el directorio elegido. Runtime incluido.
 
-El EXE incluye su runtime: no hacen falta instalador ni reinstalación de dependencias.
+Ajustes > Actualizaciones consulta `Alessio278/StagePad-Live`. Requiere el asset `StagePad.exe` y SHA-256 o `SHA256.txt`. Instalación con audio/secuencias detenidos, comprobación de producto/versión, copia anterior y restauración si falla el arranque.
 
-Proyectos, ajustes, asignaciones y último show permanecen en `%LOCALAPPDATA%\StagePad` y en la carpeta de proyectos configurada. Conserva estas carpetas. Los audios originales mantienen sus rutas.
+Conserva shows y audio antes de una versión principal. Exportar show incluye medios; copiar solo JSON no. Migración sin sobrescribir shows; conserva `backups\legacy-data` si contiene audio referenciado.
 
-Si una instancia anterior invisible impide sustituir el archivo, abre el nuevo EXE desde otra carpeta. La versión 0.12.0 intenta recuperar instancias bloqueadas del mismo usuario/sesión. Si hay una ventana visible se activa: ciérrala antes de actualizar.
+Build sin firma. SmartScreen es independiente de la integridad de la descarga. La red se necesita para buscar actualizaciones, no para reproducir.
 
-El paquete GitHub contiene los fuentes; para usar o actualizar basta el paquete Windows.
-
-**Exportar show con audio** crea `.stagepad.zip` con audio original; **Importar show** acepta una ruta completa o un paquete en la carpeta de proyectos. Importa con otro nombre sin sobrescribir. Detén audio/secuencias antes. Límite: 8 GiB de medios.
+[Guía](README.es.md)

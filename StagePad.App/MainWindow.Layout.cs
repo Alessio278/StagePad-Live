@@ -46,8 +46,8 @@ internal sealed partial class MainWindow
         var body=new StackPanel { Margin=new Thickness(14,12,14,14) };
         var headline=Text("Il tuo show",19);headline.FontWeight=FontWeights.SemiBold;body.Children.Add(headline);body.Children.Add(setupHint);
         var settings=new StackPanel();sidebarSettings=settings;body.Children.Add(settings);
-        Section(settings,"PROGETTO");settings.Children.Add(ButtonRow(Button("Apri…",OpenProject),Button("Salva…",SaveProject)));
-        Section(settings,"SLOT");settings.Children.Add(Field("Numero di slot · 1–100",slotCount));
+        Section(settings,"PROGETTO");settings.Children.Add(ButtonRow(Button("Nuovo show",NewShow),Button("Apri",OpenProject)));settings.Children.Add(ButtonRow(Button("Salva",SaveProject),Button("Salva con nome",SaveProjectAs)));
+        Section(settings,"SLOT");settings.Children.Add(Field("Numero di slot · 1-100",slotCount));
         settings.Children.Add(Button("Applica numero slot",async()=>await Send(new("slot-count",Value:(int)(slotCount.SelectedItem??16)))));
         Section(settings,"USCITA AUDIO");settings.Children.Add(Field("Dispositivo",outputs));
         var bufferRow=new Grid();bufferRow.ColumnDefinitions.Add(new(){Width=new GridLength(86)});bufferRow.ColumnDefinitions.Add(new());
@@ -78,23 +78,32 @@ internal sealed partial class MainWindow
         waveform.SeekRequested+=async fraction=>
         {
             if(last==null)return;int slot=current;
-            await Send(new("seek",slot,Value:(float)fraction,Origin:"mouse"));
+            markerFeedback.Reset();await Send(new("seek",slot,Value:(float)fraction,Origin:"mouse"));
         };
         selected.TextTrimming=TextTrimming.CharacterEllipsis;selected.FontSize=17;selected.FontWeight=FontWeights.SemiBold;
-        waveform.Height=44;waveform.Margin=new Thickness(0,6,0,0);position.Height=3;position.Margin=new Thickness(0);
-        var layout=new Grid();layout.ColumnDefinitions.Add(new(){Width=new GridLength(2,GridUnitType.Star)});layout.ColumnDefinitions.Add(new(){Width=new GridLength(3,GridUnitType.Star)});
-        var left=new StackPanel { Margin=new Thickness(0,0,18,0) };
+        waveform.AddMarkerRequested+=fraction=>OpenMarkers(fraction*(last?.Slots[current].Duration??0));
+        waveform.EditMarkerRequested+=id=>OpenMarkers(SelectedPlayerPosition(),id);
+        waveform.Height=82;waveform.Margin=new Thickness(0,6,0,0);position.Height=3;position.Margin=new Thickness(0);
+        var layout=new Grid();layout.ColumnDefinitions.Add(new());layout.ColumnDefinitions.Add(new(){Width=new GridLength(185)});
+        var audioArea=new Grid{Margin=new Thickness(0,0,16,0)};audioArea.RowDefinitions.Add(new(){Height=GridLength.Auto});audioArea.RowDefinitions.Add(new(){Height=GridLength.Auto});audioArea.RowDefinitions.Add(new(){Height=GridLength.Auto});layout.Children.Add(audioArea);
+        var heading=new Grid();heading.ColumnDefinitions.Add(new(){Width=new GridLength(2,GridUnitType.Star)});heading.ColumnDefinitions.Add(new(){Width=new GridLength(3,GridUnitType.Star)});audioArea.Children.Add(heading);
+        var title=new StackPanel{VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)};
         var label=Text("TRACCIA SELEZIONATA",10);label.Foreground=Brush("#91A6BD");label.FontWeight=FontWeights.SemiBold;
-        left.Children.Add(label);left.Children.Add(selected);left.Children.Add(waveform);left.Children.Add(position);
-        var masterRow=new StackPanel { Orientation=Orientation.Horizontal,Margin=new Thickness(0,5,0,0) };
-        var masterLabel=Text("MASTER",10);masterLabel.Foreground=Brush("#91A6BD");masterLabel.VerticalAlignment=VerticalAlignment.Center;masterLabel.Margin=new Thickness(0,0,10,0);
-        master.Width=118;masterPercent.FontSize=12;masterPercent.Margin=new Thickness(10,0,0,0);masterPercent.VerticalAlignment=VerticalAlignment.Center;
-        masterRow.Children.Add(masterLabel);masterRow.Children.Add(master);masterRow.Children.Add(masterPercent);left.Children.Add(masterRow);layout.Children.Add(left);
+        title.Children.Add(label);title.Children.Add(selected);heading.Children.Add(title);
         var readouts=new Grid();for(int i=0;i<3;i++)readouts.ColumnDefinitions.Add(new());
         var elapsed=Readout("TRASCORSO",selectedTime);var duration=Readout("DURATA TOTALE",durationTime);var remaining=Readout("RIMANENTE",remainingTime);
         durationTime.Foreground=Brush("#9BAFC5");remainingTime.Foreground=Brush("#FFCC80");
-        readouts.Children.Add(elapsed);Grid.SetColumn(duration,1);Grid.SetColumn(remaining,2);readouts.Children.Add(duration);readouts.Children.Add(remaining);Grid.SetColumn(readouts,1);layout.Children.Add(readouts);
-        return new Border { Margin=new Thickness(0,12,0,0),Padding=new Thickness(16,12,16,12),Background=Brush("#121D2B"),BorderBrush=Brush("#293C51"),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(14),Child=layout };
+        readouts.Children.Add(elapsed);Grid.SetColumn(duration,1);Grid.SetColumn(remaining,2);readouts.Children.Add(duration);readouts.Children.Add(remaining);Grid.SetColumn(readouts,1);heading.Children.Add(readouts);
+        waveform.Height=72;waveform.HorizontalAlignment=HorizontalAlignment.Stretch;Grid.SetRow(waveform,1);audioArea.Children.Add(waveform);Grid.SetRow(position,2);audioArea.Children.Add(position);
+        var tools=new StackPanel{VerticalAlignment=VerticalAlignment.Center};Grid.SetColumn(tools,1);layout.Children.Add(tools);
+        var masterHeading=new DockPanel();var masterLabel=Text("MASTER",10);masterLabel.Foreground=Brush("#91A6BD");masterHeading.Children.Add(masterLabel);
+        masterPercent.FontSize=12;masterPercent.HorizontalAlignment=HorizontalAlignment.Right;masterHeading.Children.Add(masterPercent);tools.Children.Add(masterHeading);
+        master.Width=double.NaN;master.HorizontalAlignment=HorizontalAlignment.Stretch;master.Margin=new Thickness(0,2,0,0);tools.Children.Add(master);tools.Children.Add(MarkerControls());
+        var chrome=new Grid{Margin=new Thickness(0,12,0,0)};
+        playerHaloWide=new Border{BorderBrush=playerRed,BorderThickness=new Thickness(10),CornerRadius=new CornerRadius(21),Margin=new Thickness(-7),Opacity=0,IsHitTestVisible=false};
+        playerHaloInner=new Border{BorderBrush=playerRed,BorderThickness=new Thickness(6),CornerRadius=new CornerRadius(17),Margin=new Thickness(-3),Opacity=0,IsHitTestVisible=false};
+        playerChrome=new Border{Padding=new Thickness(16,12,16,12),Background=Brush("#121D2B"),BorderBrush=playerNeutral,BorderThickness=new Thickness(5),CornerRadius=new CornerRadius(14),Child=layout};
+        chrome.Children.Add(playerHaloWide);chrome.Children.Add(playerHaloInner);chrome.Children.Add(playerChrome);return chrome;
     }
     private FrameworkElement BuildGridToolbar()
     {
@@ -187,7 +196,8 @@ internal sealed partial class MainWindow
         foreach(var slot in last.Slots)
         {
             bool playing=slot.State=="Playing" && last.AudioError==null && slot.Underruns==0;
-            var reading=UiPlaybackClock.Read(slot.Position,slot.Duration,playing,slot.State=="Ended",anchor,now);
+            var loop=LoopBounds(last.Project?.Slots[slot.Index]);
+            var reading=UiPlaybackClock.Read(slot.Position,slot.Duration,playing,slot.State=="Ended",anchor,now,loop.Start,loop.End);
             int index=slot.Index;
             if(displayedPadElapsed[index]!=reading.Elapsed || displayedPadDuration[index]!=reading.Duration)
             {
@@ -203,6 +213,7 @@ internal sealed partial class MainWindow
         AssignText(selectedTime,UiPlaybackClock.Format(selectedReading.Elapsed));
         AssignText(durationTime,UiPlaybackClock.Format(selectedReading.Duration));
         AssignText(remainingTime,UiPlaybackClock.Format(selectedReading.Remaining));
+        RenderMarkerFeedback(now,anchor);
     }
     private static void AssignText(TextBlock target,string text){if(target.Text!=text)target.Text=text;}
 }

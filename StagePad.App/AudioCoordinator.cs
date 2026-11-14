@@ -16,10 +16,14 @@ internal sealed class AudioCoordinator : IDisposable
     private readonly string?[] errors = new string?[Projects.MaxSlots];
     private readonly bool[] loading = new bool[Projects.MaxSlots], seeking=new bool[Projects.MaxSlots];
     private readonly int[] seekSerial=new int[Projects.MaxSlots];
+    private readonly LoopRegion?[] loopBuffers=new LoopRegion?[Projects.MaxSlots];
+    private readonly bool[] loopPreparing=new bool[Projects.MaxSlots];
     private readonly SeekBuffer?[] seekBuffers=new SeekBuffer?[Projects.MaxSlots];
     private readonly List<(long Ticket,SeekBuffer Buffer)> retiredBuffers=[];
     private readonly ConcurrentQueue<int> failedSeeks=new();
     private long seekEpoch;
+    private readonly int[] markerVersions=new int[Projects.MaxSlots],signalEpochs=new int[Projects.MaxSlots];
+    private long markerDrops;
     private readonly int[] generation = new int[Projects.MaxSlots];
     private readonly List<(long Ticket, IAudioSource Source)> retired = [];
     private readonly ConcurrentQueue<(int Index, int Stamp)> failedCompletions = new();
@@ -39,25 +43,81 @@ internal sealed class AudioCoordinator : IDisposable
     private MidiCcBinding? learnTemplate;
     private readonly VolumeControl masterPickup=new(),trackPickup=new();
     private bool maintenance;
+    private bool markerLearn,markerSetup;
+    private string? markerUi;
+    private long markerUiSequence,markerUiTick;
+    private int markerSlot,markerSourceRevision;
+    private bool MarkerSetupActive=>markerSetup && Environment.TickCount64-markerUiTick<=1500;
+    private Reply MarkerContext(Request request)
+    {
+        if(markerLearn && !MarkerSetupActive)markerLearn=false;
+        if(!Guid.TryParseExact(request.Origin,"N",out _) || request.DeviceId!=instance)return new(false,"Contesto marker non aggiornato.");
+        if(markerUi!=request.Origin)
+        {
+            if(MarkerSetupActive)return new(false,"Contesto marker non aggiornato.");
+            markerUi=request.Origin;markerUiSequence=-1;
+        }
+        if(request.Epoch<=markerUiSequence)return new(true);
+        markerUiSequence=request.Epoch;markerUiTick=Environment.TickCount64;
+        markerSetup=request.Flag;markerSlot=request.Slot;markerSourceRevision=request.SourceRevision??-1;
+        if(!markerSetup)markerLearn=false;
+        return new(true);
+    }
+    private Reply CaptureMarker(Request request)
+    {
+        int i=markerSlot;
+        if(!MarkerSetupActive || locked || maintenance || readingProject || (uint)i>=project.SlotCount || markerSourceRevision!=generation[i] || loading[i] || seeking[i] || errors[i]!=null || device.Error!=null)return new(true);
+        long now=Environment.TickCount64;
+        if(request.Timestamp<=0 || request.Timestamp>now || now-request.Timestamp>250 || now-mixer.RenderHeartbeat>250)return new(true);
+        var view=mixer.View(i);if(view.State!=VoiceState.Playing || sources[i]?.Error!=null)return new(true);
+        var settings=project.Slots[i];
+        var marker=new AudioMarker{Seconds=view.Frame/(double)Mixer.Rate,Label="Marker "+(settings.Markers.Length+1)};
+        var markers=AudioMarkers.Change(settings.Markers,"marker-add",marker,null,view.Frames/(double)Mixer.Rate);
+        var reply=UpdateMarkerPlan(i,markers);if(!reply.Ok)return reply;
+        SetSlot(i,settings with{Markers=markers});return new(true);
+    }
     private readonly long[] audioOrder=new long[Projects.MaxSlots];
     private long audioSequence,lastTriggerTick;
     private long ticket, triggerSerial, projectRevision, lastPanicTick;
-    private int controlEpoch;
+    private long savedProjectRevision,autoSaveDue,lastSavedAt;
+    private bool autoSaveEnabled=true;
+    private string autoSaveDirectory=ProjectFiles.DefaultDirectory;
+    private Task? saveWorker;
+    private string? pendingSavePath;
+    private static string UntitledPath(string directory)=>System.IO.Path.Combine(directory,"Show "+DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")+"-"+Guid.NewGuid().ToString("N")[..6]+".json");
+    private bool ProjectDirty=>projectRevision!=savedProjectRevision;
+    private int controlEpoch,disposed;
     public CancellationToken Shutdown => stop.Token;
     public AudioCoordinator(string pipe)
     {
         this.pipe = pipe;
+        try
+        {
+            string preferences=System.IO.Path.Combine(Log.Root,"settings.json");
+            if(File.Exists(preferences))using(var settings=System.Text.Json.JsonDocument.Parse(File.ReadAllText(preferences)))
+            {
+                var values=settings.RootElement;autoSaveEnabled=!values.TryGetProperty("autoSaveProjects",out var enabled) || enabled.ValueKind!=System.Text.Json.JsonValueKind.False;
+                if(values.TryGetProperty("projectDirectory",out var folder) && folder.ValueKind==System.Text.Json.JsonValueKind.String && folder.GetString() is {} directory)autoSaveDirectory=ProjectDirectoryPolicy.DirectoryPath(directory);
+            }
+        }
+        catch(Exception ex){Log.Warn("autosave-settings",ex.Message);}
         project=ProjectFiles.ReadStartup(out projectPath,out projectError);
         budget = new(project.MemoryMiB * 1048576L);
         cache = System.IO.Path.Combine(Log.Root, "cache", instance);
         device = new(mixer); inputLink = new(pipe + ".in"); outputLink = new(pipe + ".out");
         control = new Thread(Run) { IsBackground = true, Name = "StagePad audio control" };
-        jobs.Add(() => ApplyProject(project)); control.Start();
+        jobs.Add(()=>
+        {
+            ApplyProject(project);
+            bool clean=project.Slots.All(s=>s.File==null && s.Markers.Length==0 && s.PadNote<0);
+            if(projectPath!=null)try{clean=System.Text.Json.JsonSerializer.Serialize(project,Projects.Json)==System.Text.Json.JsonSerializer.Serialize(ProjectFiles.Read(projectPath),Projects.Json);}catch{clean=false;}
+            savedProjectRevision=clean?projectRevision:-1;
+        });control.Start();
         _ = Task.Run(MonitorMidi);
     }
     public Task<Reply> Handle(Request r)
     {
-        if (r.Op == "state") return Task.FromResult(new Reply(true, State: Volatile.Read(ref snapshot)));
+        if (r.Op == "state" && r.Origin==null) return Task.FromResult(new Reply(true, State: Volatile.Read(ref snapshot)));
         if (r.Op == "panic") { Interlocked.Increment(ref controlEpoch);Interlocked.Increment(ref seekEpoch); Volatile.Write(ref lastPanicTick, Environment.TickCount64); mixer.Panic(); outputLink.Panic();oscOutput.Panic(); return Task.FromResult(new Reply(true)); }
         if (r.Op == "shutdown") { Interlocked.Increment(ref seekEpoch); mixer.Panic(); outputLink.Panic();oscOutput.Panic(); stop.Cancel(); return Task.FromResult(new Reply(true)); }
         int acceptedEpoch=Volatile.Read(ref controlEpoch);
@@ -67,7 +127,8 @@ internal sealed class AudioCoordinator : IDisposable
             try
             {
                 if(r.Op is "play" or "pad-down" or "midi-down" or "seek" && acceptedEpoch!=Volatile.Read(ref controlEpoch)){tcs.TrySetResult(new(false,"Sequenza annullata."));return;}
-                if(r.Op=="save-project")StartSave(r,tcs);
+                if(r.Op=="marker-loop")StartLoop(r,tcs);
+                else if(r.Op=="save-project")StartSave(r,tcs);
                 else if(r.Op=="load-project")StartOpen(r,tcs);
                 else if(r.Op is "export-show" or "import-show")StartBundle(r,tcs);
                 else if(r.Op=="test-command")StartCommandTest(r,tcs);
@@ -112,18 +173,20 @@ internal sealed class AudioCoordinator : IDisposable
     private void StartSave(Request request,TaskCompletionSource<Reply> completion)
     {
         if(maintenance){completion.TrySetResult(new(false,"Manutenzione in corso: attendi il completamento."));return;}
-        if(string.IsNullOrWhiteSpace(request.Path)){completion.TrySetResult(new(false,"Percorso progetto mancante."));return;}
+        if(string.IsNullOrWhiteSpace(request.Path) && request.Origin!="auto-save"){completion.TrySetResult(new(false,"Percorso progetto mancante."));return;}
         if(readingProject){completion.TrySetResult(new(false,"Lettura progetto in corso."));return;}
         if(savingProject){completion.TrySetResult(new(false,"Salvataggio già in corso."));return;}
-        string path=System.IO.Path.GetFullPath(request.Path);var value=project with {Name=System.IO.Path.GetFileNameWithoutExtension(path)[..Math.Min(100,System.IO.Path.GetFileNameWithoutExtension(path).Length)]};savingProject=true;
-        _=Task.Run(()=>
+        bool automatic=request.Origin=="auto-save",newAutomatic=automatic && projectPath==null;
+        long savingRevision=projectRevision;string path=System.IO.Path.GetFullPath(request.Path??projectPath??UntitledPath(autoSaveDirectory));pendingSavePath=path;var value=project with {Name=System.IO.Path.GetFileNameWithoutExtension(path)[..Math.Min(100,System.IO.Path.GetFileNameWithoutExtension(path).Length)]};savingProject=true;
+        saveWorker=Task.Run(()=>
         {
             string? error=null;
-            try{ProjectFiles.Write(path,value,true);}catch(Exception ex){error="Salvataggio non riuscito: "+ex.Message;Log.Error("project-save",ex);}
+            try{if(newAutomatic && File.Exists(path))throw new IOException("Nome show già presente: salvataggio rinviato.");ProjectFiles.Write(path,value,true);}catch(Exception ex){error="Salvataggio non riuscito: "+ex.Message;Log.Error("project-save",ex);}
             if(!jobs.TryAdd(()=>
             {
-                savingProject=false;projectError=error;
-                if(error==null){projectPath=path;project=project with {Name=value.Name};Changed();}
+                savingProject=false;pendingSavePath=null;projectError=error;
+                if(error==null){lastSavedAt=DateTimeOffset.UtcNow.ToUnixTimeSeconds();bool unchanged=projectRevision==savingRevision;projectPath=path;project=project with {Name=value.Name};Changed();if(unchanged)savedProjectRevision=projectRevision;}
+                if(error!=null && automatic)autoSaveDue=Environment.TickCount64+5000;
                 completion.TrySetResult(new(error==null,error));
             },100))
             {
@@ -140,6 +203,8 @@ internal sealed class AudioCoordinator : IDisposable
         if(readingProject){Fail("Lettura progetto in corso.");return;}
         if(savingProject){Fail("Salvataggio già in corso.");return;}
         if(Busy() || loading.Any(x=>x) || seeking.Any(x=>x)){Fail("Ferma le tracce e attendi i caricamenti prima di aprire un progetto.");return;}
+        if(ProjectDirty && !request.Flag){Fail("Salva le modifiche prima di continuare, oppure scegli di scartarle.");return;}
+        if(request.Epoch>0 && request.Epoch!=projectRevision){Fail("Il progetto è cambiato: riprova l’operazione.");return;}
         if(string.IsNullOrWhiteSpace(request.Path)){Fail("Percorso mancante.");return;}
         string path=System.IO.Path.GetFullPath(request.Path);long revision=projectRevision;readingProject=true;
         _=Task.Run(()=>
@@ -154,7 +219,7 @@ internal sealed class AudioCoordinator : IDisposable
                 {projectError="Apertura annullata: stato del progetto cambiato durante la lettura.";Fail(projectError);return;}
                 if(mixer.CommandCapacityRemaining<Projects.MaxSlots*3+1)
                 {projectError="Motore occupato: riprova ad aprire il progetto.";Fail(projectError);return;}
-                projectPath=path;projectError=null;ApplyProject(next! with {Name=System.IO.Path.GetFileNameWithoutExtension(path)[..Math.Min(100,System.IO.Path.GetFileNameWithoutExtension(path).Length)]});completion.TrySetResult(new(true));
+                projectPath=path;projectError=null;ApplyProject(next! with {Name=System.IO.Path.GetFileNameWithoutExtension(path)[..Math.Min(100,System.IO.Path.GetFileNameWithoutExtension(path).Length)]});savedProjectRevision=projectRevision;completion.TrySetResult(new(true));
             },100))
             {readingProject=false;Fail("Coda piena, apertura annullata.");}
         });
@@ -186,13 +251,46 @@ internal sealed class AudioCoordinator : IDisposable
     }
     private bool Busy(int? slot = null) => slot is int i ? mixer.View(i).State is VoiceState.Playing or VoiceState.Paused or VoiceState.Stopping : Enumerable.Range(0, project.SlotCount).Any(i => Busy(i));
     private void Changed()
-    { projectRevision++; recovery.Schedule(project,projectPath); }
+    { projectRevision++;autoSaveDue=Environment.TickCount64+1500; recovery.Schedule(project,projectPath); }
     private void SetSlot(int i, SlotSettings settings)
     { var slots = (SlotSettings[])project.Slots.Clone(); slots[i] = settings; var next = project with { Slots = slots }; Projects.Validate(next); project = next; Changed(); }
     private Reply Execute(Request r)
     {
-        if (r.Op == "lock") { locked = r.Flag; if (locked){ learn = -1;volumeLearn=null;} return new(true); }
-        if (r.Op == "wave") return new(true, Peaks: sources[(uint)r.Slot < project.SlotCount ? r.Slot : 0] is OwnedSource owned ? owned.Peaks : []);
+        if(r.Op=="autosave-settings")
+        {
+            if(locked)return new(false,"SHOW LOCK attivo: modifiche bloccate.");
+            if(r.Path!=null)autoSaveDirectory=ProjectDirectoryPolicy.DirectoryPath(r.Path);
+            autoSaveEnabled=r.Flag;autoSaveDue=Environment.TickCount64+1500;return new(true);
+        }
+        if(r.Op=="new-project")
+        {
+            if(locked || maintenance || readingProject || savingProject)return new(false,"SHOW LOCK o operazione sui progetti in corso.");
+            if(Busy() || loading.Any(v=>v) || seeking.Any(v=>v) || heldNotes.Count>0 || oscOutput.Pending>0 || (midiOut?.ActiveNotes??0)>0 || (midiOut?.PendingCommands??0)>0)return new(false,"Ferma le tracce e attendi le sequenze prima di creare un nuovo show.");
+            if(ProjectDirty && !r.Flag)return new(false,"Salva le modifiche prima di continuare, oppure scegli di scartarle.");
+            if(r.Epoch>0 && r.Epoch!=projectRevision)return new(false,"Il progetto è cambiato: riprova l’operazione.");
+            if(mixer.CommandCapacityRemaining<Projects.MaxSlots*3+1)return new(false,"Motore occupato: riprova tra un istante.");
+            var empty=new ProjectDocument{Name="Nuovo show",Routing=project.Routing,MemoryMiB=project.MemoryMiB,MasterControl=project.MasterControl,CurrentTrackControl=project.CurrentTrackControl,MarkerCapture=project.MarkerCapture};
+            projectPath=null;projectError=null;ApplyProject(empty);savedProjectRevision=projectRevision;return new(true);
+        }
+        if(r.Op is "marker-context" or "state")
+        {
+            var reply=MarkerContext(r);return r.Op=="state"?new(true,State:Volatile.Read(ref snapshot)):reply;
+        }
+        if(r.Op is "learn-marker" or "clear-marker-learn")
+        {
+            if(r.Op=="learn-marker" && !r.Flag){markerLearn=false;return new(true);}
+            if(locked || readingProject || maintenance || !MarkerSetupActive)return new(false,"Il tasto marker si configura solo in Setup, con SHOW LOCK disattivato.");
+            if(r.Op=="clear-marker-learn"){markerLearn=false;project=project with{MarkerCapture=null};Changed();return new(true);}
+            markerLearn=r.Flag;if(markerLearn){learn=-1;volumeLearn=null;}return new(true);
+        }
+        if (r.Op == "lock") { locked = r.Flag; if (locked){ learn = -1;volumeLearn=null;markerLearn=false;} return new(true); }
+        if(r.Op=="wave")
+        {
+            int slot=r.Slot;if((uint)slot>=project.SlotCount)return new(false,"Slot non valido.");
+            bool matches=(r.Origin==null || r.Origin==instance) && (!r.SourceRevision.HasValue || r.SourceRevision==generation[slot]);
+            bool ready=matches && !loading[slot] && errors[slot]==null && sources[slot] is OwnedSource;
+            return new(matches,Peaks:ready && sources[slot] is OwnedSource owned?owned.Peaks:[],WaveInstance:instance,WaveSlot:slot,WaveRevision:generation[slot],WaveReady:ready);
+        }
         if (r.Op is "midi-down" or "pad-down" or "play" or "seek" && r.Timestamp > 0 && r.Timestamp < Volatile.Read(ref lastPanicTick)) return new(false, "Comando precedente a PANIC scartato.");
         if(r.Op=="midi-disconnected"){if(r.Origin==inputConnection)ReleaseInput();return new(true);}
         if(maintenance && r.Op!="cancel-update")return new(false,"Manutenzione in corso: attendi il completamento.");
@@ -210,6 +308,7 @@ internal sealed class AudioCoordinator : IDisposable
             {
                 if(r.Origin is not ("master" or "track"))return new(false,"Assegnazione volume MIDI non valida: canale 1-16 e CC da -1 a 127.");
                 volumeLearn=r.Flag?r.Origin:null;
+                if(r.Flag){markerLearn=false;learn=-1;}
                 learnTemplate=r.Origin=="master"?r.MasterControl??project.MasterControl:r.TrackControl??project.CurrentTrackControl;
                 MidiCcBinding.Validate(learnTemplate with{Controller=-1},new());return new(true);
             }
@@ -255,7 +354,7 @@ internal sealed class AudioCoordinator : IDisposable
         if (r.Op == "budget")
         {
             int value = (int)r.Value;
-            if (value is < 128 or > 4096 || !budget.SetLimit(value * 1048576L)) return new(false, "Budget 128–4096 MiB richiesto, non inferiore alla RAM già riservata.");
+            if (value is < 128 or > 4096 || !budget.SetLimit(value * 1048576L)) return new(false, "Budget 128-4096 MiB richiesto, non inferiore alla RAM già riservata.");
             project = project with { MemoryMiB = value }; Changed(); return new(true);
         }
         if (r.Op == "test") return Posted(new(AudioOp.Test));
@@ -274,23 +373,35 @@ internal sealed class AudioCoordinator : IDisposable
         int i = r.Slot; var settings = project.Slots[i];
         switch (r.Op)
         {
+            case "marker-add":case "marker-edit":case "marker-delete":
+                if(locked || readingProject)return new(false,"SHOW LOCK: modifiche ai marker bloccate.");
+                if(r.Origin!=instance || r.SourceRevision!=generation[i])return new(false,"La traccia è cambiata. Riapri la gestione marker.");
+                if(loading[i] || sources[i]==null || errors[i]!=null)return new(false,"Attendi che la traccia sia pronta.");
+                if(settings.MarkerLoop is {Enabled:true} loop && r.Op!="marker-add" && (r.MarkerId==loop.StartId || r.MarkerId==loop.EndId) && (r.Op=="marker-delete" || r.Marker?.Seconds!=settings.Markers.First(m=>m.Id==r.MarkerId).Seconds))return new(false,"Rimuovi il loop prima di spostare o eliminare i marker di inizio/fine.");
+                var updated=AudioMarkers.Change(settings.Markers,r.Op,r.Marker,r.MarkerId,sources[i]!.Frames/(double)Mixer.Rate);
+                var retainedLoop=settings.MarkerLoop;
+                if(retainedLoop!=null && (!updated.Any(m=>m.Id==retainedLoop.StartId) || !updated.Any(m=>m.Id==retainedLoop.EndId)))retainedLoop=null;
+                if(retainedLoop!=null){try{MarkerLoops.Validate(retainedLoop,updated);}catch(InvalidDataException){retainedLoop=null;}}
+                var markerSettings=settings with{Markers=updated,MarkerLoop=retainedLoop};Projects.ValidateSlot(markerSettings);
+                var markerReply=UpdateMarkerPlan(i,updated);if(!markerReply.Ok)return markerReply;
+                SetSlot(i,markerSettings);return new(true);
             case "settings":
                 if (r.Settings == null) return new(false, "Parametri mancanti.");
                 if (Busy(i) || loading[i] || seeking[i]) return new(false, "Ferma lo slot prima di modificarlo.");
-                var proposed=r.Settings with {File=settings.File,Volume=settings.Volume};
+                var proposed=r.Settings with {File=settings.File,Volume=settings.Volume,Markers=settings.Markers,MarkerLoop=settings.MarkerLoop};
                 if(proposed.Name!=settings.Name && !string.IsNullOrWhiteSpace(proposed.Name) && proposed.Name!=$"Slot {i+1}")proposed=proposed with{AutoName=false};
                 proposed=SlotTitles.Normalize(proposed,i);
                 SetSlot(i, proposed); return ConfigureVoice(i);
-            case "learn": learn = r.Flag ? i : -1; return new(true);
+            case "learn": if(r.Flag){markerLearn=false;volumeLearn=null;}learn = r.Flag ? i : -1; return new(true);
             case "load":
                 if (string.IsNullOrWhiteSpace(r.Path)) return new(false, "Seleziona un file.");
                 if (loading[i] || seeking[i] || Busy(i)) return new(false, "Ferma lo slot e attendi il caricamento.");
                 string path = System.IO.Path.GetFullPath(r.Path);
-                SetSlot(i, SlotTitles.Normalize(settings,i) with { File = path });
+                SetSlot(i, SlotTitles.Normalize(settings,i) with { File = path,Markers=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.Markers:[],MarkerLoop=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.MarkerLoop:null });
                 StartImport(i, path); return new(true);
             case "clear":
                 if (loading[i] || seeking[i] || Busy(i)) return new(false, "Ferma lo slot e attendi il caricamento.");
-                generation[i]++; var cleared = Install(i, null); if (cleared.Ok) SetSlot(i, settings with { File = null }); return cleared;
+                generation[i]++; var cleared = Install(i, null); if (cleared.Ok) SetSlot(i, settings with { File = null,Markers=[],MarkerLoop=null }); return cleared;
             case "play": case "pad-down": return Trigger(i);
             case "pad-up":
                 outputLink.Post(new("release", i)); return Posted(new(AudioOp.Release, i));
@@ -316,6 +427,20 @@ internal sealed class AudioCoordinator : IDisposable
             if (!heldNotes.Remove(key, out int slot)) return new(true);
             outputLink.Post(new("release", slot)); return Posted(new(AudioOp.Release, slot));
         }
+        if(learnConsumed.Contains(key))return new(true);
+        if(markerLearn && MarkerSetupActive && !locked)
+        {
+            learnConsumed.Add(key);
+            int conflict=Array.FindIndex(project.Slots,s=>s.PadChannel==r.Channel && s.PadNote==r.Note);
+            if(conflict>=0)
+            {
+                if(conflict<project.SlotCount && project.Slots[conflict].EmergencyPauseAll){learnConsumed.Remove(key);heldNotes[key]=conflict;return Trigger(conflict);}
+                return new(false,"Il tasto marker è già assegnato a uno slot. Scegli un tasto libero.");
+            }
+            project=project with{MarkerCapture=new(r.Channel,r.Note)};markerLearn=false;Changed();return new(true);
+        }
+        if(project.MarkerCapture is {} capture && capture.Channel==r.Channel && capture.Note==r.Note)
+        {learnConsumed.Add(key);return CaptureMarker(r);}
         if (learn >= 0 && !locked)
         {
             int target = learn;
@@ -384,7 +509,48 @@ internal sealed class AudioCoordinator : IDisposable
         if(SlotActions.Midi(s.Action) && !outputLink.Post(new("send",i,Settings:s)))failures.Add(outputLink.Alert??"Comando non riuscito.");
         if(SlotActions.Osc(s.Action) && !oscOutput.Post(s.OscCommands,i))failures.Add(oscOutput.Error??"Comando non riuscito.");
         result=failures.Count==0?new(true):new(false,string.Join(" · ",failures));
+        if(result.Ok && !s.EmergencyPauseAll && SlotActions.Audio(s.Action) && MarkerSetupActive){markerSlot=i;markerSourceRevision=generation[i];}
         lastStarted = i; triggerSerial++; return result;
+    }
+    private void StartLoop(Request r,TaskCompletionSource<Reply> completion)
+    {
+        void Fail(string error)=>completion.TrySetResult(new(false,error));
+        int i=r.Slot;
+        if((uint)i>=project.SlotCount){Fail("Slot non valido.");return;}
+        if(locked || readingProject || maintenance){Fail("SHOW LOCK attivo: modifiche bloccate.");return;}
+        if(r.Origin!=instance || r.SourceRevision!=generation[i]){Fail("La traccia è cambiata. Riapri la gestione marker.");return;}
+        if(Busy(i) || loading[i] || seeking[i]){Fail("Ferma lo slot e attendi il caricamento prima di configurare il loop.");return;}
+        var settings=project.Slots[i];var loop=r.MarkerLoop;
+        MarkerLoops.Validate(loop,settings.Markers);
+        if(loop is not {Enabled:true})
+        {
+            long next=++ticket;
+            if(!mixer.Post(new(AudioOp.Loop,i,Ticket:next))){Fail("Coda audio piena.");return;}
+            if(loopBuffers[i] is {} old)retiredBuffers.Add((next,old.Buffer));loopBuffers[i]=null;
+            SetSlot(i,settings with{MarkerLoop=loop});completion.TrySetResult(new(true));return;
+        }
+        if(sources[i] is not OwnedSource source || errors[i]!=null){Fail("Attendi che la traccia sia pronta.");return;}
+        var range=MarkerLoops.Frames(loop,settings.Markers,source.Frames/(double)Mixer.Rate);
+        loading[i]=loopPreparing[i]=true;int stamp=generation[i],epoch=Volatile.Read(ref controlEpoch);
+        _=Task.Run(async()=>
+        {
+            LoopRegion? buffer=null;string? error=null;bool entered=false;
+            try{await importLimit.WaitAsync(stop.Token);entered=true;buffer=source.PrepareLoop(range.Start,range.End,stop.Token);}
+            catch(Exception ex){error=ex.Message;Log.Error("loop-prepare",ex);}
+            finally{if(entered)importLimit.Release();}
+            if(!jobs.TryAdd(()=>
+            {
+                loading[i]=loopPreparing[i]=false;
+                if(error!=null || stamp!=generation[i] || epoch!=Volatile.Read(ref controlEpoch) || locked || !ReferenceEquals(source,sources[i]))
+                {if(buffer!=null)budget.Release(buffer.Buffer.ResidentBytes);Fail(error??"Preparazione loop annullata.");return;}
+                long next=++ticket;
+                if(!mixer.Post(new(AudioOp.Loop,i,Ticket:next,Loop:buffer)))
+                {if(buffer!=null)budget.Release(buffer.Buffer.ResidentBytes);Fail("Coda audio piena.");return;}
+                if(loopBuffers[i] is {} old)retiredBuffers.Add((next,old.Buffer));loopBuffers[i]=buffer;
+                SetSlot(i,project.Slots[i] with{MarkerLoop=loop});completion.TrySetResult(new(true));
+            },100))
+            {if(buffer!=null)budget.Release(buffer.Buffer.ResidentBytes);failedCompletions.Enqueue((i,stamp));Fail("Coda comandi piena.");}
+        });
     }
     private Reply BeginSeek(int i,float normalized)
     {
@@ -392,6 +558,7 @@ internal sealed class AudioCoordinator : IDisposable
         if(!float.IsFinite(normalized) || normalized is <0 or >1)return new(false,"Posizione non valida.");
         if(loading[i] || sources[i]==null || errors[i]!=null)return new(false,"Audio dello slot non pronto.");
         if(seeking[i])return new(false,"Spostamento già in preparazione.");
+        var markerPlan=UpdateMarkerPlan(i,project.Slots[i].Markers,true);if(!markerPlan.Ok)return markerPlan;CancelMarkerOutputs(i);
         var source=sources[i]!;long frame=(long)Math.Round(normalized*source.Frames);int stamp=++seekSerial[i];long epoch=Volatile.Read(ref seekEpoch);
         seeking[i]=true;
         _=Task.Run(()=>
@@ -406,7 +573,7 @@ internal sealed class AudioCoordinator : IDisposable
                 if(stamp!=seekSerial[i] || epoch!=Volatile.Read(ref seekEpoch) || !ReferenceEquals(source,sources[i])) { if(prepared!=null)budget.Release(prepared.ResidentBytes);return; }
                 if(problem!=null){if(prepared!=null)budget.Release(prepared.ResidentBytes);projectError="Spostamento non riuscito: "+problem;return;}
                 long next=++ticket;
-                if(!mixer.Post(new(AudioOp.Seek,i,Ticket:next,Frame:frame,Seek:prepared)))
+                if(!mixer.Post(new(AudioOp.Seek,i,Ticket:next,Frame:frame,Seek:prepared,SignalEpoch:signalEpochs[i])))
                 { if(prepared!=null)budget.Release(prepared.ResidentBytes);projectError="Coda audio piena: spostamento annullato.";return; }
                 if(seekBuffers[i] is {} old)retiredBuffers.Add((next,old));seekBuffers[i]=prepared;
             };
@@ -417,7 +584,7 @@ internal sealed class AudioCoordinator : IDisposable
     }
     private void ApplyProject(ProjectDocument value)
     {
-        Projects.Validate(value); project = value; learn = -1; heldNotes.Clear(); learnConsumed.Clear();
+        Projects.Validate(value); project = value; learn = -1;markerLearn=false;markerSetup=false; heldNotes.Clear(); learnConsumed.Clear();
         budget.SetLimit(value.MemoryMiB * 1048576L, true); mixer.Panic(); outputLink.Panic();oscOutput.Panic();
         device.Configure(value.Routing.AudioDevice, value.Routing.BufferMs);
         inputLink.Configure(value.Routing.MidiInput); outputLink.Configure(value.Routing.MidiOutput);
@@ -436,34 +603,67 @@ internal sealed class AudioCoordinator : IDisposable
     { var s = project.Slots[i]; return Posted(new(AudioOp.Configure, i, Mode: s.Mode, FadeInMs: s.FadeInMs, FadeOutMs: s.FadeOutMs)); }
     private void StartImport(int i, string path)
     {
-        loading[i] = true; errors[i] = null; int stamp = ++generation[i];
+        loading[i] = true; errors[i] = null; int stamp = ++generation[i];var markerSettings=project.Slots[i];
         _ = Task.Run(async () =>
         {
-            IAudioSource? prepared = null; string? error = null; bool entered = false;
-            try { await importLimit.WaitAsync(stop.Token); entered = true; prepared = Importer.Import(path, cache, budget, stop.Token); }
+            IAudioSource? prepared = null;LoopRegion? preparedLoop=null; string? error = null; bool entered = false;
+            try { await importLimit.WaitAsync(stop.Token); entered = true; prepared = Importer.Import(path, cache, budget, stop.Token);
+                if(markerSettings.MarkerLoop is {Enabled:true} activeLoop && prepared is OwnedSource owned){var range=MarkerLoops.Frames(activeLoop,markerSettings.Markers,owned.Frames/(double)Mixer.Rate);preparedLoop=owned.PrepareLoop(range.Start,range.End,stop.Token);} }
             catch (Exception ex) { error = ex.Message; Log.Error("import", ex); }
             finally { if (entered) importLimit.Release(); }
             var result = prepared; var problem = error;
-            if (!jobs.TryAdd(() => Complete(i, stamp, result, problem)))
-            { result?.Dispose(); failedCompletions.Enqueue((i, stamp)); }
+            if (!jobs.TryAdd(() => Complete(i, stamp, result, problem,preparedLoop)))
+            { if(preparedLoop!=null)budget.Release(preparedLoop.Buffer.ResidentBytes);result?.Dispose(); failedCompletions.Enqueue((i, stamp)); }
         });
     }
-    private Reply Posted(AudioCommand command) => mixer.Post(command) ? new(true) : new(false, "Coda audio piena. PANIC resta disponibile.");
-    private Reply Install(int i, IAudioSource? source)
+    private Reply Posted(AudioCommand command)
+    {
+        bool signal=command.Op is AudioOp.Play or AudioOp.Trigger or AudioOp.Stop or AudioOp.Pause || command.Op==AudioOp.Release && project.Slots[command.Slot].Mode==PlayMode.Hold;
+        int i=command.Slot,next=signal?signalEpochs[i]+1:0;
+        if(!mixer.Post(signal?command with{SignalEpoch=next}:command))return new(false,"Coda audio piena. PANIC resta disponibile.");
+        if(signal){signalEpochs[i]=next;if(command.Op is AudioOp.Stop or AudioOp.Pause or AudioOp.Release || command.Op==AudioOp.Trigger && project.Slots[i].Mode==PlayMode.TogglePause && mixer.View(i).State==VoiceState.Playing)CancelMarkerOutputs(i);}
+        return new(true);
+    }
+    private Reply UpdateMarkerPlan(int i,AudioMarker[] markers,bool cancelSignals=false)
+    {
+        int version=markerVersions[i]+1,signal=signalEpochs[i]+(cancelSignals?1:0);
+        if(!mixer.Post(new(AudioOp.Markers,i,Markers:markers,MarkerVersion:version,SignalEpoch:signal)))return new(false,"Coda audio piena.");
+        markerVersions[i]=version;signalEpochs[i]=signal;return new(true);
+    }
+    private void CancelMarkerOutputs(int i)
+    {
+        oscOutput.CancelMarkers(i);outputLink.Post(new("cancel-markers",i));
+    }
+    private void DispatchMarkers()
+    {
+        long now=Environment.TickCount64;
+        for(int n=0;n<128 && mixer.TryReadMarker(out var signal);n++)
+        {
+            int i=signal.Slot;
+            if((uint)i>=project.SlotCount || signal.Epoch!=mixer.EventEpoch || signal.Version!=markerVersions[i] || signal.SignalEpoch!=signalEpochs[i] || now-signal.Tick>250 || loading[i] || seeking[i] || errors[i]!=null || sources[i]?.Error!=null || device.Error!=null)continue;
+            int scope=MarkerTriggers.Scope(i,signal.Index);var marker=signal.Marker;
+            if(marker.MidiTrigger is {} midi)outputLink.Post(new("send",scope,Settings:new(){MidiCommands=[midi]}));
+            if(marker.OscTrigger is {} osc)oscOutput.Post([osc],scope);
+        }
+        if(mixer.MarkerDrops!=markerDrops){markerDrops=mixer.MarkerDrops;projectError="Coda trigger marker piena: alcuni comandi non inviati.";Log.Warn("marker-trigger",projectError);}
+    }
+    private Reply Install(int i, IAudioSource? source,LoopRegion? loop=null)
     {
         long next = ++ticket;
-        if (!mixer.Post(new(AudioOp.Install, i, Source: source, Ticket: next))) return new(false, "Coda audio piena.");
+        if (!mixer.Post(new(AudioOp.Install, i, Source: source, Ticket: next,Loop:loop,Markers:(uint)i<project.Slots.Length?project.Slots[i].Markers:[],MarkerVersion:markerVersions[i]+1,SignalEpoch:signalEpochs[i]+1))) return new(false, "Coda audio piena.");
+        markerVersions[i]++;signalEpochs[i]++;
         if (sources[i] is { } previous) retired.Add((next, previous));
         if(seekBuffers[i] is {} preview){retiredBuffers.Add((next,preview));seekBuffers[i]=null;}
+        if(loopBuffers[i] is {} oldLoop)retiredBuffers.Add((next,oldLoop.Buffer));loopBuffers[i]=loop;
         sources[i] = source; errors[i] = null; return new(true);
     }
-    private void Complete(int i, int stamp, IAudioSource? source, string? error)
+    private void Complete(int i, int stamp, IAudioSource? source, string? error,LoopRegion? loop=null)
     {
-        if (generation[i] != stamp) { source?.Dispose(); return; }
+        if (generation[i] != stamp) { if(loop!=null)budget.Release(loop.Buffer.ResidentBytes);source?.Dispose(); return; }
         loading[i] = false;
-        if (error != null) { errors[i] = error; source?.Dispose(); return; }
-        var reply = Install(i, source);
-        if (!reply.Ok) { errors[i] = reply.Error; source?.Dispose(); }
+        if (error != null) { errors[i] = error;if(loop!=null)budget.Release(loop.Buffer.ResidentBytes); source?.Dispose(); return; }
+        var reply = Install(i, source,loop);
+        if (!reply.Ok) { errors[i] = reply.Error;if(loop!=null)budget.Release(loop.Buffer.ResidentBytes); source?.Dispose(); }
     }
     private async Task MonitorMidi()
     {
@@ -494,17 +694,34 @@ internal sealed class AudioCoordinator : IDisposable
                 if (jobs.TryTake(out var job, 20)) job();
                 while(failedSeeks.TryDequeue(out int failed)){seeking[failed]=false;projectError="Coda piena: spostamento annullato.";}
                 for(int j=retiredBuffers.Count-1;j>=0;j--)if(mixer.AppliedTicket>=retiredBuffers[j].Ticket){budget.Release(retiredBuffers[j].Buffer.ResidentBytes);retiredBuffers.RemoveAt(j);}
-                while (failedCompletions.TryDequeue(out var failed)) if (generation[failed.Index] == failed.Stamp) { loading[failed.Index] = false; errors[failed.Index] = "Coda piena alla fine del caricamento: riprova."; }
+                while (failedCompletions.TryDequeue(out var failed)) if (generation[failed.Index] == failed.Stamp) { loading[failed.Index] = loopPreparing[failed.Index]=false; errors[failed.Index] = "Coda piena alla fine del caricamento: riprova."; }
                 for (int j = retired.Count - 1; j >= 0; j--) if (mixer.AppliedTicket >= retired[j].Ticket) { var old = retired[j].Source; retired.RemoveAt(j); _ = Task.Run(old.Dispose); }
+                if(autoSaveEnabled && ProjectDirty && !savingProject && !readingProject && !maintenance && Environment.TickCount64>=autoSaveDue)
+                    StartSave(new("save-project",Path:projectPath,Origin:"auto-save"),new TaskCompletionSource<Reply>(TaskCreationOptions.RunContinuationsAsynchronously));
+                DispatchMarkers();
                 if (Environment.TickCount64 < nextSnapshot) continue; nextSnapshot = Environment.TickCount64 + 100;
                 if (mixer.CallbackFaults != previousFaults) { Log.Warn("audio-callback", $"Errori isolati: {mixer.CallbackFaults}"); previousFaults = mixer.CallbackFaults; }
-                var slots = Enumerable.Range(0, project.SlotCount).Select(i => { var v = mixer.View(i); return new SlotInfo(i, SlotTitles.Display(project.Slots[i],i), v.State.ToString(), v.Frame / (double)Mixer.Rate, v.Frames / (double)Mixer.Rate, v.Volume, v.Starvations, errors[i] ?? sources[i]?.Error, loading[i], generation[i],seeking[i]); }).ToArray();
+                var slots = Enumerable.Range(0, project.SlotCount).Select(i => { var v = mixer.View(i); return new SlotInfo(i, SlotTitles.Display(project.Slots[i],i), v.State.ToString(), v.Frame / (double)Mixer.Rate, v.Frames / (double)Mixer.Rate, v.Volume, v.Starvations, errors[i] ?? sources[i]?.Error, loading[i], generation[i],seeking[i],v.LoopPass,loopPreparing[i]); }).ToArray();
                 Volatile.Write(ref snapshot, new(instance, device.Status, device.Error, device.DeviceId, device.Latency, mixer.Master, budget.Used, mixer.CallbackFaults,
                     Log.Unavailable, device.Devices, slots, project, locked, learn, projectError ?? recovery.Error, outputLink.Alert, Volatile.Read(ref midiIn), Volatile.Read(ref midiOut),
-                    Environment.TickCount64, mixer.RenderHeartbeat, device.Heartbeat, lastStarted, triggerSerial, projectPath, readingProject, projectRevision,oscOutput.Error,oscOutput.Sent,volumeLearn,CurrentPlaying()));
+                    Environment.TickCount64, mixer.RenderHeartbeat, device.Heartbeat, lastStarted, triggerSerial, projectPath, readingProject, projectRevision,oscOutput.Error,oscOutput.Sent,volumeLearn,CurrentPlaying(),markerLearn && MarkerSetupActive,MarkerSetupActive,ProjectDirty,autoSaveEnabled,savingProject,lastSavedAt));
             }
         }
         catch (Exception ex) { Log.Error("control-thread", ex); stop.Cancel(); }
     }
-    public void Dispose() { stop.Cancel(); control.Join(1000);recovery.Dispose();oscOutput.Dispose();inputLink.Dispose();outputLink.Dispose();device.Dispose(); }
+    public void Dispose()
+    {
+        if(Interlocked.Exchange(ref disposed,1)!=0)return;
+        stop.Cancel();control.Join(1000);
+        if(autoSaveEnabled && ProjectDirty)
+        {
+            var final=project;string target=projectPath??pendingSavePath??UntitledPath(autoSaveDirectory);var active=saveWorker;
+            var flush=Task.Run(async()=>
+            {
+                try{if(active!=null)await active;ProjectFiles.Write(target,final with{Name=System.IO.Path.GetFileNameWithoutExtension(target)},true);recovery.Schedule(final,target);}
+                catch(Exception ex){Log.Error("autosave-exit",ex);}
+            });
+            flush.Wait(1500);
+        }
+        recovery.Dispose();oscOutput.Dispose();inputLink.Dispose();outputLink.Dispose();device.Dispose(); }
 }

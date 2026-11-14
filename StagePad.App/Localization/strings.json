@@ -74,10 +74,10 @@
     "es": "Guardar…",
     "fr": "Enregistrer…"
   },
-  "Numero di slot · 1–100": {
-    "en": "Number of slots · 1–100",
-    "es": "Número de slots · 1–100",
-    "fr": "Nombre de slots · 1–100"
+  "Numero di slot · 1-100": {
+    "en": "Number of slots · 1-100",
+    "es": "Número de slots · 1-100",
+    "fr": "Nombre de slots · 1-100"
   },
   "Applica numero slot": {
     "en": "Apply slot count",
@@ -454,20 +454,20 @@
     "es": "Protocolo",
     "fr": "Protocole"
   },
-  "Canale OUT 1–16": {
-    "en": "OUT channel 1–16",
-    "es": "Canal OUT 1–16",
-    "fr": "Canal OUT 1–16"
+  "Canale OUT 1-16": {
+    "en": "OUT channel 1-16",
+    "es": "Canal OUT 1-16",
+    "fr": "Canal OUT 1-16"
   },
-  "Nota OUT 0–127": {
-    "en": "OUT note 0–127",
-    "es": "Nota OUT 0–127",
-    "fr": "Note OUT 0–127"
+  "Nota OUT 0-127": {
+    "en": "OUT note 0-127",
+    "es": "Nota OUT 0-127",
+    "fr": "Note OUT 0-127"
   },
-  "Velocity 1–127": {
-    "en": "Velocity 1–127",
-    "es": "Velocidad 1–127",
-    "fr": "Vélocité 1–127"
+  "Velocity 1-127": {
+    "en": "Velocity 1-127",
+    "es": "Velocidad 1-127",
+    "fr": "Vélocité 1-127"
   },
   "Nota": {
     "en": "Note",
@@ -499,10 +499,10 @@
     "es": "Comando MSC",
     "fr": "Commande MSC"
   },
-  "Device ID 0–127": {
-    "en": "Device ID 0–127",
-    "es": "ID de dispositivo 0–127",
-    "fr": "ID du périphérique 0–127"
+  "Device ID 0-127": {
+    "en": "Device ID 0-127",
+    "es": "ID de dispositivo 0-127",
+    "fr": "ID du périphérique 0-127"
   },
   "Command format 1 / 2 / 127": {
     "en": "Command format 1 / 2 / 127",
@@ -1114,10 +1114,10 @@
     "es": "Cola llena, apertura cancelada.",
     "fr": "File pleine, ouverture annulée."
   },
-  "Budget 128–4096 MiB richiesto, non inferiore alla RAM già riservata.": {
-    "en": "RAM budget must be 128–4096 MiB and at least the amount already reserved.",
-    "es": "El presupuesto de RAM debe ser de 128–4096 MiB y no inferior a la memoria ya reservada.",
-    "fr": "Le budget RAM doit être de 128–4096 MiB et au moins égal à la mémoire déjà réservée."
+  "Budget 128-4096 MiB richiesto, non inferiore alla RAM già riservata.": {
+    "en": "RAM budget must be 128-4096 MiB and at least the amount already reserved.",
+    "es": "El presupuesto de RAM debe ser de 128-4096 MiB y no inferior a la memoria ya reservada.",
+    "fr": "Le budget RAM doit être de 128-4096 MiB et au moins égal à la mémoire déjà réservée."
   },
   "Coda piena alla fine del caricamento: riprova.": {
     "en": "Queue full at the end of loading: try again.",
@@ -1195,7 +1195,7 @@
     "fr": "Cache PCM non valide."
   },
   "Progetto non valido: schema 1 e da 1 a 100 slot richiesti.": {
-    "en": "Invalid project: schema 1 and 1–100 slots required.",
+    "en": "Invalid project: schema 1 and 1-100 slots required.",
     "es": "Proyecto no válido: se requiere el esquema 1 y de 1 a 100 slots.",
     "fr": "Projet non valide : schéma 1 et 1 à 100 slots requis."
   },
@@ -1215,12 +1215,12 @@
     "fr": "Tampon audio non valide."
   },
   "Griglia: righe e colonne da 1 a 10, con una cella per ogni slot attivo.": {
-    "en": "Grid: 1–10 rows and columns, with a cell for each active slot.",
+    "en": "Grid: 1-10 rows and columns, with a cell for each active slot.",
     "es": "Cuadrícula: de 1 a 10 filas y columnas, con una celda por slot activo.",
     "fr": "Grille : 1 à 10 lignes et colonnes, avec une cellule par slot actif."
   },
   "Griglia Setup: righe e colonne da 1 a 10, con una cella per ogni slot attivo.": {
-    "en": "Setup grid: 1–10 rows and columns, with a cell for each active slot.",
+    "en": "Setup grid: 1-10 rows and columns, with a cell for each active slot.",
     "es": "Cuadrícula de Preparación: de 1 a 10 filas y columnas, con una celda por slot activo.",
     "fr": "Grille de Préparation : 1 à 10 lignes et colonnes, avec une cellule par slot actif."
   },
@@ -1939,11 +1939,6 @@
     "es": "No hay una nueva versión estable disponible.",
     "fr": "Aucune nouvelle version stable disponible."
   },
-  "Disponibile StagePad {0}.": {
-    "en": "StagePad {0} is available.",
-    "es": "StagePad {0} disponible.",
-    "fr": "StagePad {0} est disponible."
-  },
   "Preparazione aggiornamento…": {
     "en": "Preparing update…",
     "es": "Preparando actualización…",
@@ -2093,5 +2088,465 @@
     "en": "Jump prevention applies to absolute faders. Relative step only applies to relative encoders. Track control follows the latest audio still playing.",
     "es": "Las opciones antisaltos se aplican a faders absolutos. El paso relativo solo se aplica a encoders relativos. El control de pista sigue el último audio que sigue sonando.",
     "fr": "La prévention des sauts concerne les faders absolus. Le pas relatif concerne uniquement les encodeurs relatifs. La piste suit le dernier audio encore en lecture."
+  },
+  "+ Marker": {
+    "en": "+ Marker",
+    "es": "+ Marcador",
+    "fr": "+ Repère"
+  },
+  "Gestisci marker": {
+    "en": "Manage markers",
+    "es": "Gestionar marcadores",
+    "fr": "Gérer les repères"
+  },
+  "Salva marker": {
+    "en": "Save marker",
+    "es": "Guardar marcador",
+    "fr": "Enregistrer le repère"
+  },
+  "Elimina marker": {
+    "en": "Delete marker",
+    "es": "Eliminar marcador",
+    "fr": "Supprimer le repère"
+  },
+  "Modifica marker": {
+    "en": "Edit marker",
+    "es": "Editar marcador",
+    "fr": "Modifier le repère"
+  },
+  "Aggiungi marker qui": {
+    "en": "Add marker here",
+    "es": "Añadir marcador aquí",
+    "fr": "Ajouter un repère ici"
+  },
+  "Colore marker": {
+    "en": "Marker color",
+    "es": "Color del marcador",
+    "fr": "Couleur du repère"
+  },
+  "Etichetta marker": {
+    "en": "Marker label",
+    "es": "Etiqueta del marcador",
+    "fr": "Libellé du repère"
+  },
+  "Posizione · hh:mm:ss.fff": {
+    "en": "Position · hh:mm:ss.fff",
+    "es": "Posición · hh:mm:ss.fff",
+    "fr": "Position · hh:mm:ss.fff"
+  },
+  "Doppio clic su un marker per saltare al punto. Le modifiche sono salvate nello show.": {
+    "en": "Double-click a marker to jump to its position. Changes are saved with the show.",
+    "es": "Haz doble clic en un marcador para saltar a su posición. Los cambios se guardan en el show.",
+    "fr": "Double-cliquez sur un repère pour atteindre sa position. Les modifications sont enregistrées avec le show."
+  },
+  "Doppio clic: vai al marker · clic destro: modifica": {
+    "en": "Double-click: jump to marker · right-click: edit",
+    "es": "Doble clic: ir al marcador · clic derecho: editar",
+    "fr": "Double-clic : atteindre le repère · clic droit : modifier"
+  },
+  "Conferma eliminazione": {
+    "en": "Confirm deletion",
+    "es": "Confirmar eliminación",
+    "fr": "Confirmer la suppression"
+  },
+  "Premi di nuovo per eliminare il marker selezionato.": {
+    "en": "Press again to delete the selected marker.",
+    "es": "Pulsa de nuevo para eliminar el marcador seleccionado.",
+    "fr": "Appuyez à nouveau pour supprimer le repère sélectionné."
+  },
+  "Marker salvato.": {
+    "en": "Marker saved.",
+    "es": "Marcador guardado.",
+    "fr": "Repère enregistré."
+  },
+  "Marker eliminato.": {
+    "en": "Marker deleted.",
+    "es": "Marcador eliminado.",
+    "fr": "Repère supprimé."
+  },
+  "{0} / 32 marker · durata {1}": {
+    "en": "{0} / 32 markers · duration {1}",
+    "es": "{0} / 32 marcadores · duración {1}",
+    "fr": "{0} / 32 repères · durée {1}"
+  },
+  "Attendi che la traccia sia pronta.": {
+    "en": "Wait until the track is ready.",
+    "es": "Espera a que la pista esté lista.",
+    "fr": "Attendez que la piste soit prête."
+  },
+  "La traccia è cambiata. Riapri la gestione marker.": {
+    "en": "The track changed. Reopen marker management.",
+    "es": "La pista ha cambiado. Vuelve a abrir la gestión de marcadores.",
+    "fr": "La piste a changé. Rouvrez la gestion des repères."
+  },
+  "SHOW LOCK: modifiche ai marker bloccate.": {
+    "en": "SHOW LOCK: marker editing is locked.",
+    "es": "SHOW LOCK: edición de marcadores bloqueada.",
+    "fr": "SHOW LOCK : modification des repères verrouillée."
+  },
+  "Massimo 32 marker per traccia.": {
+    "en": "Maximum 32 markers per track.",
+    "es": "Máximo 32 marcadores por pista.",
+    "fr": "Maximum 32 repères par piste."
+  },
+  "Marker non valido: posizione, etichetta o colore.": {
+    "en": "Invalid marker: position, label or color.",
+    "es": "Marcador no válido: posición, etiqueta o color.",
+    "fr": "Repère invalide : position, libellé ou couleur."
+  },
+  "Il marker deve essere dentro la durata della traccia.": {
+    "en": "The marker must be within the track duration.",
+    "es": "El marcador debe estar dentro de la duración de la pista.",
+    "fr": "Le repère doit se trouver dans la durée de la piste."
+  },
+  "Marker troppo grandi: accorcia le etichette.": {
+    "en": "Marker data is too large: shorten the labels.",
+    "es": "Datos de marcadores demasiado grandes: acorta las etiquetas.",
+    "fr": "Données des repères trop volumineuses : raccourcissez les libellés."
+  },
+  "Marker già presente o non valido.": {
+    "en": "Marker already exists or is invalid.",
+    "es": "El marcador ya existe o no es válido.",
+    "fr": "Le repère existe déjà ou est invalide."
+  },
+  "Il marker non esiste più. Aggiorna l’elenco.": {
+    "en": "The marker no longer exists. Refresh the list.",
+    "es": "El marcador ya no existe. Actualiza la lista.",
+    "fr": "Le repère n’existe plus. Actualisez la liste."
+  },
+  "Operazione marker non valida.": {
+    "en": "Invalid marker operation.",
+    "es": "Operación de marcador no válida.",
+    "fr": "Opération de repère invalide."
+  },
+  "Posizione marker non valida. Usa hh:mm:ss.fff.": {
+    "en": "Invalid marker position. Use hh:mm:ss.fff.",
+    "es": "Posición no válida. Usa hh:mm:ss.fff.",
+    "fr": "Position invalide. Utilisez hh:mm:ss.fff."
+  },
+  "Loop tra marker": {
+    "en": "Loop between markers",
+    "es": "Bucle entre marcadores",
+    "fr": "Boucle entre marqueurs"
+  },
+  "Inizio loop": {
+    "en": "Loop start",
+    "es": "Inicio del bucle",
+    "fr": "Début de boucle"
+  },
+  "Fine loop": {
+    "en": "Loop end",
+    "es": "Fin del bucle",
+    "fr": "Fin de boucle"
+  },
+  "Applica loop": {
+    "en": "Apply loop",
+    "es": "Aplicar bucle",
+    "fr": "Appliquer la boucle"
+  },
+  "Loop attivo": {
+    "en": "Loop enabled",
+    "es": "Bucle activado",
+    "fr": "Boucle activée"
+  },
+  "Loop disattivato": {
+    "en": "Loop disabled",
+    "es": "Bucle desactivado",
+    "fr": "Boucle désactivée"
+  },
+  "Preparazione loop in corso...": {
+    "en": "Preparing loop...",
+    "es": "Preparando bucle...",
+    "fr": "Préparation de la boucle..."
+  },
+  "Loop aggiornato.": {
+    "en": "Loop updated.",
+    "es": "Bucle actualizado.",
+    "fr": "Boucle mise à jour."
+  },
+  "Scegli due marker distinti: fine dopo inizio, distanza minima 50 ms.": {
+    "en": "Choose two different existing markers: end after start, at least 50 ms apart.",
+    "es": "Elige dos marcadores existentes distintos: fin después del inicio, separados al menos 50 ms.",
+    "fr": "Choisissez deux marqueurs existants distincts : fin après début, écart minimal de 50 ms."
+  },
+  "Intervallo loop non valido.": {
+    "en": "Invalid loop range.",
+    "es": "Intervalo de bucle no válido.",
+    "fr": "Plage de boucle non valide."
+  },
+  "Ferma lo slot e attendi il caricamento prima di configurare il loop.": {
+    "en": "Stop the slot and wait for loading before configuring the loop.",
+    "es": "Detén el slot y espera a que termine la carga para configurar el bucle.",
+    "fr": "Arrêtez le slot et attendez la fin du chargement pour configurer la boucle."
+  },
+  "Budget RAM insufficiente per il loop. Accorcia l’intervallo o aumenta il budget nelle impostazioni.": {
+    "en": "Not enough RAM budget for the loop. Shorten the range or increase the budget in Settings.",
+    "es": "Presupuesto RAM insuficiente para el bucle. Acorta el intervalo o aumenta el presupuesto en Ajustes.",
+    "fr": "Budget RAM insuffisant pour la boucle. Raccourcissez la plage ou augmentez le budget dans les paramètres."
+  },
+  "Preparazione loop annullata.": {
+    "en": "Loop preparation cancelled.",
+    "es": "Preparación del bucle cancelada.",
+    "fr": "Préparation de la boucle annulée."
+  },
+  "Trigger MIDI / OSC": {
+    "en": "MIDI / OSC triggers",
+    "es": "Disparadores MIDI / OSC",
+    "fr": "Déclencheurs MIDI / OSC"
+  },
+  "Aggiungi trigger MIDI": {
+    "en": "Add MIDI trigger",
+    "es": "Añadir disparador MIDI",
+    "fr": "Ajouter un déclencheur MIDI"
+  },
+  "Aggiungi trigger OSC": {
+    "en": "Add OSC trigger",
+    "es": "Añadir disparador OSC",
+    "fr": "Ajouter un déclencheur OSC"
+  },
+  "Invio al passaggio del marker, anche a ogni giro del loop. Il salto manuale non invia i trigger saltati. Le note MIDI hanno Note Off automatico. Le destinazioni MIDI sono quelle dello show.": {
+    "en": "Sent when playback crosses the marker, including each loop pass. Manual seeking does not send skipped triggers. MIDI notes have automatic Note Off. MIDI uses the show output device.",
+    "es": "Se envía al pasar por el marcador, también en cada vuelta del bucle. Los saltos manuales no envían disparadores omitidos. Las notas MIDI tienen Note Off automático. MIDI usa la salida del show.",
+    "fr": "Envoi au passage du marqueur, à chaque tour de boucle également. Les sauts manuels ne déclenchent pas les marqueurs ignorés. Les notes MIDI ont un Note Off automatique. MIDI utilise la sortie du show."
+  },
+  "I trigger marker MIDI sono immediati e le note usano Note Off automatico.": {
+    "en": "Marker MIDI triggers are immediate and notes use automatic Note Off.",
+    "es": "Los disparadores MIDI son inmediatos y las notas usan Note Off automático.",
+    "fr": "Les déclencheurs MIDI sont immédiats, avec Note Off automatique."
+  },
+  "I trigger marker OSC sono immediati.": {
+    "en": "Marker OSC triggers are immediate.",
+    "es": "Los disparadores OSC son inmediatos.",
+    "fr": "Les déclencheurs OSC sont immédiats."
+  },
+  "Marker troppo grandi: riduci etichette o trigger.": {
+    "en": "Marker data too large: shorten labels or reduce triggers.",
+    "es": "Datos de marcadores demasiado grandes: reduce etiquetas o disparadores.",
+    "fr": "Données des marqueurs trop volumineuses : réduisez les libellés ou les déclencheurs."
+  },
+  "Coda trigger marker piena: alcuni comandi non inviati.": {
+    "en": "Marker trigger queue full: some commands were not sent.",
+    "es": "Cola de disparadores llena: algunos comandos no se enviaron.",
+    "fr": "File des déclencheurs pleine : certaines commandes n’ont pas été envoyées."
+  },
+  "MARKER MIDI (SETUP)": {
+    "en": "MIDI MARKERS (SETUP)",
+    "es": "MARCADORES MIDI (PREPARACIÓN)",
+    "fr": "MARQUEURS MIDI (PRÉPARATION)"
+  },
+  "LEARN inserimento marker": {
+    "en": "LEARN marker insertion",
+    "es": "LEARN insertar marcador",
+    "fr": "LEARN insertion de marqueur"
+  },
+  "Rimuovi assegnazione marker": {
+    "en": "Clear marker assignment",
+    "es": "Eliminar asignación de marcador",
+    "fr": "Effacer l’affectation de marqueur"
+  },
+  "Un tasto MIDI per inserire marker sulla traccia selezionata in riproduzione. In Serata non modifica lo show. Scegli un tasto non assegnato agli slot.": {
+    "en": "A MIDI button inserts markers on the selected playing track. It does not modify the show in Live mode. Choose a button not assigned to a slot.",
+    "es": "Un botón MIDI inserta marcadores en la pista seleccionada en reproducción. No modifica el show en Directo. Elige un botón no asignado a un slot.",
+    "fr": "Un bouton MIDI insère des marqueurs sur la piste sélectionnée en lecture. Il ne modifie pas le show en Direct. Choisissez un bouton non affecté à un slot."
+  },
+  "Assegnazione marker rimossa.": {
+    "en": "Marker assignment cleared.",
+    "es": "Asignación de marcador eliminada.",
+    "fr": "Affectation de marqueur effacée."
+  },
+  "Premi il tasto MIDI da assegnare ai marker.": {
+    "en": "Press the MIDI button to assign to marker insertion.",
+    "es": "Pulsa el botón MIDI para asignarlo a la inserción de marcadores.",
+    "fr": "Appuyez sur le bouton MIDI à affecter à l’insertion de marqueurs."
+  },
+  "LEARN marker annullato.": {
+    "en": "Marker LEARN cancelled.",
+    "es": "LEARN de marcador cancelado.",
+    "fr": "LEARN de marqueur annulé."
+  },
+  "Tasto marker assegnato.": {
+    "en": "Marker button assigned.",
+    "es": "Botón de marcador asignado.",
+    "fr": "Bouton de marqueur affecté."
+  },
+  "Nessun tasto marker assegnato.": {
+    "en": "No marker button assigned.",
+    "es": "Ningún botón de marcador asignado.",
+    "fr": "Aucun bouton de marqueur affecté."
+  },
+  "Canale {0} - nota {1}": {
+    "en": "Channel {0} - note {1}",
+    "es": "Canal {0} - nota {1}",
+    "fr": "Canal {0} - note {1}"
+  },
+  "Assegnazione marker MIDI non valida.": {
+    "en": "Invalid marker MIDI assignment.",
+    "es": "Asignación MIDI de marcador no válida.",
+    "fr": "Affectation MIDI de marqueur non valide."
+  },
+  "Il tasto marker è già assegnato a uno slot. Scegli un tasto libero.": {
+    "en": "The marker button is already assigned to a slot. Choose an unused button.",
+    "es": "El botón ya está asignado a un slot. Elige un botón libre.",
+    "fr": "Ce bouton est déjà affecté à un slot. Choisissez un bouton libre."
+  },
+  "Il tasto marker si configura solo in Setup, con SHOW LOCK disattivato.": {
+    "en": "Configure the marker button in Setup with SHOW LOCK off.",
+    "es": "Configura el botón de marcador en Preparación con SHOW LOCK desactivado.",
+    "fr": "Configurez le bouton de marqueur en Préparation, avec SHOW LOCK désactivé."
+  },
+  "Contesto marker non aggiornato.": {
+    "en": "Marker context is not up to date.",
+    "es": "El contexto de marcador no está actualizado.",
+    "fr": "Le contexte de marqueur n’est pas à jour."
+  },
+  "Apri pagina delle release": {
+    "en": "Open releases page",
+    "es": "Abrir página de versiones",
+    "fr": "Ouvrir la page des versions"
+  },
+  "Ultima release stabile: StagePad {0}.": {
+    "en": "Latest stable release: StagePad {0}.",
+    "es": "Última versión estable: StagePad {0}.",
+    "fr": "Dernière version stable : StagePad {0}."
+  },
+  "Nuovo show": {
+    "en": "New show",
+    "es": "Nuevo show",
+    "fr": "Nouveau show"
+  },
+  "Apri show": {
+    "en": "Open show",
+    "es": "Abrir show",
+    "fr": "Ouvrir un show"
+  },
+  "Salva show con nome": {
+    "en": "Save show as",
+    "es": "Guardar show como",
+    "fr": "Enregistrer le show sous"
+  },
+  "Salva con nome": {
+    "en": "Save as",
+    "es": "Guardar como",
+    "fr": "Enregistrer sous"
+  },
+  "Altre operazioni": {
+    "en": "More actions",
+    "es": "Más acciones",
+    "fr": "Autres actions"
+  },
+  "Chiudi": {
+    "en": "Close",
+    "es": "Cerrar",
+    "fr": "Fermer"
+  },
+  "Salvare le modifiche prima di continuare?": {
+    "en": "Save changes before continuing?",
+    "es": "¿Guardar los cambios antes de continuar?",
+    "fr": "Enregistrer les modifications avant de continuer ?"
+  },
+  "Salva e continua": {
+    "en": "Save and continue",
+    "es": "Guardar y continuar",
+    "fr": "Enregistrer et continuer"
+  },
+  "Scarta e continua": {
+    "en": "Discard and continue",
+    "es": "Descartar y continuar",
+    "fr": "Ignorer et continuer"
+  },
+  "Conferma sovrascrittura e continua": {
+    "en": "Confirm overwrite and continue",
+    "es": "Confirmar sobrescritura y continuar",
+    "fr": "Confirmer le remplacement et continuer"
+  },
+  "Salva le modifiche prima di continuare, oppure scegli di scartarle.": {
+    "en": "Save changes before continuing, or choose to discard them.",
+    "es": "Guarda los cambios antes de continuar o elige descartarlos.",
+    "fr": "Enregistrez les modifications avant de continuer ou choisissez de les ignorer."
+  },
+  "Il progetto è cambiato: riprova l’operazione.": {
+    "en": "The project changed: please try again.",
+    "es": "El proyecto cambió: vuelve a intentarlo.",
+    "fr": "Le projet a changé : réessayez."
+  },
+  "SHOW LOCK o operazione sui progetti in corso.": {
+    "en": "SHOW LOCK or a project operation is active.",
+    "es": "SHOW LOCK o una operación de proyecto está activa.",
+    "fr": "SHOW LOCK ou une opération sur les projets est active."
+  },
+  "Ferma le tracce e attendi le sequenze prima di creare un nuovo show.": {
+    "en": "Stop tracks and wait for sequences before creating a new show.",
+    "es": "Detén las pistas y espera a las secuencias antes de crear un nuevo show.",
+    "fr": "Arrêtez les pistes et attendez la fin des séquences avant de créer un nouveau show."
+  },
+  "Salvataggio automatico degli show": {
+    "en": "Automatically save shows",
+    "es": "Guardar shows automáticamente",
+    "fr": "Enregistrement automatique des shows"
+  },
+  "Auto-save attivo": {
+    "en": "Auto-save enabled",
+    "es": "Guardado automático activado",
+    "fr": "Enregistrement automatique activé"
+  },
+  "Auto-save disattivato": {
+    "en": "Auto-save disabled",
+    "es": "Guardado automático desactivado",
+    "fr": "Enregistrement automatique désactivé"
+  },
+  "Auto-save in attesa…": {
+    "en": "Auto-save pending…",
+    "es": "Guardado automático pendiente…",
+    "fr": "Enregistrement automatique en attente…"
+  },
+  "Salvataggio in corso…": {
+    "en": "Saving…",
+    "es": "Guardando…",
+    "fr": "Enregistrement…"
+  },
+  "Modifiche non salvate": {
+    "en": "Unsaved changes",
+    "es": "Cambios sin guardar",
+    "fr": "Modifications non enregistrées"
+  },
+  "Salvato alle {0}": {
+    "en": "Saved at {0}",
+    "es": "Guardado a las {0}",
+    "fr": "Enregistré à {0}"
+  },
+  "Nome show già presente: salvataggio rinviato.": {
+    "en": "Show name already exists: save postponed.",
+    "es": "El nombre del show ya existe: guardado aplazado.",
+    "fr": "Ce nom de show existe déjà : enregistrement différé."
+  },
+  "Apri": {
+    "en": "Open",
+    "es": "Abrir",
+    "fr": "Ouvrir"
+  },
+  "Salva": {
+    "en": "Save",
+    "es": "Guardar",
+    "fr": "Enregistrer"
+  },
+  "Disponibile StagePad Live {0}.": {
+    "en": "StagePad Live {0} is available.",
+    "es": "StagePad Live {0} está disponible.",
+    "fr": "StagePad Live {0} est disponible."
+  },
+  "Rimuovi loop": {
+    "en": "Remove loop",
+    "es": "Quitar bucle",
+    "fr": "Supprimer la boucle"
+  },
+  "Play avvia la traccia dal marker iniziale del loop. La pausa conserva la posizione. Ferma lo slot per applicare o rimuovere il loop. Rimuovilo prima di spostare o eliminare i due marker. Il tratto viene preparato in RAM entro il budget impostato.": {
+    "en": "Play starts at the loop start marker. Pause preserves the position. Stop the slot to apply or remove the loop. Remove it before moving or deleting its endpoints. The region is prepared in RAM within the configured budget.",
+    "es": "Play comienza en el marcador inicial del bucle. La pausa conserva la posición. Detén el slot para aplicar o quitar el bucle. Quítalo antes de mover o eliminar sus extremos. El tramo se prepara en RAM dentro del presupuesto configurado.",
+    "fr": "Play démarre au marqueur de début de boucle. La pause conserve la position. Arrêtez le slot pour appliquer ou supprimer la boucle. Supprimez-la avant de déplacer ou supprimer ses bornes. La région est préparée en RAM dans le budget configuré."
+  },
+  "Rimuovi il loop prima di spostare o eliminare i marker di inizio/fine.": {
+    "en": "Remove the loop before moving or deleting its start/end markers.",
+    "es": "Quita el bucle antes de mover o eliminar sus marcadores inicial y final.",
+    "fr": "Supprimez la boucle avant de déplacer ou supprimer ses marqueurs de début/fin."
   }
 }

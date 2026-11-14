@@ -5,14 +5,14 @@ using StagePad.Core;
 
 namespace StagePad.App;
 public sealed record Request(string Op, int Slot = 0, string? Path = null, float Value = 0, string? DeviceId = null, int Latency = 40,
-    SlotSettings? Settings = null, RoutingSettings? Routing = null, int Channel = 1, int Note = 0, bool Flag = false, long Epoch = 0, string? Origin = null, long Timestamp = 0, int Rows = 4, int Columns = 4, string? TargetPath = null, int Controller = -1, MidiCcBinding? MasterControl = null, MidiCcBinding? TrackControl = null);
+    SlotSettings? Settings = null, RoutingSettings? Routing = null, int Channel = 1, int Note = 0, bool Flag = false, long Epoch = 0, string? Origin = null, long Timestamp = 0, int Rows = 4, int Columns = 4, string? TargetPath = null, int Controller = -1, MidiCcBinding? MasterControl = null, MidiCcBinding? TrackControl = null, AudioMarker? Marker = null, string? MarkerId = null, int? SourceRevision = null, MarkerLoop? MarkerLoop = null);
 public sealed record DeviceInfo(string Id, string Name) { public override string ToString()=>Name; }
 public sealed record MidiPortState(string Instance, string Status, string? Error, string? Selected, DeviceInfo[] Devices, long Heartbeat, string LastMessage = "", long Messages = 0, bool LoggingUnavailable = false, int ActiveNotes=0, int PendingCommands=0);
-public sealed record SlotInfo(int Index, string Name, string State, double Position, double Duration, float Volume, long Underruns, string? Error, bool Loading, int Revision = 0, bool Seeking=false);
+public sealed record SlotInfo(int Index, string Name, string State, double Position, double Duration, float Volume, long Underruns, string? Error, bool Loading, int Revision = 0, bool Seeking=false, long LoopPass=0, bool LoopPreparing=false);
 public sealed record StateInfo(string Instance, string AudioStatus, string? AudioError, string? DeviceId, int Latency, float Master, long MemoryBytes, int CallbackErrors, bool LoggingUnavailable, DeviceInfo[] Devices, SlotInfo[] Slots,
     ProjectDocument? Project = null, bool ShowLocked = false, int LearnSlot = -1, string? ProjectError = null, string? MidiAlert = null, MidiPortState? MidiIn = null, MidiPortState? MidiOut = null,
-    long Heartbeat = 0, long RenderHeartbeat = 0, long DeviceHeartbeat = 0, int LastStarted = 0, long TriggerSerial = 0, string? ProjectPath = null, bool ProjectLoading = false, long ProjectRevision = 0, string? OscAlert = null, long OscSent = 0, string? VolumeLearn = null, int CurrentPlaying = -1);
-public sealed record Reply(bool Ok, string? Error = null, StateInfo? State = null, MidiPortState? Midi = null, float[]? Peaks = null, long UiBeat = 0, bool UiReady=false);
+    long Heartbeat = 0, long RenderHeartbeat = 0, long DeviceHeartbeat = 0, int LastStarted = 0, long TriggerSerial = 0, string? ProjectPath = null, bool ProjectLoading = false, long ProjectRevision = 0, string? OscAlert = null, long OscSent = 0, string? VolumeLearn = null, int CurrentPlaying = -1, bool MarkerLearn=false, bool MarkerSetup=false,bool ProjectDirty=false,bool AutoSaveEnabled=true,bool ProjectSaving=false,long LastSavedAt=0);
+public sealed record Reply(bool Ok, string? Error = null, StateInfo? State = null, MidiPortState? Midi = null, float[]? Peaks = null, long UiBeat = 0, bool UiReady=false, string? WaveInstance=null,int? WaveSlot=null,int? WaveRevision=null,bool WaveReady=false);
 
 internal static class Wire
 {
@@ -77,6 +77,7 @@ internal static class Wire
                         try
                         {
                             var request = await Read<Request>(connected, timeout.Token);
+                            if(request.Op=="marker-loop")timeout.CancelAfter(35000);
                             if(request.Op is "export-show" or "import-show")timeout.CancelAfter(300000);
                             if(request.Op is "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project")timeout.CancelAfter(25000);
                             Reply reply = await handle(request);

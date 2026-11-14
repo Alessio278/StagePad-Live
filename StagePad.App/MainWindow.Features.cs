@@ -19,7 +19,8 @@ internal sealed partial class MainWindow
     private Button? lockSwitch;
     private RoutingSettings? lastRoute;
     private long seenTrigger, uiBeat = Environment.TickCount64;
-    private int waveSlot = -1, waveRevision = -1;
+    private WaveformIdentity? waveTarget,waveLoaded;
+    private long waveRetryAfter;
     private bool refreshingWave;
     public long UiBeat => Volatile.Read(ref uiBeat);
     private async Task SendRouting(bool includeAudio = true)
@@ -50,7 +51,18 @@ internal sealed partial class MainWindow
         if(last?.ShowLocked==true){Warn("SHOW LOCK: apertura bloccata.");return Task.CompletedTask;}
         ShowProjectBrowser(false);return Task.CompletedTask;
     }
-    private Task SaveProject(){ShowProjectBrowser(true);return Task.CompletedTask;}
+    private async Task SaveProject()
+    {
+        if(last?.ProjectSaving==true)return;
+        if(last?.ProjectPath is {} path){await Send(new("save-project",Path:path));return;}
+        ShowProjectBrowser(true);
+    }
+    private Task SaveProjectAs(){ShowProjectBrowser(true);return Task.CompletedTask;}
+    private async Task NewShow()
+    {
+        if(last?.Slots.Any(s=>s.State is "Playing" or "Paused" or "Stopping" || s.Loading || s.Seeking)==true){Warn("Ferma le tracce e attendi le sequenze prima di creare un nuovo show.");return;}
+        ShowProjectBrowser(false);if(projectBrowser!=null)await projectBrowser.BeginNewShow();
+    }
     private void ShowProjectBrowser(bool saveMode)
     {
         SetView(false);
@@ -61,6 +73,7 @@ internal sealed partial class MainWindow
     }
     private async void ProjectDirectoryChanged()
     {
+        await SendReply(new("autosave-settings",Path:L.ProjectDirectory,Flag:L.AutoSaveProjects));
         if(projectBrowser!=null)await projectBrowser.Refresh();
     }
     private Button PadButton(string text, int slot)
@@ -99,13 +112,14 @@ internal sealed partial class MainWindow
         if(s.Project!=null)ApplyLayouts(s.Project);
         string title=s.ProjectPath!=null?System.IO.Path.GetFileNameWithoutExtension(s.ProjectPath):s.Project?.Name??"Nuovo progetto";
         if(title=="Nuovo progetto")title=L.T("Senza nome");
-        showName.Text="Show: "+title;showName.ToolTip=showName.Text;
+        if(s.ProjectPath==null && title=="Nuovo show")title=L.T("Nuovo show");
+        showName.Text="Show: "+title+(s.ProjectDirty?" *":"");showName.ToolTip=showName.Text+" · "+L.T(s.ProjectSaving?"Salvataggio in corso…":s.AutoSaveEnabled?"Auto-save attivo":"Auto-save disattivato");
         if (lockSwitch != null) { lockSwitch.Content=L.T(s.ShowLocked?"● LOCK ATTIVO":"SHOW LOCK");lockSwitch.Background=Brush(s.ShowLocked?"#493B25":"#1B2B3D");lockSwitch.Foreground=Brush(s.ShowLocked?"#FFCC80":"#B6C9DE"); }
         if(sidebarSettings!=null)sidebarSettings.IsEnabled=!s.ShowLocked;
         if(gridToolbar!=null)gridToolbar.IsEnabled=!s.ShowLocked;
         inputBadge.Text="● MIDI IN · "+PortLabel(s.MidiIn,false);outputBadge.Text="● MIDI OUT · "+PortLabel(s.MidiOut,true);
         inputBadge.Foreground=Brush(PortColor(s.MidiIn));outputBadge.Foreground=Brush(PortColor(s.MidiOut));
-        settingsWindow?.Update(s);projectBrowser?.Update(s);
+        settingsWindow?.Update(s);projectBrowser?.Update(s);UpdateMarkerState(s);
         bool routeChanged = s.Project != null && s.Project.Routing != lastRoute;
         if (routeChanged) { lastRoute = s.Project!.Routing; latency.SelectedItem = lastRoute.BufferMs; outputs.SelectedValue = lastRoute.AudioDevice ?? s.DeviceId; }
         FillPorts(midiInput, s.MidiIn?.Devices ?? [], s.Project?.Routing.MidiInput, routeChanged);
@@ -126,15 +140,22 @@ internal sealed partial class MainWindow
     }
     private async Task RefreshWave(StateInfo s)
     {
-        if (refreshingWave || (waveSlot == current && waveRevision == s.Slots[current].Revision && !s.Slots[current].Loading)) return;
-        if (s.Slots[current].Loading) return;
-        refreshingWave = true; int slot = current, revision = s.Slots[current].Revision;
+        if((uint)current>=s.Slots.Length)return;
+        var slotState=s.Slots[current];var key=new WaveformIdentity(s.Instance,current,slotState.Revision);
+        if(waveTarget!=key){waveTarget=key;waveLoaded=null;waveRetryAfter=0;waveform.SetPeaks([]);}
+        if(slotState.Loading || slotState.Error!=null || slotState.Duration<=0)return;
+        if(refreshingWave || waveLoaded==key || Environment.TickCount64<waveRetryAfter)return;
+        refreshingWave=true;
         try
         {
-            var reply = await Wire.Call(pipe, new("wave", slot), 1000);
-            if (current == slot) { waveform.SetPeaks(reply.Peaks ?? []); waveSlot = slot; waveRevision = revision; }
+            var reply=await Wire.Call(pipe,new("wave",key.Slot,Origin:key.Instance,SourceRevision:key.Revision),1000);
+            var present=last;
+            bool currentSource=present!=null && (uint)current<present.Slots.Length && new WaveformIdentity(present.Instance,current,present.Slots[current].Revision)==key && !present.Slots[current].Loading;
+            if(currentSource && WaveformIdentity.Accepts(key,reply.Ok,reply.WaveInstance,reply.WaveSlot,reply.WaveRevision,reply.WaveReady,reply.Peaks))
+            {waveform.SetPeaks(reply.Peaks!);waveLoaded=key;}
+            else waveRetryAfter=Environment.TickCount64+350;
         }
-        catch (Exception ex) { Log.Warn("wave-ui", ex.Message); }
-        finally { refreshingWave = false; }
+        catch(Exception ex){waveRetryAfter=Environment.TickCount64+1000;Log.Warn("wave-ui",ex.Message);}
+        finally{refreshingWave=false;}
     }
 }

@@ -1,15 +1,13 @@
-# OSC / MIDI / Audio - StagePad 0.12.0
+# StagePad Live - OSC
 
-Nelle impostazioni dello slot seleziona **Audio**, **MIDI** e/o **OSC** in **Azioni alla pressione**. Sono disponibili tutte e sette le combinazioni. Il pad MIDI associato e il tasto a schermo eseguono la stessa scelta.
+Seleziona OSC nello slot, aggiungi un comando e indica host/IP, porta UDP 1-65535 e percorso che inizia con `/`. Esempio: `127.0.0.1`, porta `8000`, `/show/go`, argomento intero `1`.
 
-Aggiungi fino a **16 comandi MIDI** e **16 comandi OSC** per slot. MIDI supporta Note (Impulso/Gate), MSC, Control Change e Program Change. Tutti i comandi MIDI usano la destinazione selezionata in Setup. Numeri programma e valori CC seguono l’intervallo 0-127 indicato nei campi.
+Tipi: int32, float32, stringa ASCII, vero o falso. Fino a 16 argomenti e 16 comandi per slot, con dimensione dati limitata. Ogni comando può avere un receiver diverso. Indirizzi e tipi devono corrispondere al software ricevente.
 
-Per ogni comando OSC inserisci host/IP, porta UDP e percorso, poi gli argomenti tipizzati: intero, decimale, testo ASCII, vero o falso. Esempio: host `127.0.0.1`, porta `8000`, percorso `/show/go`, argomento intero `1`. Ogni comando può avere un destinatario diverso. Vedi la [guida OSC](OSC.it.md).
+Frecce per l’ordine, ritardi per la temporizzazione e Test ora per un singolo comando immediato a riproduzione ferma. Massimo 30 secondi per comando e 60 per lista. Le liste MIDI/OSC sono indipendenti; il sincronismo tra uscite dipende dai receiver.
 
-Audio, MIDI e OSC vengono inviati indipendentemente. Un audio mancante non impedisce MIDI/OSC; un’uscita MIDI occupata non blocca audio o OSC. Ogni elenco viene inviato nell’ordine visualizzato; i tempi fra audio, MIDI e UDP dipendono anche dai ricevitori. Il rilascio chiude tutte le note MIDI Gate dello slot. STOP ALL annulla gli OSC ancora in coda e rilascia le note MIDI. La diagnostica in Settings conta i messaggi UDP trasmessi localmente: verifica la risposta sul software ricevente.
+Un marker invia un OSC immediato a ogni passaggio, anche nei loop. I salti non inviano i cue saltati. STOP/STOP ALL annullano sequenze in attesa. Il reconnect non ripete i cue.
 
-Selezioni, comandi, destinazioni e argomenti vengono salvati nel progetto e nel recupero. I progetti precedenti conservano il comportamento MIDI originale. Limiti: 16 argomenti per messaggio OSC e 6000 byte complessivi di configurazione comandi per slot.
+UDP non conferma la ricezione: il contatore indica solo invio locale. Configura firewall/interfacce e verifica il receiver. Nessuna scoperta automatica, conferma o garanzia di sicurezza dell’attrezzatura remota.
 
-OSC format reference: https://opensoundcontrol.stanford.edu/spec-1_0.html
-
-UDP invia ogni comando una sola volta. I messaggi scaduti dopo un secondo in coda o in risoluzione DNS vengono scartati, senza ripetizioni dopo riconnessione. Un messaggio già trasmesso non può essere richiamato da STOP ALL. Il ricevitore deve accettare i tipi di argomento configurati, in particolare T/F.
+[Guida](README.it.md)

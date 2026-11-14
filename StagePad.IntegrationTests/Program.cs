@@ -12,7 +12,7 @@ if(args.Length==2 && args[0]=="--lifecycle-parent")
 }
 
 string folder = Path.Combine(Path.GetTempPath(), "stagepad-integration-" + Guid.NewGuid().ToString("N"));
-Directory.CreateDirectory(folder); Environment.SetEnvironmentVariable("STAGEPAD_DATA_DIR", folder);
+Directory.CreateDirectory(folder);File.WriteAllText(Path.Combine(folder,"settings.json"),"{\"autoSaveProjects\":false}"); Environment.SetEnvironmentVariable("STAGEPAD_DATA_DIR", folder);
 Log.Start("integration");
 int checks = 0;
 void Check(bool value, string name) { if (!value) throw new Exception("FAIL: " + name); checks++; Console.WriteLine("PASS: " + name); }
@@ -29,7 +29,7 @@ async Task<StateInfo> Until(Func<StateInfo, bool> predicate, string name, int ti
     while (Environment.TickCount64 < limit) { var s = await State(); if (s != null && predicate(s)) return s; await Task.Delay(15); }
     throw new Exception("TIMEOUT: " + name + " · " + System.Text.Json.JsonSerializer.Serialize(await State()));
 }
-async Task Do(Request r) { var reply = await audio.Handle(r); Check(reply.Ok, "accepted " + r.Op + (reply.Ok ? "" : ": " + reply.Error)); }
+async Task Do(Request r) { if(r.Op=="load-project")r=r with{Flag=true};var reply = await audio.Handle(r); Check(reply.Ok, "accepted " + r.Op + (reply.Ok ? "" : ": " + reply.Error)); }
 async Task Configure(int slot, Func<SlotSettings, SlotSettings> change)
 { var s = await State(); await Do(new("settings", slot, Settings: change(s.Project!.Slots[slot]))); }
 async Task LoadReady(int slot,string path,string name)
@@ -56,6 +56,23 @@ try
     await LoadReady(0,file,"load");
     var wire = await Wire.Call(pipe, new("state")); Check(wire.State?.Project?.Slots.Length == 16, "serialized protocol project snapshot roundtrip (in-process transport)");
     Check((await Wire.Call(pipe, new("wave"))).Peaks?.Length == 5, "waveform serialized separately");
+    var waveState=await State();int oldWaveRevision=waveState.Slots[0].Revision;
+    var readyWave=await Wire.Call(pipe,new("wave",0,Origin:waveState.Instance,SourceRevision:oldWaveRevision));
+    Check(readyWave.WaveReady && readyWave.WaveInstance==waveState.Instance && readyWave.WaveRevision==oldWaveRevision && readyWave.WaveSlot==0,"wave response identifies exact ready source");
+    Check(!(await audio.Handle(new("wave",0,Origin:"old-engine",SourceRevision:oldWaveRevision))).WaveReady,"old engine waveform request rejected");
+    FakeAudioImport.AllowCompletion.Reset();
+    try
+    {
+        await Do(new("load",0,Path:file));await Until(s=>s.Slots[0].Loading && s.Slots[0].Revision>oldWaveRevision,"waveform race import held");
+        int loadingRevision=(await State()).Slots[0].Revision;
+        var loadingWave=await audio.Handle(new("wave",0,Origin:waveState.Instance,SourceRevision:loadingRevision));
+        Check(!loadingWave.WaveReady && loadingWave.Peaks?.Length==0,"wave request during import never exposes old source peaks as new revision");
+        Check(!(await audio.Handle(new("wave",0,Origin:waveState.Instance,SourceRevision:oldWaveRevision))).Ok,"previous waveform revision rejected while replacement is loading");
+    }
+    finally{FakeAudioImport.AllowCompletion.Set();}
+    await Until(s=>!s.Slots[0].Loading && s.Slots[0].State=="Ready","wave replacement complete");
+    var finalWaveState=await State();var finalWave=await audio.Handle(new("wave",0,Origin:finalWaveState.Instance,SourceRevision:finalWaveState.Slots[0].Revision));
+    Check(finalWave.WaveReady && finalWave.Peaks?.Length==5,"retry after import returns complete waveform for the new revision");
     await Do(new("learn", Flag:true)); Emit(36,true);
     await Until(s => s.Project!.Slots[0].PadNote == 36, "learn"); Emit(36,false);
     Check((await State()).Slots[0].State == "Ready", "learn does not trigger audio or lights");
@@ -167,6 +184,18 @@ try
         owned.Hint(48000*20);await Task.Delay(100);
         Check(owned.ReadAt(48000*21,block)==1024 && block.AsSpan().SequenceEqual(pcmSamples.AsSpan(48000*21*2,2048)),"read-ahead catches destination beyond prepared second");
         seekBudget.Release(prepared.ResidentBytes);
+        seekBudget.SetLimit(realDisk.ResidentBytes);
+        bool loopNoBudget=false;try{owned.PrepareLoop(48000*20,48000*21,CancellationToken.None);}catch(InvalidOperationException){loopNoBudget=true;}
+        Check(loopNoBudget && seekBudget.Used==realDisk.ResidentBytes,"loop budget rejection never leaks RAM or modifies source");
+        seekBudget.SetLimit(realDisk.ResidentBytes+48000*8);
+        using(var cancelledLoop=new CancellationTokenSource())
+        {
+            cancelledLoop.Cancel();bool wasCancelled=false;try{owned.PrepareLoop(48000*20,48000*21,cancelledLoop.Token);}catch(OperationCanceledException){wasCancelled=true;}
+            Check(wasCancelled && seekBudget.Used==realDisk.ResidentBytes,"cancelled loop preparation releases its reservation");
+        }
+        var residentLoop=owned.PrepareLoop(48000*20,48000*21,CancellationToken.None);
+        Check(residentLoop.Buffer.ReadAt(48000*20,block)==1024 && block.AsSpan().SequenceEqual(pcmSamples.AsSpan(48000*20*2,2048)),"streaming loop contains exact PCM from existing markers");
+        Check(seekBudget.Used==realDisk.ResidentBytes+residentLoop.Buffer.ResidentBytes,"streaming loop uses bounded shared RAM reservation");seekBudget.Release(residentLoop.Buffer.ResidentBytes);
     }
     Check(seekBudget.Used==0,"source and seek preview reservations fully released");
 
@@ -468,6 +497,185 @@ try
         Check(available?.Version==new Version(0,13,0) && available.Sha256==new string('a',64),"stable GitHub release resolves allowed executable and checksum");
         Check(await updateService.Check(new Version(0,13,0))==null,"updater never offers same version");
     }
+
+    await Do(new("panic"));await Until(s=>s.Slots.All(v=>v.State is not ("Playing" or "Paused" or "Stopping")),"idle before marker tests");
+    var markerState=await State();int markerRevision=markerState.Slots[4].Revision;string markerInstance=markerState.Instance;
+    var savedMarker=new AudioMarker{Seconds=1,Label="Ingresso palco",Color="#A48BFF"};
+    await Do(new("play",4));await Until(s=>s.Slots[4].State=="Playing","audio playing during marker edits");
+    await Do(new("marker-add",4,Origin:markerInstance,Marker:savedMarker,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].Markers.Any(m=>m.Id==savedMarker.Id),"marker added live");
+    double markerPositionBefore=(await State()).Slots[4].Position;
+    var editedMarker=savedMarker with{Seconds=2,Label="Cambio scena",Color="#FFAA55"};
+    await Do(new("marker-edit",4,Origin:markerInstance,Marker:editedMarker,MarkerId:savedMarker.Id,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].Markers.Single().Label=="Cambio scena" && s.Slots[4].Position>markerPositionBefore,"live marker edit preserves ongoing playback");
+    Check((await State()).Slots[4].State=="Playing","marker editing never stops or restarts audio");
+    await Do(new("lock",Flag:true));
+    Check(!(await audio.Handle(new("marker-delete",4,Origin:markerInstance,MarkerId:savedMarker.Id,SourceRevision:markerRevision))).Ok,"SHOW LOCK rejects marker mutation");
+    await Do(new("seek",4,Value:.05f));await Until(s=>!s.Slots[4].Seeking && s.Slots[4].Position>=2,"marker-style seek remains available in SHOW LOCK");
+    await Do(new("lock",Flag:false));await Do(new("panic"));await Until(s=>s.Slots[4].State=="Stopped","idle before marker persistence");
+    string markersFile=Path.Combine(folder,"markers-show.json");await Do(new("save-project",Path:markersFile));
+    Check(ProjectFiles.Read(markersFile).Slots[4].Markers.Single()==editedMarker,"marker custom data saved in show file");
+    Check(!(await audio.Handle(new("marker-add",4,Origin:markerInstance,Marker:new AudioMarker{Seconds=50},SourceRevision:markerRevision))).Ok,"marker outside clip is rejected without altering saved markers");
+    Check(!(await audio.Handle(new("marker-delete",4,Origin:markerInstance,MarkerId:savedMarker.Id,SourceRevision:markerRevision-1))).Ok,"stale marker editor cannot change replaced audio");
+    Check(!(await audio.Handle(new("marker-delete",4,Origin:"other-engine",MarkerId:savedMarker.Id,SourceRevision:markerRevision))).Ok,"marker editor from another engine cannot modify this show");
+    await Do(new("marker-delete",4,Origin:markerInstance,MarkerId:savedMarker.Id,SourceRevision:markerRevision));await Until(s=>s.Project!.Slots[4].Markers.Length==0,"marker deleted");
+    await Do(new("load-project",Path:markersFile));await Until(s=>s.Project!.Slots[4].Markers.Length==1 && !s.Slots[4].Loading && s.Slots[4].State=="Ready","markers restored after project reopen");
+    Check((await State()).Project!.Slots[4].Markers.Single()==editedMarker,"reopening show restores exact label color position and identity");
+    markerState=await State();markerRevision=markerState.Slots[4].Revision;markerInstance=markerState.Instance;
+    var loopEndMarker=new AudioMarker{Seconds=2.2,Label="Fine loop",Color="#AABBFF"};
+    await Do(new("marker-add",4,Origin:markerInstance,Marker:loopEndMarker,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].Markers.Length==2,"loop endpoint added");
+    var loopConfig=new MarkerLoop(true,editedMarker.Id,loopEndMarker.Id);
+    Check(!(await audio.Handle(new("marker-loop",4,Origin:"stale-engine",SourceRevision:markerRevision,MarkerLoop:loopConfig))).Ok,"stale engine cannot configure loop");
+    Check(!(await audio.Handle(new("marker-loop",4,Origin:markerInstance,SourceRevision:markerRevision,MarkerLoop:new(true,loopEndMarker.Id,editedMarker.Id)))).Ok,"coordinator rejects reversed marker interval");
+    long beforeLoopMemory=(await State()).MemoryBytes;
+    await Do(new("marker-loop",4,Origin:markerInstance,SourceRevision:markerRevision,MarkerLoop:loopConfig));
+    await Until(s=>s.Project!.Slots[4].MarkerLoop==loopConfig && !s.Slots[4].Loading,"loop prepared before ready");
+    await Configure(4,s=>s with{MarkerLoop=null});await Until(s=>s.Project!.Slots[4].MarkerLoop==loopConfig,"slot settings preserve loop managed by marker editor");
+    Check((await State()).MemoryBytes==beforeLoopMemory+9600*8,"prepared loop RAM charged to shared budget");
+    await Do(new("play",4));await Until(s=>s.Slots[4].LoopPass>=3,"multiple engine loop passes",9000);
+    Check((await State()).Slots[4].State=="Playing" && (await State()).Slots[4].Position>=2 && (await State()).Slots[4].Position<2.2 && (await State()).Slots[4].Underruns==0,"marker loop repeats without stopping or disk starvation");
+    var insideLoopMarker=new AudioMarker{Seconds=2.1,Label="Inside applied loop",Color="#77CCFF"};
+    long loopMemoryBeforeEdit=(await State()).MemoryBytes;
+    await Do(new("marker-add",4,Origin:markerInstance,Marker:insideLoopMarker,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].Markers.Any(m=>m.Id==insideLoopMarker.Id) && s.Project.Slots[4].MarkerLoop==loopConfig && s.Slots[4].State=="Playing","adding marker after applying loop updates list data without interrupting playback");
+    await Do(new("marker-edit",4,Origin:markerInstance,Marker:insideLoopMarker with{Label="Edited inside loop"},MarkerId:insideLoopMarker.Id,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].Markers.Any(m=>m.Id==insideLoopMarker.Id && m.Label=="Edited inside loop"),"new marker in applied loop remains editable");
+    await Do(new("marker-delete",4,Origin:markerInstance,MarkerId:insideLoopMarker.Id,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].Markers.Length==2 && s.Project.Slots[4].MarkerLoop==loopConfig,"deleting non-endpoint marker preserves applied loop");
+    Check((await State()).MemoryBytes==loopMemoryBeforeEdit,"marker changes do not rebuild or leak loop PCM");
+    Check(!(await audio.Handle(new("marker-loop",4,Origin:markerInstance,SourceRevision:markerRevision))).Ok,"loop reconfiguration blocked during live audio");
+    Check(!(await audio.Handle(new("marker-delete",4,Origin:markerInstance,MarkerId:loopEndMarker.Id,SourceRevision:markerRevision))).Ok,"enabled loop protects endpoint deletion");
+    await Do(new("panic"));await Until(s=>s.Slots[4].State=="Stopped","panic stops looping audio");
+    string loopFile=Path.Combine(folder,"loop-show.json");await Do(new("save-project",Path:loopFile));
+    Check(ProjectFiles.Read(loopFile).Slots[4].MarkerLoop==loopConfig,"show persists loop using existing marker IDs");
+    await Do(new("load-project",Path:loopFile));await Until(s=>!s.Slots[4].Loading && s.Slots[4].State=="Ready" && s.Project!.Slots[4].MarkerLoop==loopConfig,"saved loop preloaded on project reopen");
+    markerState=await State();markerRevision=markerState.Slots[4].Revision;markerInstance=markerState.Instance;
+    await Do(new("lock",Flag:true));Check(!(await audio.Handle(new("marker-loop",4,Origin:markerInstance,SourceRevision:markerRevision))).Ok,"SHOW LOCK protects loop settings");await Do(new("lock",Flag:false));
+    await Do(new("marker-loop",4,Origin:markerInstance,SourceRevision:markerRevision));
+    await Until(s=>s.Project!.Slots[4].MarkerLoop==null && s.MemoryBytes==beforeLoopMemory,"disabled loop releases PCM after audio acknowledgement");
+    await Do(new("marker-delete",4,Origin:markerInstance,MarkerId:loopEndMarker.Id,SourceRevision:markerRevision));await Until(s=>s.Project!.Slots[4].Markers.Length==1,"endpoint editable after disabling loop");
+    using(var triggerReceiver=new System.Net.Sockets.UdpClient(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback,0)))
+    {
+        int triggerPort=((System.Net.IPEndPoint)triggerReceiver.Client.LocalEndPoint!).Port;
+        await LoadReady(5,file,"marker trigger test audio");await Configure(5,s=>s with{Mode=PlayMode.TogglePause,Action=SlotAction.Audio});
+        var triggerState=await State();int triggerRevision=triggerState.Slots[5].Revision;string triggerInstance=triggerState.Instance;
+        var startCue=new AudioMarker{Seconds=0,Label="Start OSC",OscTrigger=new(){Port=triggerPort,Address="/marker/start"}};
+        var midiCue=new AudioMarker{Seconds=.12,Label="MIDI cue",MidiTrigger=new(){Kind=MidiKind.ControlChange,Channel=5,Controller=31,ControlValue=55}};
+        var bothCue=new AudioMarker{Seconds=.25,Label="Both cue",MidiTrigger=new(){Kind=MidiKind.Note,Channel=5,Note=72,PulseMs=50},OscTrigger=new(){Port=triggerPort,Address="/marker/end"}};
+        foreach(var cue in new[]{startCue,midiCue,bothCue})await Do(new("marker-add",5,Origin:triggerInstance,SourceRevision:triggerRevision,Marker:cue));
+        await Until(s=>s.Project!.Slots[5].Markers.Length==3,"trigger markers stored");
+        int CcCount()=>FakeMidi.Notes.Count(raw=>(raw&255)==0xB4 && ((raw>>8)&127)==31 && ((raw>>16)&127)==55);
+        int beforeCc=CcCount();long beforeOsc=(await State()).OscSent;
+        await Do(new("play",5));await Until(s=>s.OscSent>=beforeOsc+2 && CcCount()>beforeCc,"marker MIDI OSC outputs dispatched from playback");
+        string[] paths=new string[2];for(int n=0;n<2;n++)paths[n]=System.Text.Encoding.ASCII.GetString((await triggerReceiver.ReceiveAsync().WaitAsync(TimeSpan.FromSeconds(2))).Buffer).Split('\0')[0];
+        Check(paths.SequenceEqual(new[]{"/marker/start","/marker/end"}) && CcCount()==beforeCc+1,"independent markers each dispatch their MIDI/OSC without cancelling other cues");
+        await Task.Delay(150);Check(FakeMidi.Notes.Any(raw=>(raw&255)==0x84 && ((raw>>8)&127)==72),"marker note trigger automatically sends Note Off");
+        long afterOsc=(await State()).OscSent;await Do(new("seek",5,Value:.9f));await Until(s=>!s.Slots[5].Seeking && s.Slots[5].Position>35,"seek past trigger markers");await Task.Delay(150);
+        Check((await State()).OscSent==afterOsc && CcCount()==beforeCc+1,"forward seek never transmits skipped marker actions");
+        await Do(new("seek",5,Value:0));await Until(s=>s.OscSent==afterOsc+1 && CcCount()==beforeCc+2,"backward seek rearms future crossings only");
+        Check(!System.Text.Encoding.ASCII.GetString((await triggerReceiver.ReceiveAsync().WaitAsync(TimeSpan.FromSeconds(2))).Buffer).StartsWith("/marker/start"),"seek to zero does not replay marker exactly at destination");
+        await Do(new("panic"));await Until(s=>s.Slots[5].State=="Stopped","idle before trigger loop");
+        await Do(new("marker-loop",5,Origin:triggerInstance,SourceRevision:triggerRevision,MarkerLoop:new(true,midiCue.Id,bothCue.Id)));
+        // Updating a trigger without moving an active loop endpoint is safe.
+        await Do(new("marker-edit",5,Origin:triggerInstance,SourceRevision:triggerRevision,MarkerId:midiCue.Id,Marker:midiCue with{Label="Loop MIDI cue"}));
+        await Do(new("play",5));await Until(s=>s.Slots[5].LoopPass>=3 && CcCount()>=beforeCc+6,"marker triggers repeat once on each loop pass");
+        await Do(new("panic"));await Until(s=>s.Slots[5].State=="Stopped","PANIC stops loop with outgoing marker triggers");await Task.Delay(150);int stoppedCc=CcCount();long stoppedOsc=(await State()).OscSent;await Task.Delay(250);
+        Check(CcCount()==stoppedCc && (await State()).OscSent==stoppedOsc,"PANIC prevents delayed marker replay after audio stops");
+        string triggerFile=Path.Combine(folder,"trigger-show.json");await Do(new("save-project",Path:triggerFile));
+        var triggerSaved=ProjectFiles.Read(triggerFile).Slots[5];Check(triggerSaved.Markers.Single(m=>m.Id==bothCue.Id).MidiTrigger==bothCue.MidiTrigger && triggerSaved.Markers.Single(m=>m.Id==bothCue.Id).OscTrigger?.Address=="/marker/end","show persists marker MIDI/OSC payloads");
+        await Do(new("marker-loop",5,Origin:triggerInstance,SourceRevision:triggerRevision));await Until(s=>s.Project!.Slots[5].MarkerLoop==null,"disable trigger test loop");
+        await Do(new("clear",5));
+    }
+    await LoadReady(5,file,"learn marker audio ready");await Configure(5,s=>s with{Action=SlotAction.Audio,Mode=PlayMode.TogglePause});
+    string markerUi=Guid.NewGuid().ToString("N");long markerUiSeq=0;
+    async Task CaptureContext(bool setup,int slot=5)
+    {
+        var context=await State();await Do(new("marker-context",slot,DeviceId:context.Instance,Flag:setup,Origin:markerUi,Epoch:++markerUiSeq,SourceRevision:context.Slots[slot].Revision));
+    }
+    async Task<Reply> CaptureKey(bool down,int channel=16,int note=126,long timestamp=0)=>await audio.Handle(new(down?"midi-down":"midi-up",Channel:channel,Note:note,Origin:"marker-capture-test",Timestamp:timestamp==0?Environment.TickCount64:timestamp));
+    Check(!(await audio.Handle(new("learn-marker",Flag:true))).Ok,"marker LEARN disabled without a current Setup UI context");
+    await CaptureContext(true);await Do(new("play",5));await Until(s=>s.Slots[5].State=="Playing" && s.Slots[5].Position>.05,"playing before marker capture learn");
+    await Do(new("learn-marker",Flag:true));await Until(s=>s.MarkerLearn,"marker LEARN armed");
+    var occupiedPad=(await State()).Project!.Slots.First(s=>s.PadNote>=0 && !s.EmergencyPauseAll);
+    Check(!(await CaptureKey(true,occupiedPad.PadChannel,occupiedPad.PadNote)).Ok,"marker LEARN rejects a pad already assigned to a slot");await CaptureKey(false,occupiedPad.PadChannel,occupiedPad.PadNote);
+    Check((await CaptureKey(true)).Ok,"free MIDI key learned for marker capture");await CaptureKey(false);
+    await Until(s=>s.Project!.MarkerCapture==new MarkerCaptureBinding(16,126) && !s.MarkerLearn,"marker capture assignment stored");
+    Check((await State()).Project!.Slots[5].Markers.Length==0,"LEARN press never inserts a marker or retriggers audio");
+    await CaptureContext(true);double beforeCapture=(await State()).Slots[5].Position;
+    Check((await CaptureKey(true)).Ok,"capture key inserts marker during playback");
+    for(int n=0;n<4;n++)await CaptureKey(true);
+    await Until(s=>s.Project!.Slots[5].Markers.Length==1,"marker created from held key only once");
+    var captured=(await State()).Project!.Slots[5].Markers.Single();
+    Check(captured.Seconds>=beforeCapture && captured.Seconds<beforeCapture+.3 && captured.MidiTrigger==null && captured.OscTrigger==null && (await State()).Slots[5].State=="Playing","capture uses audio cursor and preserves uninterrupted playback");
+    await CaptureKey(false);await CaptureKey(true);await CaptureKey(false);await Until(s=>s.Project!.Slots[5].Markers.Length==2,"new physical press creates next marker");
+    await CaptureContext(false);await CaptureKey(true);await CaptureKey(false);await Task.Delay(130);
+    Check((await State()).Project!.Slots[5].Markers.Length==2,"Serata never inserts markers from learned MIDI key");
+    var oldContext=await State();await Do(new("marker-context",5,DeviceId:oldContext.Instance,Flag:true,Origin:markerUi,Epoch:markerUiSeq-1,SourceRevision:oldContext.Slots[5].Revision));await CaptureKey(true);await CaptureKey(false);await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==2,"late Setup context cannot reenable capture after entering Serata");
+    await CaptureContext(true);await Do(new("lock",Flag:true));await CaptureKey(true);await CaptureKey(false);await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==2,"SHOW LOCK prevents MIDI marker capture");await Do(new("lock",Flag:false));
+    await CaptureContext(true);await CaptureKey(true,timestamp:Environment.TickCount64-1000);await CaptureKey(false);await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==2,"stale MIDI events never insert delayed markers");
+    await CaptureContext(true);await Do(new("learn-marker",Flag:true));await Task.Delay(1650);await CaptureKey(true);await CaptureKey(false);await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==2 && !(await State()).MarkerSetup,"lost UI heartbeat disables marker capture safely");
+    await CaptureContext(true);await Until(s=>!s.MarkerLearn,"expired marker LEARN cannot reactivate on UI reconnect");await Do(new("pause",5));await Until(s=>s.Slots[5].State=="Paused","pause before capture guard");await CaptureKey(true);await CaptureKey(false);await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==2,"paused audio cannot receive a captured marker");
+    var originalSlot=(await State()).Project!.Slots[0];Check(!(await audio.Handle(new("settings",0,Settings:originalSlot with{PadChannel=16,PadNote=126}))).Ok,"slot LEARN cannot steal reserved marker capture key");
+    await CaptureContext(true);await Do(new("play",5));await Until(s=>s.Slots[5].State=="Playing","resume for physical MIDI capture path");
+    FakeMidi.Emit(MidiCodec.Note(16,126,100,true));await Task.Delay(35);FakeMidi.Emit(MidiCodec.Note(16,126,0,false));
+    await Until(s=>s.Project!.Slots[5].Markers.Length==3,"physical MIDI input creates marker through complete routing");
+    Check((await State()).Slots[5].State=="Playing","MIDI capture pipeline leaves audio playing");
+    string captureFile=Path.Combine(folder,"capture-show.json");await Do(new("save-project",Path:captureFile));Check(ProjectFiles.Read(captureFile).MarkerCapture==new MarkerCaptureBinding(16,126),"show save preserves learned marker key");
+    await Do(new("panic"));await Until(s=>s.Slots[5].State=="Stopped","idle after marker learn test");
+    await CaptureContext(true);await Do(new("learn-marker",Flag:true));await CaptureContext(false);await Until(s=>!s.MarkerLearn,"Serata cancels pending marker LEARN");
+    await CaptureContext(true);await Do(new("clear-marker-learn"));await Until(s=>s.Project!.MarkerCapture==null,"marker binding reset");
+    await Do(new("learn-marker",Flag:true));
+    await Do(new("learn-marker",Flag:false));await Do(new("clear",5));
+    string markerArchive=Path.Combine(folder,"markers.stagepad.zip");ShowBundle.Export(markerArchive,(await State()).Project!);
+    string markerImported=ShowBundle.Import(markerArchive,Path.Combine(folder,"marker-portable"),"Markers");
+    Check(ProjectFiles.Read(markerImported).Slots[4].Markers.Single()==editedMarker,"portable show carries markers alongside original audio");
+    await LoadReady(4,file,"same audio retains markers");Check((await State()).Project!.Slots[4].Markers.Length==1,"reimporting same audio preserves marker data");
+    await LoadReady(4,titleB,"different audio resets markers");Check((await State()).Project!.Slots[4].Markers.Length==0,"replacing audio file clears cues belonging to the old track");
+    Check(!(await audio.Handle(new("new-project"))).Ok,"new show cannot silently discard unsaved changes");
+    string beforeNew=Path.Combine(folder,"before-new.json");await Do(new("save-project",Path:beforeNew));await Until(s=>!s.ProjectDirty,"explicit save marks current revision saved");
+    await Do(new("play",4));await Until(s=>s.Slots[4].State=="Playing","audio playing before new show safety guard");
+    Check(!(await audio.Handle(new("new-project",Flag:true))).Ok,"new show never resets live playback");await Do(new("panic"));await Until(s=>s.Slots.All(v=>v.State is not ("Playing" or "Paused" or "Stopping")),"idle for new show");
+    var beforeBlank=await State();await Do(new("new-project"));await Until(s=>s.ProjectPath==null && !s.ProjectDirty && s.Slots.Length==16,"new blank show installed");
+    var blank=(await State()).Project!;Check(blank.Slots.All(slot=>slot.File==null && slot.Markers.Length==0 && slot.MarkerLoop==null && slot.PadNote<0) && blank.Routing==beforeBlank.Project!.Routing,"new show clears audio cues and slot mappings while preserving device routing");
+    await Do(new("grid",Rows:2,Columns:8));await Until(s=>s.ProjectDirty,"layout edit marks show dirty");
+    Check(!(await audio.Handle(new("load-project",Path:beforeNew))).Ok,"open cannot discard dirty show without confirmation");
+    await Do(new("new-project",Flag:true));await Until(s=>!s.ProjectDirty,"explicit discard creates clean show");
+    string automaticFolder=Path.Combine(folder,"automatic-projects");await Do(new("autosave-settings",Path:automaticFolder,Flag:true));await Do(new("master",Value:.73f));
+    var autoNamed=await Until(s=>s.ProjectPath!=null && !s.ProjectDirty && !s.ProjectSaving,"untitled show gets automatic file after debounce");string autoPath=autoNamed.ProjectPath!;
+    Check(Path.GetDirectoryName(autoPath)==automaticFolder && Math.Abs(ProjectFiles.Read(autoPath).Master-.73f)<.001,"untitled auto-save uses configured project directory");
+    await Do(new("master",Value:.62f));await Until(s=>!s.ProjectDirty && s.LastSavedAt>0 && Math.Abs(ProjectFiles.Read(autoPath).Master-.62f)<.001,"named show updates automatically");
+    Check(Directory.GetFiles(automaticFolder,"*.json").Length==1 && File.Exists(autoPath+".bak"),"named auto-save updates one file and retains atomic backup");
+    await LoadReady(0,file,"live auto-save test clip");await Do(new("play",0));await Until(s=>s.Slots[0].Position>.05 && s.Slots[0].State=="Playing","playing during auto-save");double autoPosition=(await State()).Slots[0].Position;
+    await Do(new("volume",0,Value:.44f));await Until(s=>!s.ProjectDirty && Math.Abs(ProjectFiles.Read(autoPath).Slots[0].Volume-.44f)<.001,"slot volume auto-saved during playback");
+    Check((await State()).Slots[0].State=="Playing" && (await State()).Slots[0].Position>autoPosition && (await State()).CallbackErrors==0,"background auto-save preserves live playback and callback health");
+    await Do(new("panic"));await Until(s=>s.Slots[0].State=="Stopped","idle after live auto-save");await Do(new("autosave-settings",Path:automaticFolder,Flag:false));await Do(new("master",Value:.51f));await Task.Delay(1750);
+    Check((await State()).ProjectDirty && Math.Abs(ProjectFiles.Read(autoPath).Master-.62f)<.001,"disabled auto-save leaves named file unchanged");
+    await Do(new("save-project",Path:autoPath));await Until(s=>!s.ProjectDirty,"manual save remains available with auto-save disabled");
+    await Do(new("new-project"));await Until(s=>s.ProjectPath==null && !s.ProjectDirty,"blank before auto-save I/O failure test");
+    string blockedFolder=Path.Combine(folder,"blocked-folder");File.WriteAllText(blockedFolder,"PRESERVE");await Do(new("autosave-settings",Path:blockedFolder,Flag:true));await Do(new("master",Value:.33f));
+    await Until(s=>s.ProjectDirty && s.ProjectError?.StartsWith("Salvataggio non riuscito:")==true,"failed auto-save keeps dirty state and recovery");
+    Check(File.ReadAllText(blockedFolder)=="PRESERVE" && (await State()).ProjectPath==null,"failed auto-save never overwrites unrelated files or marks data as saved");
+    await Do(new("autosave-settings",Path:automaticFolder,Flag:true));var restoredSave=await Until(s=>!s.ProjectDirty && s.ProjectPath!=null && s.ProjectError==null,"auto-save retries successfully after path is repaired");autoPath=restoredSave.ProjectPath!;
+    Check(Math.Abs(ProjectFiles.Read(autoPath).Master-.33f)<.001,"auto-save retry writes latest document after an I/O failure");
+    string migrationRoot=Path.Combine(folder,"migration"),oldRoot=Path.Combine(migrationRoot,"preview-markers"),oldProjects=Path.Combine(oldRoot,"project"),mainProjects=Path.Combine(migrationRoot,"project");
+    Directory.CreateDirectory(oldProjects);Directory.CreateDirectory(mainProjects);string legacyAudio=Path.Combine(oldProjects,"tone.wav");File.WriteAllText(legacyAudio,"ORIGINAL");
+    var oldShow=new ProjectDocument{Master=.7f};oldShow.Slots[0]=oldShow.Slots[0] with{File=legacyAudio};string oldShowPath=Path.Combine(oldProjects,"Test.json");ProjectFiles.Write(oldShowPath,oldShow,false);ProjectFiles.Write(Path.Combine(oldProjects,"last-project.json"),oldShow,false,true,oldShowPath);
+    ProjectFiles.Write(Path.Combine(mainProjects,"Test.json"),new(){Master=.2f},false);File.WriteAllText(Path.Combine(migrationRoot,"settings.json"),System.Text.Json.JsonSerializer.Serialize(new{language="es",projectDirectory=oldProjects,autoSaveProjects=false}));
+    LegacyDataMigration.Run(migrationRoot);
+    Check(!Directory.Exists(oldRoot) && File.Exists(Path.Combine(migrationRoot,"backups","legacy-data","project","tone.wav")),"legacy directory is removed from active paths while source audio is retained in backup");
+    Check(Math.Abs(ProjectFiles.Read(Path.Combine(mainProjects,"Test.json")).Master-.2f)<.001,"migration never overwrites an existing named show");
+    var migratedPath=Directory.GetFiles(mainProjects,"Test - recuperato *.json").Single();var migrated=ProjectFiles.Read(migratedPath);Check(Math.Abs(migrated.Master-.7f)<.001 && File.Exists(migrated.Slots[0].File),"conflicting recovered show gets a unique name and valid audio references");
+    var migratedStartup=ProjectFiles.ReadStartup(out var migratedActive,out _,migrationRoot);Check(migratedActive==migratedPath && Math.Abs(migratedStartup.Master-.7f)<.001,"last opened legacy show resolves to the migrated main project");
+    using(var migratedSettings=System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(migrationRoot,"settings.json"))))Check(migratedSettings.RootElement.GetProperty("projectDirectory").ValueKind==System.Text.Json.JsonValueKind.Null && migratedSettings.RootElement.GetProperty("language").GetString()=="es","migration resets legacy project directory while preserving preferences");
+    string corruptMigration=Path.Combine(folder,"corrupt-migration"),corruptRecovery=Path.Combine(corruptMigration,"preview-markers","project");Directory.CreateDirectory(corruptRecovery);File.WriteAllText(Path.Combine(corruptRecovery,"last-project.json"),"BROKEN");LegacyDataMigration.Run(corruptMigration);
+    Check(File.ReadAllText(Path.Combine(corruptMigration,"backups","legacy-data","project","last-project.json"))=="BROKEN","unreadable legacy recovery remains preserved without preventing normal startup");
+    int recoveredFiles=Directory.GetFiles(mainProjects,"*.json").Length;LegacyDataMigration.Run(migrationRoot);Check(Directory.GetFiles(mainProjects,"*.json").Length==recoveredFiles,"migration is idempotent and never duplicates recovered shows");
     var children=new List<System.Diagnostics.Process>();
     System.Diagnostics.Process? externalChild=null;
     try
@@ -490,6 +698,8 @@ try
         Check(!externalChild.HasExited,"cleanup does not terminate external descendants of an application process");
     }
     finally{foreach(var child in children){try{if(!child.HasExited)child.Kill();}catch{}child.Dispose();}if(externalChild!=null){try{if(!externalChild.HasExited)externalChild.Kill();}catch{}externalChild.Dispose();}}
+    await Do(new("autosave-settings",Path:automaticFolder,Flag:true));await Do(new("master",Value:.48f));audio.Dispose();
+    Check(Math.Abs(ProjectFiles.Read(autoPath).Master-.48f)<.001,"graceful close flushes the latest edit without waiting for auto-save debounce");audio.Dispose();
     Console.WriteLine($"{checks} integration checks passed with simulated hardware. Native IPC, Windows drivers and WPF are NOT covered.");
 }
 finally

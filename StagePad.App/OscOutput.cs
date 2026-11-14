@@ -40,6 +40,12 @@ internal sealed class OscOutput : IDisposable
         try{old?.Cancel();}catch(ObjectDisposedException){}return true;
     }
     public void Cancel(int slot){CancellationTokenSource? source;lock(gate)bySlot.TryGetValue(slot,out source);try{source?.Cancel();}catch(ObjectDisposedException){} }
+    public void CancelMarkers(int slot)
+    {
+        int first=MarkerTriggers.Scope(slot,0);CancellationTokenSource[] pending;
+        lock(gate)pending=bySlot.Where(p=>p.Key>=first && p.Key<first+AudioMarkers.Maximum).Select(p=>p.Value).ToArray();
+        foreach(var source in pending)try{source.Cancel();}catch(ObjectDisposedException){}
+    }
     public void Panic()
     {
         CancellationTokenSource[] sources;lock(gate){sources=bySlot.Values.ToArray();bySlot.Clear();}

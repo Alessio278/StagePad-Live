@@ -79,7 +79,7 @@ internal sealed class AppUpdates
         using var input=File.OpenRead(path);using var pe=new PEReader(input);
         if(pe.PEHeaders.CoffHeader.Machine!=Machine.Amd64 || pe.PEHeaders.PEHeader?.Subsystem!=Subsystem.WindowsGui)throw new InvalidDataException("Eseguibile aggiornamento non valido.");
         var info=FileVersionInfo.GetVersionInfo(path);
-        if(info.ProductName?.StartsWith("StagePad Live",StringComparison.Ordinal)!=true || !Version.TryParse((info.ProductVersion??"").Split('+')[0],out var actual) || actual.Major!=expected.Major || actual.Minor!=expected.Minor || actual.Build!=expected.Build)throw new InvalidDataException("Versione o prodotto aggiornamento non validi.");
+        if(info.ProductName?.StartsWith(BuildFlavor.ProductPrefix,StringComparison.Ordinal)!=true || !Version.TryParse((info.ProductVersion??"").Split('+')[0],out var actual) || actual.Major!=expected.Major || actual.Minor!=expected.Minor || actual.Build!=expected.Build)throw new InvalidDataException("Versione o prodotto aggiornamento non validi.");
     }
     private static async Task<byte[]> Read(HttpContent content,int limit,CancellationToken ct)
     {using var input=await content.ReadAsStreamAsync(ct);using var output=new MemoryStream();byte[] buffer=new byte[8192];int count;while((count=await input.ReadAsync(buffer,ct))>0){if(output.Length+count>limit)throw new InvalidDataException("Risposta aggiornamento troppo grande.");output.Write(buffer,0,count);}return output.ToArray();}

@@ -9,6 +9,8 @@ public static class Program
     public static int Main(string[] args)
     {
         string role = args.FirstOrDefault() ?? "supervisor";
+        string normalRoot=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"StagePad");
+        if(Environment.GetEnvironmentVariable("STAGEPAD_DATA_DIR") is {} custom && Path.GetFullPath(custom).TrimEnd(Path.DirectorySeparatorChar).Equals(Path.Combine(normalRoot,"preview-markers"),StringComparison.OrdinalIgnoreCase))Environment.SetEnvironmentVariable("STAGEPAD_DATA_DIR",normalRoot);
         Log.Start(role.TrimStart('-'));
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Warn("fatal", e.ExceptionObject.ToString() ?? "Errore fatale");
         TaskScheduler.UnobservedTaskException += (_, e) => { Log.Error("task", e.Exception); e.SetObserved(); };
@@ -27,7 +29,12 @@ public static class Program
                 _ => Supervisor()
             };
         }
-        catch (Exception ex) { Log.Error("main", ex); return 2; }
+        catch(Exception ex)
+        {
+            Log.Error("main",ex);
+            if(role=="--check-ui-assets")try{Directory.CreateDirectory(Log.Root);File.WriteAllText(Path.Combine(Log.Root,"ui-check-error.txt"),ex.ToString());}catch{}
+            return 2;
+        }
     }
     private static int DecodeMain(string original, string cache, int parent)
     {
@@ -61,6 +68,10 @@ public static class Program
     {
         using var instance=SingleInstance.Enter();
         if(instance==null)return 0;
+        using var previousPreview=new Mutex(false,"Local\\StagePad-Markers-Preview-"+Environment.UserName);
+        bool legacyFree;try{legacyFree=previousPreview.WaitOne(0);}catch(AbandonedMutexException){legacyFree=true;}
+        if(!legacyFree){MessageBox.Show("Chiudi la precedente applicazione prima di avviare StagePad.","StagePad");return 1;}
+        try{LegacyDataMigration.Run(Log.Root);}catch(Exception ex){previousPreview.ReleaseMutex();Log.Error("data-migration",ex);MessageBox.Show("Recupero dei progetti non completato. I dati precedenti sono conservati.\n"+ex.Message,"StagePad");return 2;}
         using var closeSignal=LifecycleSignals.Create("-"+Environment.ProcessId);
         _=Task.Run(()=>
         {
@@ -144,6 +155,7 @@ public static class Program
             Task.WhenAll(shutdowns).Wait(750);
             ChildProcessCleanup.StopAll(processes.Values);
             foreach(var child in processes.Values)child.Dispose();
+            previousPreview.ReleaseMutex();
         }
 
         return 0;

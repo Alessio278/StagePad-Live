@@ -37,6 +37,8 @@ public sealed record SlotSettings
     public bool? AutoName {get;init;}
     public bool EmergencyPauseAll {get;init;}
     public string Color { get; init; } = "#4A78BC";
+    public AudioMarker[] Markers {get;init;}=[];
+    public MarkerLoop? MarkerLoop {get;init;}
     public string? File { get; init; }
     public float Volume { get; init; } = 1;
     public PlayMode Mode { get; init; }
@@ -49,6 +51,7 @@ public sealed record SlotSettings
     public MidiSettings[]? MidiCommands { get; init; }
     public OscCommand[] OscCommands { get; init; } = [];
 }
+public sealed record MarkerCaptureBinding(int Channel,int Note);
 public sealed record RoutingSettings
 {
     public string? AudioDevice { get; init; }
@@ -65,6 +68,7 @@ public sealed record ProjectDocument
     public GridLayout SetupGrid { get; init; } = new();
     public string Name { get; init; } = "Nuovo progetto";
     public float Master { get; init; } = 1;
+    public MarkerCaptureBinding? MarkerCapture {get;init;}
     public MidiCcBinding MasterControl {get;init;}=new();
     public MidiCcBinding CurrentTrackControl {get;init;}=new();
     public int MemoryMiB { get; init; } = 512;
@@ -112,10 +116,12 @@ public static partial class Projects
         if(p.Grid==null || p.Grid.Rows is <1 or >MaxGridSize || p.Grid.Columns is <1 or >MaxGridSize || p.Grid.Rows*p.Grid.Columns<p.SlotCount)throw new InvalidDataException("Griglia: righe e colonne da 1 a 10, con una cella per ogni slot attivo.");
         if(p.SetupGrid==null || p.SetupGrid.Rows is <1 or >MaxGridSize || p.SetupGrid.Columns is <1 or >MaxGridSize || p.SetupGrid.Rows*p.SetupGrid.Columns<p.SlotCount)throw new InvalidDataException("Griglia Setup: righe e colonne da 1 a 10, con una cella per ogni slot attivo.");
         MidiCcBinding.Validate(p.MasterControl,p.CurrentTrackControl);
+        if(p.MarkerCapture is {} capture && (capture.Channel is <1 or >16 || capture.Note is <0 or >127))throw new InvalidDataException("Assegnazione marker MIDI non valida.");
         var mapped = new HashSet<int>();
         foreach (var s in p.Slots)
         {
             ValidateSlot(s);
+            if(p.MarkerCapture is {} reserved && s.PadNote==reserved.Note && s.PadChannel==reserved.Channel)throw new InvalidDataException("Il tasto marker è già assegnato a uno slot. Scegli un tasto libero.");
             if (s.PadNote >= 0 && !mapped.Add((s.PadChannel - 1) * 128 + s.PadNote)) throw new InvalidDataException("Due slot sono associati alla stessa nota/canale del pad.");
         }
     }
@@ -124,6 +130,8 @@ public static partial class Projects
         if (s == null || s.Midi == null || s.Name is null || (s.AutoName==false && string.IsNullOrWhiteSpace(s.Name)) || s.Name.Length > 100 || !ColorPattern().IsMatch(s.Color ?? "")) throw new InvalidDataException("Nome o colore slot non valido (#RRGGBB).");
         if ((s.File?.Length ?? 0) > 1024) throw new InvalidDataException("Percorso audio troppo lungo (massimo 1024 caratteri).");
         if (!Enum.IsDefined(s.Mode) || !Enum.IsDefined(s.Action) || !float.IsFinite(s.Volume) || s.Volume is < 0 or > 1 || s.PadChannel is < 1 or > 16 || s.PadNote is < -1 or > 127 || s.FadeInMs is < 0 or > 30000 || s.FadeOutMs is < 0 or > 30000) throw new InvalidDataException("Parametri audio/mappatura non validi.");
+        AudioMarkers.Validate(s.Markers);
+        MarkerLoops.Validate(s.MarkerLoop,s.Markers);
         ValidateMidi(s.Midi);
         if(s.MidiCommands is {Length: >16} || s.OscCommands is null || s.OscCommands.Length>16)throw new InvalidDataException("Massimo 16 comandi MIDI e 16 OSC per slot.");
         if(s.MidiCommands!=null)foreach(var command in s.MidiCommands){if(command==null)throw new InvalidDataException("Comando MIDI non valido.");ValidateMidi(command);}

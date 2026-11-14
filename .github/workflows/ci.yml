@@ -1,4 +1,4 @@
-name: Windows build and simulated tests
+name: Windows build and tests
 on:
   push:
     branches: [main]
@@ -9,12 +9,12 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - name: Test and publish Windows executable
+      - name: Validate, test and build Windows
         shell: pwsh
         run: ./Build.ps1

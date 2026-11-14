@@ -80,7 +80,7 @@ internal sealed partial class MainWindow : Window
         var credit=Text("Created by Alessio Natalucci",9);credit.Foreground=Brush("#6D859E");credit.Margin=new Thickness(0,1,0,0);brandText.Children.Add(credit);brand.Children.Add(brandText);header.Children.Add(brand);
         var navigation = new StackPanel { Orientation = Orientation.Horizontal };
         setupSwitch = Button("Setup", () => { SetView(false); return Task.CompletedTask; });
-        showSwitch = Button("Serata", () => { SetView(true); return Task.CompletedTask; });
+        showSwitch = Button("Serata", EnterLive);
         setupSwitch.MinWidth = showSwitch.MinWidth = 78;
         navigation.Children.Add(setupSwitch); navigation.Children.Add(showSwitch);
         var segments = new Border { Background = Brush("#121D2B"), Padding = new Thickness(3), CornerRadius = new CornerRadius(11), Margin = new Thickness(10,0,18,0), VerticalAlignment = VerticalAlignment.Center, Child = navigation };
@@ -188,7 +188,7 @@ internal sealed partial class MainWindow : Window
         value.FontWeight=FontWeights.SemiBold;value.FontFamily=new FontFamily("Consolas");value.Margin=new Thickness(0);
         var panel=new StackPanel { Margin=new Thickness(14,0,10,0),VerticalAlignment=VerticalAlignment.Center };
         var caption=Text(label,10);caption.Foreground=Brush("#91A6BD");caption.FontWeight=FontWeights.SemiBold;panel.Children.Add(caption);
-        panel.Children.Add(new Viewbox { Height=60,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,HorizontalAlignment=HorizontalAlignment.Left,Child=value });
+        panel.Children.Add(new Viewbox { Height=30,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,HorizontalAlignment=HorizontalAlignment.Left,Child=value });
         return new Border { BorderBrush=Brush("#293C51"),BorderThickness=new Thickness(1,0,0,0),Child=panel };
     }
     private static System.Windows.Shapes.Path TransportIcon(string kind)
@@ -308,7 +308,7 @@ internal sealed partial class MainWindow : Window
         L.Bind(b,ContentControl.ContentProperty,text);
         b.Click+=async(_,_)=>{try{await action();}catch(Exception ex){Log.Error("ui-action",ex);}};return b;
     }
-    private void Select(int slot) { if(last!=null && (uint)slot>=last.Slots.Length)return;current = slot; if (last != null) Show(last); }
+    private void Select(int slot) { if(last!=null && (uint)slot>=last.Slots.Length)return;current = slot; if (last != null){Show(last);_ = SyncMarkerContext();} }
     private void Warn(string message) { localWarning = message; warningUntil = DateTime.UtcNow.AddSeconds(12); warning.Text = L.Message(message); }
     private async Task Send(Request request)
     { var reply = await SendReply(request); if (!reply.Ok) Warn(reply.Error ?? "Comando non riuscito."); }
@@ -317,7 +317,7 @@ internal sealed partial class MainWindow : Window
     private async Task<Reply> SendReply(Request request)
     {
         bool priority = request.Op == "panic" || (request.Op is "play" or "pad-down" && last?.Project is {} emergencyProject && (uint)request.Slot<emergencyProject.Slots.Length && emergencyProject.Slots[request.Slot].EmergencyPauseAll);
-        bool independent=priority || request.Op is "export-show" or "import-show" or "test-command" or "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project";
+        bool independent=priority || request.Op is "marker-context" or "marker-loop" or "export-show" or "import-show" or "test-command" or "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project";
         if (priority) Interlocked.Increment(ref uiPanicEpoch);
         long epoch = Volatile.Read(ref uiPanicEpoch);
         request = request with { Timestamp = request.Timestamp == 0 ? Environment.TickCount64 : request.Timestamp };
@@ -327,7 +327,7 @@ internal sealed partial class MainWindow : Window
         try
         {
             if (request.Op is "pad-down" or "play" or "seek" && epoch != Volatile.Read(ref uiPanicEpoch)) return new(true);
-            return await Wire.Call(pipe, request,request.Op is "export-show" or "import-show"?300000:request.Op=="test-command"?5000:request.Op is "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project"?20000:1800);
+            return await Wire.Call(pipe, request,request.Op is "export-show" or "import-show"?300000:request.Op=="marker-loop"?30000:request.Op=="test-command"?5000:request.Op is "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project"?20000:1800);
         }
         catch(OperationCanceledException) when(request.Op is "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project")
         {return new(false,"L’operazione non ha risposto in tempo. Controlla l’elenco progetti prima di riprovare.");}
@@ -340,7 +340,7 @@ internal sealed partial class MainWindow : Window
         if (polling) return; polling = true;
         try
         {
-            var reply = await Wire.Call(pipe, new("state"));
+            var reply = await Wire.Call(pipe, MarkerContextRequest("state"));
             if (reply.State != null)
             {
                 if (instance != null && instance != reply.State.Instance) Warn("Motore audio recuperato: progetto ripristinato, nessuna ripartenza automatica.");
@@ -348,7 +348,7 @@ internal sealed partial class MainWindow : Window
                 int? followSlot=null;
                 if (seenTrigger != last.TriggerSerial)
                 { seenTrigger = last.TriggerSerial; current = last.LastStarted;if(last.TriggerSerial>0)followSlot=current; }
-                if((uint)current>=last.Slots.Length){current=0;waveSlot=-1;waveRevision=-1;waveform.SetPeaks([]);}
+                if((uint)current>=last.Slots.Length){current=0;waveTarget=null;waveLoaded=null;waveform.SetPeaks([]);}
                 Show(last);
                 if(followSlot is int triggered)QueueFollowTriggeredSlot(triggered,last.TriggerSerial,last.Instance);
                 _ = RefreshWave(last);

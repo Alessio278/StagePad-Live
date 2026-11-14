@@ -23,6 +23,8 @@ internal static class L
     public static readonly DependencyProperty PreserveTextProperty=DependencyProperty.RegisterAttached("PreserveText",typeof(bool),typeof(L),new PropertyMetadata(false));
     private static UiPreferences preferences=new();
     public static bool FollowTriggeredSlot=>preferences.FollowTriggeredSlot;
+    public static bool AutoSaveProjects=>preferences.AutoSaveProjects;
+    public static bool SetAutoSaveProjects(bool enabled){var next=preferences with{AutoSaveProjects=enabled};bool saved=Save(next);preferences=next;return saved;}
     public static string ProjectDirectory=>preferences.ProjectDirectory??ProjectFiles.DefaultDirectory;
     public static event Action? DirectoryChanged;
     private static string SettingsPath=>Path.Combine(Log.Root,"settings.json");

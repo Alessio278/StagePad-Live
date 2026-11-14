@@ -6,8 +6,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: StagePad version
-      placeholder: e.g. 0.12.0
+      label: StagePad Live version
+      placeholder: e.g. 1.0.0
     validations:
       required: true
   - type: textarea

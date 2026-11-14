@@ -44,6 +44,26 @@ internal sealed class OwnedSource(IAudioSource inner, string cache, MemoryBudget
         }
         catch{budget.Release(bytes);throw;}
     }
+    public LoopRegion PrepareLoop(long start,long end,CancellationToken ct)
+    {
+        if(start<0 || end>Frames || end-start<2400)throw new InvalidDataException("Intervallo loop non valido.");
+        long frames=end-start,bytes=checked(frames*8);
+        if(frames>Array.MaxLength/2 || !budget.Reserve(bytes))throw new InvalidOperationException("Budget RAM insufficiente per il loop. Accorcia l’intervallo o aumenta il budget nelle impostazioni.");
+        try
+        {
+            ct.ThrowIfCancellationRequested();var samples=new float[checked((int)(frames*2))];
+            using var input=new FileStream(cache,FileMode.Open,FileAccess.Read,FileShare.Read,65536,FileOptions.RandomAccess);
+            input.Position=start*8;
+            // Check cancellation between bounded reads, never on the audio callback.
+            for(int offset=0;offset<samples.Length;)
+            {
+                ct.ThrowIfCancellationRequested();int count=Math.Min(32768,samples.Length-offset);
+                input.ReadExactly(System.Runtime.InteropServices.MemoryMarshal.AsBytes(samples.AsSpan(offset,count)));offset+=count;
+            }
+            ct.ThrowIfCancellationRequested();return new LoopRegion(new SeekBuffer(start,samples));
+        }
+        catch{budget.Release(bytes);throw;}
+    }
     public void Dispose()
     {
         inner.Dispose();
