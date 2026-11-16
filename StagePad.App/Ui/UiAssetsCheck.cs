@@ -148,6 +148,10 @@ internal static class UiAssetsCheck
             var main=new MainWindow("ui-check-no-transport",Environment.ProcessId,()=>LifecycleSignals.RequestClose(signalSuffix));
             new WindowInteropHelper(main).EnsureHandle();
             var commandState=new StateInfo("check","Audio pronto",null,null,40,1,0,0,false,[],[new(0,"MIDI cue","Empty",0,0,1,0,null,false,TriggerCount:1,TriggeredAt:Environment.TickCount64)],Project:new(){SlotCount=1,Slots=[new(){Action=SlotAction.Midi,MidiCommands=[new(){Channel=4}]}]});
+            // Poll stores the snapshot before rendering; mirror that setup without IPC or timers.
+            var snapshotField=typeof(MainWindow).GetField("last",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)
+                ??throw new InvalidOperationException("Main window snapshot field not found.");
+            snapshotField.SetValue(main,commandState);
             typeof(MainWindow).GetMethod("Show",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,[commandState]);
             if(!LogicalChildren(main).OfType<System.Windows.Controls.TextBlock>().Any(c=>c.Text.Contains("MIDI 1",StringComparison.Ordinal)))throw new InvalidOperationException("Command-only pad does not show its command count.");
             main.Close();
