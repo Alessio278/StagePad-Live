@@ -34,10 +34,12 @@ internal sealed class AppUpdates
         if(json.GetProperty("draft").GetBoolean() || json.GetProperty("prerelease").GetBoolean())return null;
         string tag=json.GetProperty("tag_name").GetString()??"";
         if(!Version.TryParse(tag.TrimStart('v','V'),out var version) || version<=(current??Current))return null;
-        JsonElement executable=default,checksum=default;
+        JsonElement executable=default,legacyExecutable=default,checksum=default;
+        string executableName="StagePad-"+version.ToString(version.Build<0?2:3)+".exe";
         foreach(var asset in json.GetProperty("assets").EnumerateArray())
-        {if(asset.GetProperty("name").GetString()=="StagePad.exe")executable=asset;if(asset.GetProperty("name").GetString()=="SHA256.txt")checksum=asset;}
-        if(executable.ValueKind==JsonValueKind.Undefined)throw new InvalidDataException("La release non contiene StagePad.exe.");
+        {if(asset.GetProperty("name").GetString()==executableName)executable=asset;if(asset.GetProperty("name").GetString()=="StagePad.exe")legacyExecutable=asset;if(asset.GetProperty("name").GetString()=="SHA256.txt")checksum=asset;}
+        if(executable.ValueKind==JsonValueKind.Undefined){executable=legacyExecutable;executableName="StagePad.exe";}
+        if(executable.ValueKind==JsonValueKind.Undefined)throw new InvalidDataException("La release non contiene un eseguibile StagePad valido.");
         string download=AssetUrl(executable.GetProperty("browser_download_url").GetString()!);
         string hash=executable.TryGetProperty("digest",out var digest)?digest.GetString()??"":"";
         if(hash.StartsWith("sha256:",StringComparison.Ordinal))hash=hash[7..];else hash="";
@@ -46,7 +48,7 @@ internal sealed class AppUpdates
             if(checksum.ValueKind==JsonValueKind.Undefined)throw new InvalidDataException("Checksum aggiornamento mancante.");
             using var hashes=await http.GetAsync(AssetUrl(checksum.GetProperty("browser_download_url").GetString()!),ct);hashes.EnsureSuccessStatusCode();
             string text=System.Text.Encoding.UTF8.GetString(await Read(hashes.Content,65536,ct));
-            var match=Regex.Match(text,@"(?im)^([a-f0-9]{64})\s+\*?StagePad\.exe\s*$");if(!match.Success)throw new InvalidDataException("Checksum aggiornamento mancante.");hash=match.Groups[1].Value;
+            var match=Regex.Match(text,@"(?im)^([a-f0-9]{64})\s+\*?"+Regex.Escape(executableName)+@"\s*$");if(!match.Success)throw new InvalidDataException("Checksum aggiornamento mancante.");hash=match.Groups[1].Value;
         }
         return new(version,download,hash.ToLowerInvariant());
     }

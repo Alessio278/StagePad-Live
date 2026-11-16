@@ -18,6 +18,11 @@ Nelle impostazioni puoi assegnare CC separati a master e traccia in play, con fa
 
 LEARN inserimento marker usa un tasto Note On/Off libero e agisce solo in Setup sulla traccia selezionata in play. I marker possono inviare MIDI immediato Pulse/CC/Program/MSC, senza Gate né ripetizione dei cue saltati.
 
-Non sono implementati clock MIDI e MIDI thru automatico. Nessun profilo hardware è certificato: verifica messaggi e receiver. Il reconnect non ripete cue precedenti.
+Non sono implementati clock MIDI e MIDI thru automatico. Verifica i messaggi supportati dal ricevitore. Il reconnect non ripete cue precedenti.
+## Predefiniti e feedback LED
+
+I nuovi comandi caricano canale MIDI e Device ID MSC dello show. Ogni campo resta modificabile; cambiare i predefiniti non modifica i comandi esistenti. Uno slot + Marker esclusivo può inserire sulla traccia selezionata in play, solo in Setup. Il volume dello slot conserva l’ultimo valore mouse/MIDI alle pressioni successive e nel salvataggio.
+
+Il feedback LED opzionale usa Note On generici su una porta dedicata ed è disattivato per default. Codici LED e comportamento RGB dipendono dal controller: consulta la documentazione MIDI prima di abilitarlo.
 
 [Guida](README.it.md)

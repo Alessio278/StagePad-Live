@@ -1,11 +1,9 @@
-# StagePad Live - actualizaciones portátiles
+# Actualizaciones portátiles
 
-Cierra la app y sustituye `StagePad.exe` por el de una release estable más reciente. Ajustes, shows, recuperación y referencias de audio permanecen en `%LOCALAPPDATA%\StagePad` o el directorio elegido. Runtime incluido.
+Cierra StagePad Live antes de sustituir el ejecutable. El ZIP de Windows incluye el runtime; shows, ajustes y pistas permanecen en sus carpetas.
 
-Ajustes > Actualizaciones consulta `Alessio278/StagePad-Live`. Requiere el asset `StagePad.exe` y SHA-256 o `SHA256.txt`. Instalación con audio/secuencias detenidos, comprobación de producto/versión, copia anterior y restauración si falla el arranque.
+**Ajustes > Actualizaciones** consulta las releases estables de `Alessio278/StagePad-Live`. Verifica versión y SHA-256, conserva una copia anterior e intenta restaurarla si falla el inicio. Detén audio y secuencias antes de instalar. La actualización conserva el nombre del ejecutable instalado.
 
-Conserva shows y audio antes de una versión principal. Exportar show incluye medios; copiar solo JSON no. Migración sin sobrescribir shows; conserva `backups\legacy-data` si contiene audio referenciado.
+Guarda copias de los shows y el audio antes de actualizar. La 1.1 guarda con esquema 3, que 1.0 no puede abrir. Exporta el show con audio para transferir todas las pistas: el JSON solo contiene referencias.
 
-Build sin firma. SmartScreen es independiente de la integridad de la descarga. La red se necesita para buscar actualizaciones, no para reproducir.
-
-[Guía](README.es.md)
+El ejecutable no está firmado y puede activar SmartScreen: consulta el [README](README.es.md#windows-smartscreen). La reproducción funciona sin conexión; comprobar y descargar actualizaciones requiere internet.

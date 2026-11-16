@@ -6,3 +6,23 @@ artifacts/
 *.suo
 *.pdb
 .DS_Store
+
+# Local data and release output
+*.exe
+*.zip
+*.log
+/cache/
+/project/
+/recovery/
+/logs/
+/backups/
+settings.json
+
+# Local credentials and signing files
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key

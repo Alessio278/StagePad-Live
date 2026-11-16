@@ -16,6 +16,7 @@ internal static class UiAssetsCheck
     public static int Run()
     {
         AppUpdates.ValidateBinary(Environment.ProcessPath!,AppUpdates.Current);
+        AppUpdates.ValidateBinary(Environment.ProcessPath!,new Version(AppUpdates.Current.Major,AppUpdates.Current.Minor));
         var app=new Application {ShutdownMode=ShutdownMode.OnExplicitShutdown};
         app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("pack://application:,,,/StagePad;component/Ui/Theme.xaml",UriKind.Absolute)});
         var option=new System.Windows.Controls.CheckBox{Content="Dark themed option",IsChecked=true,Width=240};
@@ -37,15 +38,40 @@ internal static class UiAssetsCheck
             for(int i=0;i<pixels.Length;i+=4)if(pixels[i]>240 && pixels[i+1]>240 && pixels[i+2]>240 && pixels[i+3]>240)white++;
             if(white<size*size/10)throw new InvalidOperationException("Logo rasterization failed.");
         }
-        var settings=new SlotSettings {EmergencyPauseAll=true,Action=SlotAction.All,MidiCommands=[new(){Kind=MidiKind.ControlChange,Controller=7,ControlValue=63},new(){Kind=MidiKind.ProgramChange,Program=12}],OscCommands=[new(){Arguments=[new(OscArgumentType.Float,"0.5"),new(OscArgumentType.True)]}]};
+        var settings=new SlotSettings {EmergencyPauseAll=true,EmergencyHold=true,Action=SlotAction.All,MidiCommands=[new(){Kind=MidiKind.ControlChange,Controller=7,ControlValue=63},new(){Kind=MidiKind.ProgramChange,Program=12}],OscCommands=[new(){Arguments=[new(OscArgumentType.Float,"0.5"),new(OscArgumentType.True)]}]};
         var editor=new SlotEditor(0,settings,_=>Task.FromResult(new Reply(true)));
         try
         {
             var restored=editor.Read();
-            if(!restored.EmergencyPauseAll || restored.Action!=SlotAction.All || restored.MidiCommands?.Length!=2 || restored.MidiCommands[0].ControlValue!=63 || restored.OscCommands.Length!=1 || restored.OscCommands[0].Arguments[0].Value!="0.5")throw new InvalidOperationException("Multi-output editor roundtrip failed.");
+            if(!restored.EmergencyPauseAll || !restored.EmergencyHold || restored.Action!=SlotAction.All || restored.MidiCommands?.Length!=2 || restored.MidiCommands[0].ControlValue!=63 || restored.OscCommands.Length!=1 || restored.OscCommands[0].Arguments[0].Value!="0.5")throw new InvalidOperationException("Multi-output editor roundtrip failed.");
             new WindowInteropHelper(editor).EnsureHandle();
         }
         finally{editor.Close();}
+        var templateDefaults=new CommandDefaults{MidiChannel=9,OscHost="192.168.10.2",OscPort=9010,OscAddress="/mix"};
+        var templateEditor=new SlotEditor(0,new(){Action=SlotAction.Audio},_=>Task.FromResult(new Reply(true)),defaults:templateDefaults);
+        try
+        {
+            IEnumerable<DependencyObject> Nodes(DependencyObject root)
+            {yield return root;foreach(var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())foreach(var node in Nodes(child))yield return node;}
+            var boxes=Nodes(templateEditor).OfType<System.Windows.Controls.CheckBox>().ToArray();
+            boxes.Single(b=>Equals(b.Content,"MIDI")).IsChecked=true;
+            if(templateEditor.Read().MidiCommands![0].Channel!=9 || templateEditor.Read().MidiCommands![0].UseShowDestination)throw new InvalidOperationException("New editable MIDI defaults failed.");
+            boxes.Single(b=>Equals(b.Content,"OSC")).IsChecked=true;
+            if(templateEditor.Read().OscCommands.Single().Port!=9010)throw new InvalidOperationException("New OSC action must preload destination.");
+            boxes.Single(b=>Equals(b.Content,"+ Marker")).IsChecked=true;
+            var markerOnly=templateEditor.Read();
+            if(markerOnly.Action!=SlotAction.Marker || markerOnly.EmergencyPauseAll || markerOnly.EmergencyHold)throw new InvalidOperationException("Marker action exclusivity failed.");
+            boxes.Single(b=>Equals(b.Content,"+ Marker")).IsChecked=false;
+            if(templateEditor.Read().Action!=SlotAction.None)throw new InvalidOperationException("No selected actions must stay disabled.");
+        }
+        finally{templateEditor.Close();}
+        ScrollSpeed.Install();
+        var scrollBody=new System.Windows.Controls.Border{Height=1200,Width=1200};
+        var wheelScrollCheck=new System.Windows.Controls.ScrollViewer{Content=scrollBody,Width=240,Height=180,CanContentScroll=false,HorizontalScrollBarVisibility=System.Windows.Controls.ScrollBarVisibility.Auto};
+        wheelScrollCheck.Measure(new Size(240,180));wheelScrollCheck.Arrange(new Rect(0,0,240,180));wheelScrollCheck.UpdateLayout();wheelScrollCheck.ScrollToVerticalOffset(100);wheelScrollCheck.UpdateLayout();
+        double beforeWheel=wheelScrollCheck.VerticalOffset;
+        scrollBody.RaiseEvent(new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice,Environment.TickCount,-120){RoutedEvent=UIElement.PreviewMouseWheelEvent});wheelScrollCheck.UpdateLayout();
+        if(Math.Abs(wheelScrollCheck.VerticalOffset-beforeWheel-24)>.5)throw new InvalidOperationException("Reduced global wheel speed failed.");
         var controls=new SettingsWindow(_=>Task.FromResult(new Reply(true)),()=>Task.CompletedTask,_=>Task.FromResult(new Reply(true)));
         controls.Update(new("check","Audio pronto",null,null,40,1,0,0,false,[],[],Project:new(){MasterControl=new(2,7,MidiControlMode.RelativeTwosComplement,true,.02f),CurrentTrackControl=new(3,11)}));
         if(controls.ReadBindings()!=(new MidiCcBinding(2,7,MidiControlMode.RelativeTwosComplement,true,.02f),new MidiCcBinding(3,11)))throw new InvalidOperationException("MIDI volume settings roundtrip failed.");
@@ -121,6 +147,9 @@ internal static class UiAssetsCheck
         {
             var main=new MainWindow("ui-check-no-transport",Environment.ProcessId,()=>LifecycleSignals.RequestClose(signalSuffix));
             new WindowInteropHelper(main).EnsureHandle();
+            var commandState=new StateInfo("check","Audio pronto",null,null,40,1,0,0,false,[],[new(0,"MIDI cue","Empty",0,0,1,0,null,false,TriggerCount:1,TriggeredAt:Environment.TickCount64)],Project:new(){SlotCount=1,Slots=[new(){Action=SlotAction.Midi,MidiCommands=[new(){Channel=4}]}]});
+            typeof(MainWindow).GetMethod("Show",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,[commandState]);
+            if(!LogicalChildren(main).OfType<System.Windows.Controls.TextBlock>().Any(c=>c.Text.Contains("MIDI 1",StringComparison.Ordinal)))throw new InvalidOperationException("Command-only pad does not show its command count.");
             main.Close();
             if(!closeSignal.WaitOne(100))throw new InvalidOperationException("Closing the main window did not signal shutdown.");
         }
@@ -133,7 +162,7 @@ internal static class UiAssetsCheck
         }
         finally{window.Close();app.Shutdown();}
         System.IO.Directory.CreateDirectory(Log.Root);
-        System.IO.File.WriteAllText(System.IO.Path.Combine(Log.Root,"ui-check-success.json"),System.Text.Json.JsonSerializer.Serialize(new{version=AppUpdates.Current.ToString(2),passed=true,platform=Environment.OSVersion.ToString(),checks=new[]{"themed checkbox checked/unchecked/indeterminate","logo rasterization","slot editor roundtrip","MIDI volume settings","marker trigger editors","empty player without cursor","dark scrollbar corner","two-axis scrolling","waveform resize","project browser layout","marker window","quick marker insertion in applied loop","cursor-following marker field","loop controls without checkbox","close signals","window icon"}}));
+        System.IO.File.WriteAllText(System.IO.Path.Combine(Log.Root,"ui-check-success.json"),System.Text.Json.JsonSerializer.Serialize(new{version=AppUpdates.Current.ToString(2),passed=true,platform=Environment.OSVersion.ToString(),checks=new[]{"themed checkbox checked/unchecked/indeterminate","logo rasterization","slot editor roundtrip","MIDI volume settings","marker trigger editors","empty player without cursor","dark scrollbar corner","two-axis scrolling","waveform resize","project browser layout","marker window","quick marker insertion in applied loop","cursor-following marker field","loop controls without checkbox","command-only pad presentation","close signals","window icon"}}));
         return 0;
     }
 }

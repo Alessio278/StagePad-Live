@@ -6,13 +6,15 @@ using System.Text.RegularExpressions;
 
 namespace StagePad.Core;
 public enum PlayMode { OneShot, Hold, Protected, TogglePause }
-public enum SlotAction { Audio, Midi, Both, Osc, AudioOsc, MidiOsc, All }
+public enum SlotAction { Audio, Midi, Both, Osc, AudioOsc, MidiOsc, All, None, Marker }
 public enum MidiKind { Note, MSC, ControlChange, ProgramChange }
 public enum NoteBehavior { Pulse, Gate }
 public enum MscCommand { Go = 1, Stop = 2, Resume = 3 }
 public enum MscAddress { Default, ExecDotPage, ExecSpacePage }
 public sealed record MidiSettings
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool UseShowDestination {get;init;}
     public int DelayMs {get;init;}
     public MidiKind Kind { get; init; }
     public int Channel { get; init; } = 1;
@@ -36,6 +38,9 @@ public sealed record SlotSettings
     public string Name { get; init; } = "Slot";
     public bool? AutoName {get;init;}
     public bool EmergencyPauseAll {get;init;}
+    public bool EmergencyHold {get;init;}
+    public int LedIdleValue {get;init;}=20;
+    public int LedActiveValue {get;init;}=127;
     public string Color { get; init; } = "#4A78BC";
     public AudioMarker[] Markers {get;init;}=[];
     public MarkerLoop? MarkerLoop {get;init;}
@@ -58,21 +63,24 @@ public sealed record RoutingSettings
     public int BufferMs { get; init; } = 40;
     public string? MidiInput { get; init; }
     public string? MidiOutput { get; init; }
+    public string? PadFeedbackOutput {get;init;}
 }
 public sealed record GridLayout(int Rows=4,int Columns=4);
 public sealed record ProjectDocument
 {
-    public int Schema { get; init; } = 1;
+    public int Schema { get; init; } = 3;
     public int SlotCount { get; init; } = 16;
     public GridLayout Grid { get; init; } = new();
     public GridLayout SetupGrid { get; init; } = new();
     public string Name { get; init; } = "Nuovo progetto";
     public float Master { get; init; } = 1;
+    public float DefaultSlotVolume {get;init;}=1;
     public MarkerCaptureBinding? MarkerCapture {get;init;}
     public MidiCcBinding MasterControl {get;init;}=new();
     public MidiCcBinding CurrentTrackControl {get;init;}=new();
     public int MemoryMiB { get; init; } = 512;
     public RoutingSettings Routing { get; init; } = new();
+    public CommandDefaults CommandDefaults {get;init;}=new();
     public SlotSettings[] Slots { get; init; } = Enumerable.Range(0, 16).Select(Projects.DefaultSlot).ToArray();
 }
 public static partial class Projects
@@ -81,7 +89,17 @@ public static partial class Projects
     public static SlotSettings DefaultSlot(int index)
     {
         if(index is <0 or >=MaxSlots)throw new ArgumentOutOfRangeException(nameof(index));
-        return new SlotSettings { Name=$"Slot {index+1}",AutoName=true,Midi=new(){Note=(60+index)%128} };
+        return new SlotSettings { Name=$"Slot {index+1}",AutoName=true,Action=SlotAction.None,Midi=new(){Note=(60+index)%128} };
+    }
+    public static ProjectDocument MaterializeDestinations(ProjectDocument project)
+    {
+        var defaults=project.CommandDefaults;
+        return project with{Slots=project.Slots.Select(s=>s with{
+            Midi=defaults.Resolve(s.Midi),
+            MidiCommands=s.MidiCommands?.Select(defaults.Resolve).ToArray(),
+            OscCommands=s.OscCommands.Select(defaults.Resolve).ToArray(),
+            Markers=s.Markers.Select(m=>m with{MidiTrigger=m.MidiTrigger is {} midi?defaults.Resolve(midi):null,OscTrigger=m.OscTrigger is {} osc?defaults.Resolve(osc):null}).ToArray()
+        }).ToArray()};
     }
     public static GridLayout FitGrid(GridLayout layout,int count)
     {
@@ -100,7 +118,7 @@ public static partial class Projects
         // Keep the hidden tail in the project, so shrinking and expanding does
         // not discard names, mappings or audio paths.
         var slots=Enumerable.Range(0,Math.Max(count,project.Slots.Length))
-            .Select(i=>i<project.Slots.Length?project.Slots[i]:DefaultSlot(i)).ToArray();
+            .Select(i=>i<project.Slots.Length?project.Slots[i]:DefaultSlot(i) with{Volume=project.DefaultSlotVolume}).ToArray();
         var next=project with { SlotCount=count,Slots=slots,Grid=FitGrid(project.Grid,count),SetupGrid=FitGrid(project.SetupGrid,count) };
         Validate(next);return next;
     }
@@ -109,8 +127,11 @@ public static partial class Projects
     [GeneratedRegex("^[0-9]{1,5}(\\.[0-9]{1,3})?$")] private static partial Regex CuePattern();
     public static void Validate(ProjectDocument p)
     {
-        if (p.Schema != 1 || p.Slots is not { Length: >=1 and <=MaxSlots } || p.SlotCount is <1 or >MaxSlots || p.SlotCount>p.Slots.Length || p.Routing == null) throw new InvalidDataException("Progetto non valido: schema 1 e da 1 a 100 slot richiesti.");
-        if (string.IsNullOrWhiteSpace(p.Name) || p.Name.Length > 100 || !float.IsFinite(p.Master) || p.Master is < 0 or > 1 || p.MemoryMiB is < 128 or > 4096) throw new InvalidDataException("Nome, master o budget RAM non validi.");
+        if(p.CommandDefaults==null)throw new InvalidDataException("Destinazioni non valide.");
+        p.CommandDefaults.Validate();
+        if(p.Routing?.PadFeedbackOutput is {} selectedLed && string.IsNullOrWhiteSpace(selectedLed) || (p.Routing?.PadFeedbackOutput?.Length??0)>512 || p.Routing?.PadFeedbackOutput is {} led && led==p.Routing.MidiOutput)throw new InvalidDataException("La porta LED deve essere separata dalla porta MIDI dei comandi.");
+        if (p.Schema is not (1 or 2 or 3) || p.Slots is not { Length: >=1 and <=MaxSlots } || p.SlotCount is <1 or >MaxSlots || p.SlotCount>p.Slots.Length || p.Routing == null) throw new InvalidDataException("Progetto non valido: schema 1/2/3 e da 1 a 100 slot richiesti.");
+        if (string.IsNullOrWhiteSpace(p.Name) || p.Name.Length > 100 || !float.IsFinite(p.Master) || p.Master is < 0 or > 1 || !float.IsFinite(p.DefaultSlotVolume) || p.DefaultSlotVolume is <0 or >1 || p.MemoryMiB is < 128 or > 4096) throw new InvalidDataException("Nome, master o budget RAM non validi.");
         if ((p.Routing.AudioDevice?.Length ?? 0) > 512 || (p.Routing.MidiInput?.Length ?? 0) > 512 || (p.Routing.MidiOutput?.Length ?? 0) > 512) throw new InvalidDataException("Identificatore dispositivo troppo lungo.");
         if (p.Routing.BufferMs is not (20 or 40 or 80)) throw new InvalidDataException("Buffer audio non valido.");
         if(p.Grid==null || p.Grid.Rows is <1 or >MaxGridSize || p.Grid.Columns is <1 or >MaxGridSize || p.Grid.Rows*p.Grid.Columns<p.SlotCount)throw new InvalidDataException("Griglia: righe e colonne da 1 a 10, con una cella per ogni slot attivo.");
@@ -130,6 +151,8 @@ public static partial class Projects
         if (s == null || s.Midi == null || s.Name is null || (s.AutoName==false && string.IsNullOrWhiteSpace(s.Name)) || s.Name.Length > 100 || !ColorPattern().IsMatch(s.Color ?? "")) throw new InvalidDataException("Nome o colore slot non valido (#RRGGBB).");
         if ((s.File?.Length ?? 0) > 1024) throw new InvalidDataException("Percorso audio troppo lungo (massimo 1024 caratteri).");
         if (!Enum.IsDefined(s.Mode) || !Enum.IsDefined(s.Action) || !float.IsFinite(s.Volume) || s.Volume is < 0 or > 1 || s.PadChannel is < 1 or > 16 || s.PadNote is < -1 or > 127 || s.FadeInMs is < 0 or > 30000 || s.FadeOutMs is < 0 or > 30000) throw new InvalidDataException("Parametri audio/mappatura non validi.");
+        if(s.LedIdleValue is <0 or >127 || s.LedActiveValue is <0 or >127)throw new InvalidDataException("Valori LED da 0 a 127.");
+        if(s.Action==SlotAction.Marker && (s.EmergencyPauseAll || s.EmergencyHold))throw new InvalidDataException("+ Marker è un’azione esclusiva.");
         AudioMarkers.Validate(s.Markers);
         MarkerLoops.Validate(s.MarkerLoop,s.Markers);
         ValidateMidi(s.Midi);

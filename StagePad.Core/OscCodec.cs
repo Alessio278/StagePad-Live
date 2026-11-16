@@ -7,6 +7,8 @@ public enum OscArgumentType { Int, Float, String, True, False }
 public sealed record OscArgument(OscArgumentType Type=OscArgumentType.Int,string Value="1");
 public sealed record OscCommand
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool UseShowDestination {get;init;}
     public int DelayMs {get;init;}
     public string Host {get;init;}="127.0.0.1";
     public int Port {get;init;}=8000;
@@ -23,7 +25,7 @@ public static class SlotActions
     {
         (true,false,false)=>SlotAction.Audio,(false,true,false)=>SlotAction.Midi,(true,true,false)=>SlotAction.Both,
         (false,false,true)=>SlotAction.Osc,(true,false,true)=>SlotAction.AudioOsc,(false,true,true)=>SlotAction.MidiOsc,
-        (true,true,true)=>SlotAction.All,_=>throw new InvalidDataException("Seleziona almeno un’azione: Audio, MIDI o OSC.")
+        (true,true,true)=>SlotAction.All,_=>SlotAction.None
     };
 }
 public static class OscCodec

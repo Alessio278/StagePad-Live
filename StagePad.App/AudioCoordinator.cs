@@ -78,6 +78,26 @@ internal sealed class AudioCoordinator : IDisposable
     }
     private readonly long[] audioOrder=new long[Projects.MaxSlots];
     private long audioSequence,lastTriggerTick;
+    private readonly HoldActivation[] emergencyHolds=Enumerable.Range(0,Projects.MaxSlots).Select(_=>new HoldActivation()).ToArray();
+    private readonly long[] slotTriggers=new long[Projects.MaxSlots],slotTriggeredAt=new long[Projects.MaxSlots];
+    private readonly bool[] slotTriggerOk=Enumerable.Repeat(true,Projects.MaxSlots).ToArray();
+    private bool feedbackWasEnabled;
+    private int holdEpoch;
+    private readonly HashSet<int> uiHeld=[];
+    private Reply PressSlot(int i,string input,long timestamp=0)
+    {
+        var s=project.Slots[i];
+        if(s.EmergencyPauseAll && s.EmergencyHold){int epoch=Volatile.Read(ref controlEpoch);if(epoch!=holdEpoch){foreach(var hold in emergencyHolds)hold.Clear();holdEpoch=epoch;}emergencyHolds[i].Press(input,Environment.TickCount64);return new(true);}
+        return Trigger(i,timestamp);
+    }
+    private void CheckEmergencyHolds()
+    {
+        int epoch=Volatile.Read(ref controlEpoch);
+        if(holdEpoch!=epoch){foreach(var hold in emergencyHolds)hold.Clear();holdEpoch=epoch;return;}
+        if(readingProject || maintenance)return;
+        for(int i=0;i<project.SlotCount;i++)
+            if(project.Slots[i] is {EmergencyPauseAll:true,EmergencyHold:true} && emergencyHolds[i].Consume(Environment.TickCount64)){Trigger(i);holdEpoch=Volatile.Read(ref controlEpoch);}
+    }
     private long ticket, triggerSerial, projectRevision, lastPanicTick;
     private long savedProjectRevision,autoSaveDue,lastSavedAt;
     private bool autoSaveEnabled=true;
@@ -143,7 +163,7 @@ internal sealed class AudioCoordinator : IDisposable
     {
         if(locked || maintenance || Busy() || readingProject || savingProject || heldNotes.Count>0 || oscOutput.Pending>0 || (midiOut?.ActiveNotes??0)>0 || (midiOut?.PendingCommands??0)>0 || loading.Any(v=>v)){completion.TrySetResult(new(false,"Ferma audio e sequenze prima del test."));return;}
         lastTriggerTick=Environment.TickCount64;
-        var settings=request.Settings??throw new InvalidDataException("Parametri mancanti.");
+        var settings=project.CommandDefaults.Resolve(request.Settings??throw new InvalidDataException("Parametri mancanti."));
         if(request.Origin=="midi")
         {
             var commands=SlotActions.MidiList(settings);if(commands.Length!=1)throw new InvalidDataException("Seleziona un solo comando per il test.");Projects.ValidateMidi(commands[0]);
@@ -251,11 +271,29 @@ internal sealed class AudioCoordinator : IDisposable
     }
     private bool Busy(int? slot = null) => slot is int i ? mixer.View(i).State is VoiceState.Playing or VoiceState.Paused or VoiceState.Stopping : Enumerable.Range(0, project.SlotCount).Any(i => Busy(i));
     private void Changed()
-    { projectRevision++;autoSaveDue=Environment.TickCount64+1500; recovery.Schedule(project,projectPath); }
+    { project=project with{Schema=3};projectRevision++;autoSaveDue=Environment.TickCount64+1500; recovery.Schedule(project,projectPath); }
     private void SetSlot(int i, SlotSettings settings)
-    { var slots = (SlotSettings[])project.Slots.Clone(); slots[i] = settings; var next = project with { Slots = slots }; Projects.Validate(next); project = next; Changed(); }
+    { emergencyHolds[i].Clear();var slots = (SlotSettings[])project.Slots.Clone(); slots[i] = settings; var next = project with { Slots = slots }; Projects.Validate(next); project = next; Changed(); }
     private Reply Execute(Request r)
     {
+        if(r.Op=="default-slot-volume")
+        {
+            if(locked || maintenance || readingProject || savingProject)return new(false,"SHOW LOCK o operazione sui progetti in corso.");
+            if(!float.IsFinite(r.Value) || r.Value is <0 or >1)return new(false,"Volume non valido.");
+            if(r.Flag)
+            {
+                if(Busy() || loading.Any(v=>v) || seeking.Any(v=>v))return new(false,"Ferma le tracce prima di applicare il volume a tutti gli slot.");
+                if(mixer.CommandCapacityRemaining-project.SlotCount<0)return new(false,"Coda audio piena.");
+                for(int slot=0;slot<project.SlotCount;slot++)if(!Posted(new(AudioOp.Volume,slot,r.Value)).Ok)return new(false,"Coda audio piena.");
+                project=project with{Slots=project.Slots.Select(s=>s with{Volume=r.Value}).ToArray()};trackPickup.Reset();
+            }
+            project=project with{DefaultSlotVolume=r.Value};Changed();return new(true);
+        }
+        if(r.Op=="command-defaults")
+        {
+            if(locked || readingProject || r.CommandDefaults==null)return new(false,"SHOW LOCK attivo: modifiche bloccate.");
+            r.CommandDefaults.Validate();project=Projects.MaterializeDestinations(project);project=project with{CommandDefaults=r.CommandDefaults};Changed();return new(true);
+        }
         if(r.Op=="autosave-settings")
         {
             if(locked)return new(false,"SHOW LOCK attivo: modifiche bloccate.");
@@ -269,7 +307,7 @@ internal sealed class AudioCoordinator : IDisposable
             if(ProjectDirty && !r.Flag)return new(false,"Salva le modifiche prima di continuare, oppure scegli di scartarle.");
             if(r.Epoch>0 && r.Epoch!=projectRevision)return new(false,"Il progetto è cambiato: riprova l’operazione.");
             if(mixer.CommandCapacityRemaining<Projects.MaxSlots*3+1)return new(false,"Motore occupato: riprova tra un istante.");
-            var empty=new ProjectDocument{Name="Nuovo show",Routing=project.Routing,MemoryMiB=project.MemoryMiB,MasterControl=project.MasterControl,CurrentTrackControl=project.CurrentTrackControl,MarkerCapture=project.MarkerCapture};
+            var empty=new ProjectDocument{Name="Nuovo show",Routing=project.Routing,MemoryMiB=project.MemoryMiB,MasterControl=project.MasterControl,CurrentTrackControl=project.CurrentTrackControl,MarkerCapture=project.MarkerCapture,CommandDefaults=project.CommandDefaults,DefaultSlotVolume=project.DefaultSlotVolume,Slots=Enumerable.Range(0,16).Select(i=>Projects.DefaultSlot(i) with{Volume=project.DefaultSlotVolume}).ToArray()};
             projectPath=null;projectError=null;ApplyProject(empty);savedProjectRevision=projectRevision;return new(true);
         }
         if(r.Op is "marker-context" or "state")
@@ -321,6 +359,7 @@ internal sealed class AudioCoordinator : IDisposable
             bool audioChanged = route.BufferMs != project.Routing.BufferMs || (route.AudioDevice != project.Routing.AudioDevice && route.AudioDevice != device.DeviceId);
             if (audioChanged && (Busy() || loading.Any(x => x) || seeking.Any(x=>x))) return new(false, "Ferma le tracce prima di cambiare uscita audio o buffer.");
             var next = project with { Routing = route }; Projects.Validate(next);
+            if(route.MidiInput!=project.Routing.MidiInput)ReleaseInput();
             project = next; Changed(); if (audioChanged) device.Configure(route.AudioDevice, route.BufferMs);
             inputLink.Configure(route.MidiInput); outputLink.Configure(route.MidiOutput); return new(true);
         }
@@ -334,6 +373,7 @@ internal sealed class AudioCoordinator : IDisposable
             int previous=project.SlotCount;
             // Reserve enough queue space before mutating any voice or project.
             if(mixer.CommandCapacityRemaining<Projects.MaxSlots*3)return new(false,"Motore occupato: riprova tra un istante.");
+            foreach(var hold in emergencyHolds)hold.Clear();uiHeld.Clear();
             project=next;learn=-1;heldNotes.Clear();learnConsumed.Clear();outputLink.Panic();oscOutput.Panic();
             lastStarted=Math.Min(lastStarted,count-1);
             for(int index=count;index<previous;index++)
@@ -397,19 +437,20 @@ internal sealed class AudioCoordinator : IDisposable
                 if (string.IsNullOrWhiteSpace(r.Path)) return new(false, "Seleziona un file.");
                 if (loading[i] || seeking[i] || Busy(i)) return new(false, "Ferma lo slot e attendi il caricamento.");
                 string path = System.IO.Path.GetFullPath(r.Path);
-                SetSlot(i, SlotTitles.Normalize(settings,i) with { File = path,Markers=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.Markers:[],MarkerLoop=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.MarkerLoop:null });
+                SetSlot(i, SlotTitles.Normalize(settings,i) with { File = path,Action=settings.Action==SlotAction.Marker?SlotAction.Audio:SlotActions.From(true,SlotActions.Midi(settings.Action),SlotActions.Osc(settings.Action)),EmergencyHold=settings.Action==SlotAction.Marker?false:settings.EmergencyHold,Markers=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.Markers:[],MarkerLoop=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.MarkerLoop:null });
                 StartImport(i, path); return new(true);
             case "clear":
                 if (loading[i] || seeking[i] || Busy(i)) return new(false, "Ferma lo slot e attendi il caricamento.");
                 generation[i]++; var cleared = Install(i, null); if (cleared.Ok) SetSlot(i, settings with { File = null,Markers=[],MarkerLoop=null }); return cleared;
-            case "play": case "pad-down": return Trigger(i);
+            case "play": if(settings.EmergencyPauseAll && settings.EmergencyHold)return new(false,"Tieni premuto il pad per 3 secondi.");return Trigger(i);
+            case "pad-down": uiHeld.Add(i);return PressSlot(i,"ui",r.Timestamp);
             case "pad-up":
-                outputLink.Post(new("release", i)); return Posted(new(AudioOp.Release, i));
+                uiHeld.Remove(i);emergencyHolds[i].Release("ui");outputLink.Post(new("release", i)); return Posted(new(AudioOp.Release, i));
             case "pause":
                 if (settings.Mode == PlayMode.Protected) return new(false, "Senza interruzione: usa STOP con il mouse.");
                 return Posted(new(AudioOp.Pause, i));
             case "seek": return BeginSeek(i,r.Value);
-            case "stop": seekSerial[i]++;oscOutput.Cancel(i); outputLink.Post(new("cancel-slot", i)); return Posted(new(AudioOp.Stop, i));
+            case "stop": emergencyHolds[i].Clear();seekSerial[i]++;oscOutput.Cancel(i); outputLink.Post(new("cancel-slot", i)); return Posted(new(AudioOp.Stop, i));
             case "volume":
                 if (!float.IsFinite(r.Value) || r.Value is < 0 or > 1) return new(false, "Volume non valido.");
                 var volume = Posted(new(AudioOp.Volume, i, r.Value)); if (volume.Ok) SetSlot(i, settings with { Volume = r.Value }); return volume;
@@ -425,6 +466,7 @@ internal sealed class AudioCoordinator : IDisposable
         {
             if (learnConsumed.Remove(key)) return new(true);
             if (!heldNotes.Remove(key, out int slot)) return new(true);
+            emergencyHolds[slot].Release("midi");
             outputLink.Post(new("release", slot)); return Posted(new(AudioOp.Release, slot));
         }
         if(learnConsumed.Contains(key))return new(true);
@@ -434,7 +476,7 @@ internal sealed class AudioCoordinator : IDisposable
             int conflict=Array.FindIndex(project.Slots,s=>s.PadChannel==r.Channel && s.PadNote==r.Note);
             if(conflict>=0)
             {
-                if(conflict<project.SlotCount && project.Slots[conflict].EmergencyPauseAll){learnConsumed.Remove(key);heldNotes[key]=conflict;return Trigger(conflict);}
+                if(conflict<project.SlotCount && project.Slots[conflict].EmergencyPauseAll){learnConsumed.Remove(key);heldNotes[key]=conflict;return PressSlot(conflict,"midi");}
                 return new(false,"Il tasto marker è già assegnato a uno slot. Scegli un tasto libero.");
             }
             project=project with{MarkerCapture=new(r.Channel,r.Note)};markerLearn=false;Changed();return new(true);
@@ -450,11 +492,11 @@ internal sealed class AudioCoordinator : IDisposable
         if (heldNotes.ContainsKey(key)) return new(true);
         int index = Array.FindIndex(project.Slots, 0, project.SlotCount, s => s.PadChannel == r.Channel && s.PadNote == r.Note);
         if (index < 0) return new(true);
-        heldNotes[key] = index; return Trigger(index);
+        heldNotes[key] = index; return PressSlot(index,"midi",r.Timestamp);
     }
     private void ReleaseInput()
     {
-        foreach(int slot in heldNotes.Values.Distinct()){outputLink.Post(new("release",slot));Posted(new(AudioOp.Release,slot));}
+        foreach(int slot in heldNotes.Values.Distinct()){emergencyHolds[slot].Release("midi");outputLink.Post(new("release",slot));Posted(new(AudioOp.Release,slot));}
         heldNotes.Clear();learnConsumed.Clear();
     }
     private int CurrentPlaying()
@@ -488,12 +530,23 @@ internal sealed class AudioCoordinator : IDisposable
         }
         return new(true);
     }
-    private Reply Trigger(int i)
+    private Reply Trigger(int i,long timestamp=0)
     {
         seekSerial[i]++;lastTriggerTick=Environment.TickCount64;
         var s = project.Slots[i]; Reply result = new(true);
+        if(s.Action==SlotAction.Marker)
+        {
+            int before=markerSlot>=0 && markerSlot<project.SlotCount?project.Slots[markerSlot].Markers.Length:0;
+            var captured=CaptureMarker(new("capture",Timestamp:timestamp>0?timestamp:Environment.TickCount64));
+            if(captured.Ok && markerSlot>=0 && markerSlot<project.SlotCount && project.Slots[markerSlot].Markers.Length>before)
+            {slotTriggers[i]++;slotTriggeredAt[i]=Environment.TickCount64;slotTriggerOk[i]=true;}
+            return captured;
+        }
+        if(s.Action==SlotAction.None && !s.EmergencyPauseAll)return new(true);
         if(s.EmergencyPauseAll)
         {
+            foreach(var hold in emergencyHolds)hold.Clear();
+            Volatile.Write(ref lastPanicTick,Environment.TickCount64);
             Interlocked.Increment(ref controlEpoch);Interlocked.Increment(ref seekEpoch);
             for(int slot=0;slot<seekSerial.Length;slot++)seekSerial[slot]++;
             mixer.EmergencyPause();outputLink.Panic();oscOutput.Panic();
@@ -506,10 +559,11 @@ internal sealed class AudioCoordinator : IDisposable
         if(!s.EmergencyPauseAll && SlotActions.Audio(s.Action) && result.Ok && !(mixer.View(i).State==VoiceState.Playing && s.Mode is PlayMode.Protected or PlayMode.TogglePause))audioOrder[i]=++audioSequence;
         // Independent dispatch: missing audio never prevents MIDI or OSC commands.
         var failures=new List<string>();if(!result.Ok)failures.Add(result.Error??"Audio slot non pronto.");
-        if(SlotActions.Midi(s.Action) && !outputLink.Post(new("send",i,Settings:s)))failures.Add(outputLink.Alert??"Comando non riuscito.");
-        if(SlotActions.Osc(s.Action) && !oscOutput.Post(s.OscCommands,i))failures.Add(oscOutput.Error??"Comando non riuscito.");
+        if(SlotActions.Midi(s.Action) && !outputLink.Post(new("send",i,Settings:project.CommandDefaults.Resolve(s))))failures.Add(outputLink.Alert??"Comando non riuscito.");
+        if(SlotActions.Osc(s.Action) && !oscOutput.Post(s.OscCommands.Select(o=>project.CommandDefaults.Resolve(o)).ToArray(),i))failures.Add(oscOutput.Error??"Comando non riuscito.");
         result=failures.Count==0?new(true):new(false,string.Join(" · ",failures));
         if(result.Ok && !s.EmergencyPauseAll && SlotActions.Audio(s.Action) && MarkerSetupActive){markerSlot=i;markerSourceRevision=generation[i];}
+        slotTriggers[i]++;slotTriggeredAt[i]=Environment.TickCount64;slotTriggerOk[i]=result.Ok;
         lastStarted = i; triggerSerial++; return result;
     }
     private void StartLoop(Request r,TaskCompletionSource<Reply> completion)
@@ -584,7 +638,8 @@ internal sealed class AudioCoordinator : IDisposable
     }
     private void ApplyProject(ProjectDocument value)
     {
-        Projects.Validate(value); project = value; learn = -1;markerLearn=false;markerSetup=false; heldNotes.Clear(); learnConsumed.Clear();
+        foreach(var hold in emergencyHolds)hold.Clear();Array.Clear(slotTriggers);Array.Clear(slotTriggeredAt);uiHeld.Clear();
+        Projects.Validate(value); value=Projects.MaterializeDestinations(value);project = value; learn = -1;markerLearn=false;markerSetup=false; heldNotes.Clear(); learnConsumed.Clear();
         budget.SetLimit(value.MemoryMiB * 1048576L, true); mixer.Panic(); outputLink.Panic();oscOutput.Panic();
         device.Configure(value.Routing.AudioDevice, value.Routing.BufferMs);
         inputLink.Configure(value.Routing.MidiInput); outputLink.Configure(value.Routing.MidiOutput);
@@ -642,8 +697,8 @@ internal sealed class AudioCoordinator : IDisposable
             int i=signal.Slot;
             if((uint)i>=project.SlotCount || signal.Epoch!=mixer.EventEpoch || signal.Version!=markerVersions[i] || signal.SignalEpoch!=signalEpochs[i] || now-signal.Tick>250 || loading[i] || seeking[i] || errors[i]!=null || sources[i]?.Error!=null || device.Error!=null)continue;
             int scope=MarkerTriggers.Scope(i,signal.Index);var marker=signal.Marker;
-            if(marker.MidiTrigger is {} midi)outputLink.Post(new("send",scope,Settings:new(){MidiCommands=[midi]}));
-            if(marker.OscTrigger is {} osc)oscOutput.Post([osc],scope);
+            if(marker.MidiTrigger is {} midi)outputLink.Post(new("send",scope,Settings:new(){MidiCommands=[project.CommandDefaults.Resolve(midi)]}));
+            if(marker.OscTrigger is {} osc)oscOutput.Post([project.CommandDefaults.Resolve(osc)],scope);
         }
         if(mixer.MarkerDrops!=markerDrops){markerDrops=mixer.MarkerDrops;projectError="Coda trigger marker piena: alcuni comandi non inviati.";Log.Warn("marker-trigger",projectError);}
     }
@@ -698,10 +753,16 @@ internal sealed class AudioCoordinator : IDisposable
                 for (int j = retired.Count - 1; j >= 0; j--) if (mixer.AppliedTicket >= retired[j].Ticket) { var old = retired[j].Source; retired.RemoveAt(j); _ = Task.Run(old.Dispose); }
                 if(autoSaveEnabled && ProjectDirty && !savingProject && !readingProject && !maintenance && Environment.TickCount64>=autoSaveDue)
                     StartSave(new("save-project",Path:projectPath,Origin:"auto-save"),new TaskCompletionSource<Reply>(TaskCreationOptions.RunContinuationsAsynchronously));
-                DispatchMarkers();
+                CheckEmergencyHolds();DispatchMarkers();
                 if (Environment.TickCount64 < nextSnapshot) continue; nextSnapshot = Environment.TickCount64 + 100;
                 if (mixer.CallbackFaults != previousFaults) { Log.Warn("audio-callback", $"Errori isolati: {mixer.CallbackFaults}"); previousFaults = mixer.CallbackFaults; }
-                var slots = Enumerable.Range(0, project.SlotCount).Select(i => { var v = mixer.View(i); return new SlotInfo(i, SlotTitles.Display(project.Slots[i],i), v.State.ToString(), v.Frame / (double)Mixer.Rate, v.Frames / (double)Mixer.Rate, v.Volume, v.Starvations, errors[i] ?? sources[i]?.Error, loading[i], generation[i],seeking[i],v.LoopPass,loopPreparing[i]); }).ToArray();
+                var slots = Enumerable.Range(0, project.SlotCount).Select(i => { var v = mixer.View(i); return new SlotInfo(i, SlotTitles.Display(project.Slots[i],i), v.State.ToString(), v.Frame / (double)Mixer.Rate, v.Frames / (double)Mixer.Rate, v.Volume, v.Starvations, errors[i] ?? sources[i]?.Error, loading[i], generation[i],seeking[i],v.LoopPass,loopPreparing[i],slotTriggers[i],slotTriggeredAt[i],slotTriggerOk[i],emergencyHolds[i].Progress(Environment.TickCount64),uiHeld.Contains(i)||heldNotes.Values.Contains(i)); }).ToArray();
+                if(project.Routing.PadFeedbackOutput!=null || feedbackWasEnabled)
+                {
+                    feedbackWasEnabled=project.Routing.PadFeedbackOutput!=null;
+                    var messages=slots.Where(v=>project.Slots[v.Index].PadNote>=0 && (project.Slots[v.Index].Action!=SlotAction.Marker || MarkerSetupActive)).Select(v=>PadLedFrame.Message(project.Slots[v.Index],v.IsPressed || v.State=="Playing" || v.TriggeredAt>0 && Environment.TickCount64-v.TriggeredAt<1200)).ToArray();
+                    outputLink.Post(new("led-frame",LedFrame:new(project.Routing.PadFeedbackOutput,messages,Environment.TickCount64)));
+                }
                 Volatile.Write(ref snapshot, new(instance, device.Status, device.Error, device.DeviceId, device.Latency, mixer.Master, budget.Used, mixer.CallbackFaults,
                     Log.Unavailable, device.Devices, slots, project, locked, learn, projectError ?? recovery.Error, outputLink.Alert, Volatile.Read(ref midiIn), Volatile.Read(ref midiOut),
                     Environment.TickCount64, mixer.RenderHeartbeat, device.Heartbeat, lastStarted, triggerSerial, projectPath, readingProject, projectRevision,oscOutput.Error,oscOutput.Sent,volumeLearn,CurrentPlaying(),markerLearn && MarkerSetupActive,MarkerSetupActive,ProjectDirty,autoSaveEnabled,savingProject,lastSavedAt));

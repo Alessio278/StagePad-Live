@@ -41,7 +41,7 @@ internal sealed partial class MainWindow
         Select(slot);
         if (last?.ShowLocked == true) { Warn("SHOW LOCK: impostazioni bloccate."); return; }
         if (last?.Project == null) return;
-        var editor = new SlotEditor(slot, last.Project.Slots[slot], settings => SendReply(new("settings", slot, Settings: settings)),SendReply) { Owner = this };
+        var editor = new SlotEditor(slot, last.Project.Slots[slot], settings => SendReply(new("settings", slot, Settings: settings)),SendReply,last.Project.CommandDefaults) { Owner = this };
         SlotEditorPosition.Attach(editor,liveView?liveCards[slot]:cards[slot]);
         editor.Show();
     }
@@ -76,15 +76,16 @@ internal sealed partial class MainWindow
         await SendReply(new("autosave-settings",Path:L.ProjectDirectory,Flag:L.AutoSaveProjects));
         if(projectBrowser!=null)await projectBrowser.Refresh();
     }
+    private readonly List<Button>[] triggerButtons=Enumerable.Range(0,Projects.MaxSlots).Select(_=>new List<Button>()).ToArray();
     private Button PadButton(string text, int slot)
     {
         // Capture guarantees a release when the mouse is released outside the pad.
         var button = new Button { Content = text, Margin = new Thickness(2), Padding = new Thickness(9,5,9,5), Background = Brush("#1B2B3D"), Foreground = Brush("#EDF4FC"), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
-        bool held = false;
+        triggerButtons[slot].Add(button);bool held = false;
         button.PreviewMouseLeftButtonDown += async (_, e) =>
         {
             e.Handled = true; if (held) return;
-            held = true; PressFeedback(button,true); button.CaptureMouse(); Select(slot); await Send(new("pad-down", slot));
+            held = true; PressFeedback(button,true); button.CaptureMouse(); if(last?.Project?.Slots[slot].Action!=SlotAction.Marker)Select(slot); await Send(new("pad-down", slot));
         };
         button.PreviewMouseLeftButtonUp += async (_, e) =>
         {
@@ -96,7 +97,7 @@ internal sealed partial class MainWindow
         {
             if (e.Key is not (Key.Space or Key.Enter)) return;
             e.Handled = true; if (e.IsRepeat || held) return;
-            held = true; PressFeedback(button,true); Select(slot); await Send(new("pad-down", slot));
+            held = true; PressFeedback(button,true); if(last?.Project?.Slots[slot].Action!=SlotAction.Marker)Select(slot); await Send(new("pad-down", slot));
         };
         button.PreviewKeyUp += async (_, e) =>
         {
@@ -127,7 +128,7 @@ internal sealed partial class MainWindow
         if(!master.IsMouseCaptureWithin && !master.IsKeyboardFocusWithin)masterPercent.Text = $"{s.Master * 100:0}%";
     }
     private static bool PortReady(MidiPortState? port)=>port?.Status=="Connesso" || port?.Status.StartsWith("Porta aperta",StringComparison.Ordinal)==true;
-    private static string PortLabel(MidiPortState? port,bool output)=>L.T(port==null?"AVVIO":port.Error!=null?"ERRORE":port.Selected==null?"OFF":PortReady(port)?(output?"APERTO":"CONNESSO"):"ATTESA");
+    private static string PortLabel(MidiPortState? port,bool output)=>L.T(port==null?"AVVIO":port.Error!=null?"ERRORE":port.Selected==null?"OFF":PortReady(port)?"CONNESSO":"ATTESA");
     private static string PortColor(MidiPortState? port)=>port?.Error!=null?"#FFCC80":PortReady(port)?"#75E2C1":"#91A6BD";
     private static void FillPorts(ComboBox combo, DeviceInfo[] ports, string? selected, bool sync)
     {

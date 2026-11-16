@@ -47,7 +47,7 @@ jobs:
           $source = "artifacts/StagePad-Live-${env:RELEASE_VERSION}-Source.zip"
           git archive --format=zip --prefix="StagePad-Live-${env:RELEASE_VERSION}/" --output=$source HEAD
           if ($LASTEXITCODE -ne 0) { throw 'Source archive failed.' }
-          $assets = @('artifacts/win-x64/StagePad.exe','artifacts/RELEASE-CHECKS.md') + @(Get-ChildItem 'artifacts/*-Windows.zip','artifacts/*-Source.zip' | ForEach-Object { $_.FullName })
+          $assets = @("artifacts/win-x64/StagePad-${env:RELEASE_VERSION}.exe",'artifacts/StagePad.exe','artifacts/RELEASE-CHECKS.md') + @(Get-ChildItem 'artifacts/*-Windows.zip','artifacts/*-Source.zip' | ForEach-Object { $_.FullName })
           $lines = foreach ($file in $assets) { "{0}  {1}" -f (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant(),(Split-Path $file -Leaf) }
           $lines | Set-Content 'artifacts/SHA256.txt' -Encoding utf8NoBOM
       - name: Publish stable latest release
@@ -61,7 +61,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           $existing = gh release view $env:RELEASE_TAG --json isDraft,isPrerelease 2>$null
           if ($LASTEXITCODE -eq 0 -and -not ($existing | ConvertFrom-Json).isDraft) { throw 'A published release already exists; refusing to overwrite it.' }
-          $assets = @('artifacts/win-x64/StagePad.exe','artifacts/SHA256.txt','artifacts/RELEASE-CHECKS.md') + @(Get-ChildItem 'artifacts/*-Windows.zip','artifacts/*-Source.zip' | ForEach-Object { $_.FullName })
+          $assets = @("artifacts/win-x64/StagePad-${env:RELEASE_VERSION}.exe",'artifacts/StagePad.exe','artifacts/SHA256.txt','artifacts/RELEASE-CHECKS.md') + @(Get-ChildItem 'artifacts/*-Windows.zip','artifacts/*-Source.zip' | ForEach-Object { $_.FullName })
           if ($existing) {
             gh release upload $env:RELEASE_TAG @assets --clobber
           } else {

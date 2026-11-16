@@ -48,8 +48,8 @@ internal sealed class MarkerWindow : Window
         var next=CommandForm.Button("+ Marker",async()=>await AddAt(CursorPosition()));form.Children.Add(next);
         form.Children.Add(CommandForm.Row("Posizione · hh:mm:ss.fff",time));form.Children.Add(CommandForm.Row("Etichetta marker",label));form.Children.Add(CommandForm.Row("Colore marker",colorHost));
         var triggerForm=new StackPanel();var triggerButtons=new WrapPanel();
-        triggerButtons.Children.Add(CommandForm.Button("Aggiungi trigger MIDI",()=>{if(midiTrigger==null){SetMidi(new());L.Apply(triggerHost);}}));
-        triggerButtons.Children.Add(CommandForm.Button("Aggiungi trigger OSC",()=>{if(oscTrigger==null){SetOsc(new());L.Apply(triggerHost);}}));
+        triggerButtons.Children.Add(CommandForm.Button("Aggiungi trigger MIDI",()=>{if(midiTrigger==null){SetMidi(latestState?.Project?.CommandDefaults.Midi()??new());L.Apply(triggerHost);}}));
+        triggerButtons.Children.Add(CommandForm.Button("Aggiungi trigger OSC",()=>{if(oscTrigger==null){SetOsc(latestState?.Project?.CommandDefaults.Osc()??new());L.Apply(triggerHost);}}));
         triggerForm.Children.Add(triggerButtons);triggerForm.Children.Add(triggerHost);
         triggerForm.Children.Add(new TextBlock{Text="Invio al passaggio del marker, anche a ogni giro del loop. Il salto manuale non invia i trigger saltati. Le note MIDI hanno Note Off automatico. Le destinazioni MIDI sono quelle dello show.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12});
         form.Children.Add(new Expander{Header="Trigger MIDI / OSC",Content=triggerForm,Foreground=Brushes.White,Margin=new Thickness(0,8,0,0)});
@@ -91,11 +91,11 @@ internal sealed class MarkerWindow : Window
     }
     private void SetMidi(MidiSettings value)
     {
-        midiTrigger=new MidiCommandEditor(value,()=>{if(midiTrigger!=null)triggerHost.Children.Remove(midiTrigger);midiTrigger=null;},markerTrigger:true);triggerHost.Children.Add(midiTrigger);
+        midiTrigger=new MidiCommandEditor(latestState?.Project?.CommandDefaults.Resolve(value)??value,()=>{if(midiTrigger!=null)triggerHost.Children.Remove(midiTrigger);midiTrigger=null;},markerTrigger:true);triggerHost.Children.Add(midiTrigger);
     }
     private void SetOsc(OscCommand value)
     {
-        oscTrigger=new OscCommandEditor(value,()=>{if(oscTrigger!=null)triggerHost.Children.Remove(oscTrigger);oscTrigger=null;},markerTrigger:true);triggerHost.Children.Add(oscTrigger);
+        oscTrigger=new OscCommandEditor(latestState?.Project?.CommandDefaults.Resolve(value)??value,()=>{if(oscTrigger!=null)triggerHost.Children.Remove(oscTrigger);oscTrigger=null;},markerTrigger:true);triggerHost.Children.Add(oscTrigger);
     }
     private void SetColor(string value){color=value;colorHost.Children.Clear();var picker=new ColorPicker(value);picker.Changed+=v=>color=v;colorHost.Children.Add(picker);}
     private void Buttons(){form.IsEnabled=!busy && !stale && !showLocked;save.IsEnabled=editId!=null || shown.Length<AudioMarkers.Maximum;remove.IsEnabled=editId!=null;L.Bind(remove,ContentControl.ContentProperty,deleteId!=null?"Conferma eliminazione":"Elimina marker");}

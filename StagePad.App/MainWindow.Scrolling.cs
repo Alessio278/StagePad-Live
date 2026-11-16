@@ -35,12 +35,7 @@ internal sealed partial class MainWindow
         foreach(var scroll in new[]{setupScroll,liveScroll})
         {
             scroll.PanningMode=PanningMode.Both;
-            scroll.PreviewMouseWheel+=(_,e)=>
-            {
-                if((Keyboard.Modifiers&ModifierKeys.Shift)==0 || scroll.ScrollableWidth<=0)return;
-                scroll.ScrollToHorizontalOffset(scroll.HorizontalOffset-HorizontalWheelMotion.Pixels(e.Delta));
-                e.Handled=true;
-            };
+
         }
     }
     private IntPtr HorizontalWheelMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam,ref bool handled)

@@ -1,9 +1,9 @@
 # Security policy
 
-The current release line is **StagePad Live 1.x**. Fixes are distributed through this repository's stable releases.
+Security fixes are provided in the latest stable StagePad Live release.
 
-For a potential vulnerability, use GitHub's private **Report a vulnerability** option when available. Do not post secrets, private shows, personal paths or device credentials in public issues. For ordinary bugs use the issue template.
+To report a vulnerability, use the repository's private **Report a vulnerability** option if available. Do not include credentials, private shows or personal files in public issues. Ordinary bugs can use the issue template.
 
-Only download updates from the official repository. The app checks update origin, SHA-256, executable product/version and startup health. These checks do not constitute code signing or hardware certification.
+Download updates from the official repository. The updater checks their origin, checksum and executable version, and keeps a previous executable for rollback. Release files are currently unsigned.
 
-OSC sends to user-configured UDP destinations. Audio decoding is isolated from the audio callback. Neither feature makes untrusted media or external equipment inherently safe. Test your performance setup before public use.
+OSC destinations are configured by the user and use UDP. Test receiving equipment and untrusted media in a separate show before live use.

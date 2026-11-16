@@ -26,7 +26,7 @@ public static class AudioMarkers
             {
                 if(a.MidiTrigger!=b.MidiTrigger)return false;
                 var x=a.OscTrigger;var y=b.OscTrigger;
-                if(x!=null && y!=null){if(x.Host!=y.Host || x.Port!=y.Port || x.Address!=y.Address || x.DelayMs!=y.DelayMs || !x.Arguments.SequenceEqual(y.Arguments))return false;}
+                if(x!=null && y!=null){if(x.UseShowDestination!=y.UseShowDestination || x.Host!=y.Host || x.Port!=y.Port || x.Address!=y.Address || x.DelayMs!=y.DelayMs || !x.Arguments.SequenceEqual(y.Arguments))return false;}
                 else if(x!=y)return false;
             }
         }

@@ -18,6 +18,11 @@ Settings supports independent master and current-playing-track CC bindings: abso
 
 Marker-capture LEARN assigns an unused Note On/Off key. It creates markers only in Setup on the selected playing track. Marker output triggers can use immediate MIDI Pulse/CC/Program/MSC. They never use Gate and do not replay skipped cues after a seek.
 
-MIDI clock and automatic MIDI thru are not implemented. Hardware names are not predefined profiles; verify actual messages and receiver behavior. Reconnect does not replay old cues.
+MIDI clock and automatic MIDI thru are not implemented. Check the messages supported by the receiver. Reconnect does not replay old cues.
+## Slot defaults and LED feedback
+
+New commands preload the show’s MIDI channel and MSC device ID. Edit either value per command; later default changes leave existing commands unchanged. An exclusive + Marker slot can capture on selected playing audio in Setup. Slot volume keeps its latest mouse/MIDI value across retriggers and saves.
+
+Optional LED feedback uses generic Note On messages on a dedicated output and is off by default. LED codes and RGB behavior depend on the controller; check its MIDI documentation before enabling it.
 
 [README](../README.md)

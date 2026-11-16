@@ -20,9 +20,11 @@ internal abstract class MidiModule : IDisposable
     protected abstract bool Input { get; }
     protected virtual int ActiveNotes=>0;
     protected virtual int PendingCount=>0;
+    protected virtual string? FeedbackStatus=>null;
     protected virtual Task<Reply> Deferred(Request r)=>Task.FromResult(Command(r));
     protected abstract void Tick();
     protected abstract void ClosePort();
+    protected virtual void StopExtra(){}
     protected abstract void OpenPort(int index);
     protected virtual Reply Command(Request r) => new(false, "Comando MIDI sconosciuto.");
     public Task<Reply> Handle(Request r)
@@ -70,13 +72,13 @@ internal abstract class MidiModule : IDisposable
                         int[] matching = devices.Select((d, i) => (d, i)).Where(x => x.d.Id == selected).Select(x => x.i).ToArray();
                         if (matching.Length != 1) throw new InvalidOperationException(matching.Length == 0 ? "Porta non disponibile; riconnessione automatica in attesa." : "Dispositivi MIDI identici: impossibile riconnettere in modo univoco.");
                         OpenPort(matching[0]); opened = true; error = null;
-                        status = Input ? "Connesso" : "Porta aperta · ricezione non verificata";
+                        status = "Connesso";
                     }
                     nextRetry = now + 2000;
                 }
                 Tick();
                 Volatile.Write(ref heartbeat, Environment.TickCount64);
-                Volatile.Write(ref snapshot, new(instance, status, error, selected, devices, heartbeat, lastMessage, count, Log.Unavailable,ActiveNotes,PendingCount));
+                Volatile.Write(ref snapshot, new(instance, status, error, selected, devices, heartbeat, lastMessage, count, Log.Unavailable,ActiveNotes,PendingCount,FeedbackStatus));
             }
             catch (Exception ex)
             {
@@ -84,11 +86,12 @@ internal abstract class MidiModule : IDisposable
                 try { ClosePort(); } catch (Exception close) { Log.Error("midi-close", close); }
                 opened = false; nextRetry = Environment.TickCount64 + 2000;
                 Volatile.Write(ref heartbeat, Environment.TickCount64);
-                Volatile.Write(ref snapshot, new(instance, status, error, desired, devices, heartbeat, lastMessage, count, Log.Unavailable,ActiveNotes,PendingCount));
+                Volatile.Write(ref snapshot, new(instance, status, error, desired, devices, heartbeat, lastMessage, count, Log.Unavailable,ActiveNotes,PendingCount,FeedbackStatus));
             }
             if (stop.Token.WaitHandle.WaitOne(5)) break;
         }
         try { ClosePort(); } catch (Exception ex) { Log.Error("midi-close", ex); }
+        try{StopExtra();}catch(Exception ex){Log.Error("midi-extra-close",ex);}
     }
     public void Dispose() { stop.Cancel(); if (worker?.Join(1000) == true) stop.Dispose(); }
 }
@@ -158,6 +161,10 @@ internal sealed class MidiInputModule(string audioPipe) : MidiModule(audioPipe)
 }
 internal sealed class MidiOutputModule(string audioPipe) : MidiModule(audioPipe)
 {
+    private readonly MidiPadFeedback padFeedback=new();
+    private PadLedFrame? ledFrame;
+    protected override string? FeedbackStatus=>padFeedback.Status;
+    protected override void StopExtra()=>padFeedback.Dispose();
     private readonly BlockingCollection<Request> outgoing = new(256);
     private sealed record Scheduled(int Slot,int Index,MidiSettings Settings,long Due,long Order,string? TestId);
     private readonly List<Scheduled> scheduled=[];
@@ -185,6 +192,8 @@ internal sealed class MidiOutputModule(string audioPipe) : MidiModule(audioPipe)
     protected override bool Input => false;
     protected override Reply Command(Request r)
     {
+        if(r.Op=="led-frame"){r.LedFrame?.Validate();Volatile.Write(ref ledFrame,r.LedFrame);return new(true);}
+
         if (r.Op == "panic")
         {
             long current;
@@ -227,6 +236,7 @@ internal sealed class MidiOutputModule(string audioPipe) : MidiModule(audioPipe)
     }
     protected override void Tick()
     {
+        padFeedback.Apply(Volatile.Read(ref ledFrame),desired);
         long pendingPanic = Interlocked.Exchange(ref panicEpoch, -1);
         if (pendingPanic > epoch)
         {

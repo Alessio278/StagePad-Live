@@ -9,6 +9,7 @@ New-Item 'artifacts/validation' -ItemType Directory -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Core tests failed. Packaging cancelled.' }
 & dotnet run --project StagePad.IntegrationTests -c Release | Tee-Object 'artifacts/validation/integration-tests.log'
 if ($LASTEXITCODE -ne 0) { throw 'Integration tests failed. Packaging cancelled.' }
+if (Test-Path 'artifacts/win-x64') { Remove-Item 'artifacts/win-x64' -Recurse -Force }
 & dotnet publish StagePad.App/StagePad.App.csproj -c Release -r win-x64 --self-contained true '-p:PublishSingleFile=true' '-p:IncludeNativeLibrariesForSelfExtract=true' '-p:EnableCompressionInSingleFile=true' -o artifacts/win-x64
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
 $previousDataRoot = $env:STAGEPAD_DATA_DIR
@@ -28,15 +29,21 @@ try {
     if (Test-Path $smokeRoot) { Remove-Item $smokeRoot -Recurse -Force -ErrorAction SilentlyContinue }
 }
 $version = ([xml](Get-Content 'StagePad.App/StagePad.App.csproj')).Project.PropertyGroup.Version
-$exe = 'artifacts/win-x64/StagePad.exe'
+$versionedName = "StagePad-$version.exe"
+Copy-Item 'artifacts/win-x64/StagePad.exe' 'artifacts/StagePad.exe' -Force
+Move-Item 'artifacts/win-x64/StagePad.exe' "artifacts/win-x64/$versionedName" -Force
+$exe = "artifacts/win-x64/$versionedName"
 $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'artifacts/win-x64/SHA256.txt'), "$hash  StagePad.exe" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'artifacts/win-x64/SHA256.txt'), "$hash  $versionedName" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 Copy-Item 'LICENSE' 'artifacts/win-x64/LICENSE'
+New-Item 'artifacts/win-x64/licenses' -ItemType Directory -Force | Out-Null
+Copy-Item 'licenses/*' 'artifacts/win-x64/licenses/' -Force
+Get-ChildItem 'artifacts/win-x64/*.pdb' | Remove-Item -Force
 Copy-Item 'docs/UPDATE.en.md' 'artifacts/win-x64/UPDATE.en.md'
 Copy-Item 'docs/UPDATE.it.md' 'artifacts/win-x64/UPDATE.it.md'
 Copy-Item 'docs/UPDATE.es.md' 'artifacts/win-x64/UPDATE.es.md'
 Copy-Item 'docs/UPDATE.fr.md' 'artifacts/win-x64/UPDATE.fr.md'
-Copy-Item 'docs/TEST-COMPLETI.md' 'artifacts/win-x64/WINDOWS-CHECKLIST.md'
+Copy-Item 'docs/TESTING.md' 'artifacts/win-x64/WINDOWS-CHECKLIST.md'
 Compress-Archive -Path 'artifacts/win-x64/*' -DestinationPath "artifacts/StagePad-Live-${version}-Windows.zip" -Force
 Copy-Item 'artifacts/win-x64/SHA256.txt' 'artifacts/SHA256.txt'
 @"

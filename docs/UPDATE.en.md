@@ -1,11 +1,9 @@
-# StagePad Live - portable updates
+# Portable updates
 
-Close the application before replacing `StagePad.exe` with the executable from a newer stable release. Settings, named shows, recovery and media references stay in `%LOCALAPPDATA%\StagePad` or your chosen project folder. The Windows ZIP includes its runtime.
+Close StagePad Live before replacing its executable. The Windows ZIP includes the runtime; shows, settings and media remain in their existing folders.
 
-Settings > Updates checks `Alessio278/StagePad-Live` stable releases. The updater expects a `StagePad.exe` asset and a matching SHA-256 digest or `SHA256.txt`. Installation requires idle audio/sequences, validates product/version and retains a previous executable. Failed startup attempts rollback; Settings can restore an available previous version.
+**Settings > Updates** checks stable releases from `Alessio278/StagePad-Live`. It verifies the versioned executable and SHA-256, keeps a previous copy and attempts rollback if startup fails. Audio and command sequences must be stopped before installation. The update keeps the installed filename.
 
-Back up shows and original audio before a major-version change. Show export includes media; copying only JSON does not. Existing development data is migrated without overwriting named shows; archived media remains in `backups\legacy-data` when referenced.
+Back up shows and original audio before upgrading. Version 1.1 saves schema 3, which version 1.0 cannot read. Export a show with audio to copy all referenced media; copying JSON alone does not include it.
 
-This build is unsigned. SmartScreen reputation is separate from the checksum and update integrity checks. Automatic update checks require network access; ordinary playback does not.
-
-[README](../README.md)
+The executable is unsigned and may trigger SmartScreen. See the [README](../README.md#windows-smartscreen). Ordinary playback works offline; checking or downloading updates needs internet access.

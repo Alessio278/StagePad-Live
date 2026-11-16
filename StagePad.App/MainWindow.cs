@@ -25,6 +25,7 @@ internal sealed partial class MainWindow : Window
     private readonly string?[] padTintColors = new string?[StagePad.Core.Projects.MaxSlots];
     private readonly Border[] liveCards = new Border[StagePad.Core.Projects.MaxSlots];
     private readonly Border[] accents = new Border[StagePad.Core.Projects.MaxSlots], liveAccents = new Border[StagePad.Core.Projects.MaxSlots];
+    private readonly TextBlock[] liveVolumePercent=new TextBlock[StagePad.Core.Projects.MaxSlots];
     private readonly TextBlock[] liveTitles = new TextBlock[StagePad.Core.Projects.MaxSlots], liveStates = new TextBlock[StagePad.Core.Projects.MaxSlots], liveTimes = new TextBlock[StagePad.Core.Projects.MaxSlots];
     private readonly ContentControl viewHost = new()
     { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
@@ -149,7 +150,8 @@ internal sealed partial class MainWindow : Window
             var learnButton=Button("LEARN",async()=>{Select(slot);await Send(new("learn",slot,Flag:last?.LearnSlot!=slot));}); learnButton.FontSize=10;
             var clear=Button("Svuota",async()=>await Send(new("clear",slot))); clear.FontSize=10;
             panel.Children.Add(ButtonRow(learnButton,clear));
-            var volume=new Slider { Minimum=0,Maximum=1,Value=1,Margin=new Thickness(0,5,0,0),ToolTip="Volume slot" }; volumes[i]=volume; panel.Children.Add(volume);
+            var volume=new Slider { Minimum=0,Maximum=1,Value=1,Margin=new Thickness(0,5,0,0),ToolTip="Volume slot" }; volumes[i]=volume; var volumeRow=new DockPanel();var percent=Text("100%",11);percent.Width=42;percent.TextAlignment=TextAlignment.Right;percent.VerticalAlignment=VerticalAlignment.Center;DockPanel.SetDock(percent,Dock.Right);volumeRow.Children.Add(percent);volumeRow.Children.Add(volume);panel.Children.Add(volumeRow);
+            volume.ValueChanged+=(_,_)=>percent.Text=$"{volume.Value*100:0}%";
             volume.PreviewMouseLeftButtonUp+=async(_,_)=>{if(!updating) await Send(new("volume",slot,Value:(float)volume.Value));};
             volume.PreviewKeyUp+=async(_,_)=>{if(!updating) await Send(new("volume",slot,Value:(float)volume.Value));};
             var body=new DockPanel(); accents[i]=new Border { Height=3,Background=Brush("#4A78BC"),Margin=new Thickness(14,0,14,0),CornerRadius=new CornerRadius(1.5) };
@@ -220,7 +222,7 @@ internal sealed partial class MainWindow : Window
             var number=Text($"{i+1:00}",10);number.Foreground=Brush("#91A6BD");number.Margin=new Thickness(0,0,8,0);heading.Children.Add(number);
             liveStates[i]=Text("VUOTO",10);liveStates[i].TextTrimming=TextTrimming.CharacterEllipsis;liveStates[i].HorizontalAlignment=HorizontalAlignment.Right;liveStates[i].Margin=new Thickness(0);Grid.SetColumn(liveStates[i],1);heading.Children.Add(liveStates[i]);labels.Children.Add(heading);
             liveTitles[i]=Text($"Slot {i+1}",22);liveTitles[i].Foreground=Brushes.White;liveTitles[i].FontWeight=FontWeights.SemiBold;liveTitles[i].TextTrimming=TextTrimming.CharacterEllipsis;liveTitles[i].VerticalAlignment=VerticalAlignment.Center;liveTitles[i].Margin=new Thickness(0,2,0,2);var titleViewport=new ScrollingTitle(liveTitles[i]);scrollingTitles[i]=titleViewport;Grid.SetRow(titleViewport,1);labels.Children.Add(titleViewport);
-            liveTimes[i]=Text("00:00 / 00:00",15);liveTimes[i].FontFamily=new FontFamily("Consolas");liveTimes[i].Foreground=Brush("#B6C9DE");liveTimes[i].Margin=new Thickness(0,0,0,3);Grid.SetRow(liveTimes[i],2);labels.Children.Add(liveTimes[i]);
+            liveTimes[i]=Text("00:00 / 00:00",15);liveTimes[i].FontFamily=new FontFamily("Consolas");liveTimes[i].Foreground=Brush("#B6C9DE");liveTimes[i].Margin=new Thickness(0,0,0,3);var liveVolumeRow=new DockPanel();liveVolumePercent[i]=Text("100%",11);liveVolumePercent[i].VerticalAlignment=VerticalAlignment.Center;liveVolumePercent[i].Margin=new Thickness(6,0,0,0);DockPanel.SetDock(liveVolumePercent[i],Dock.Right);liveVolumeRow.Children.Add(liveVolumePercent[i]);liveVolumeRow.Children.Add(liveTimes[i]);Grid.SetRow(liveVolumeRow,2);labels.Children.Add(liveVolumeRow);
             var body=PadButton("",slot);body.Content=labels;body.Background=Brushes.Transparent;body.BorderThickness=new Thickness(0);body.Padding=new Thickness(0);body.Margin=new Thickness(1,0,1,3);body.HorizontalContentAlignment=HorizontalAlignment.Stretch;body.VerticalContentAlignment=VerticalAlignment.Stretch;
             body.ToolTip="Premi il titolo oppure ▶ per eseguire la modalità configurata.";Grid.SetRow(body,1);layout.Children.Add(body);
             var play=PadButton("",slot);play.Content=TransportIcon("play");play.Background=Brush("#23473F");play.ToolTip="Play / riprendi · tieni premuto per Hold";
@@ -275,14 +277,14 @@ internal sealed partial class MainWindow : Window
         }
         else { WindowState = WindowState.Normal; WindowStyle = previousWindowStyle; WindowState = previousWindowState; }
     }
-    private static LinearGradientBrush PadTint(string hex)
+    private static LinearGradientBrush PadTint(string hex,bool bright=false)
     {
         var color=(Color)ColorConverter.ConvertFromString(hex);
         Color Blend(double strength)=>Color.FromRgb(
             (byte)Math.Round(18+(color.R-18)*strength),
             (byte)Math.Round(29+(color.G-29)*strength),
             (byte)Math.Round(43+(color.B-43)*strength));
-        var tint=new LinearGradientBrush(Blend(.18),Blend(.04),new Point(0,0),new Point(1,1));
+        var tint=new LinearGradientBrush(Blend(bright?.8:.18),Blend(bright?.5:.04),new Point(0,0),new Point(1,1));
         tint.Freeze();return tint;
     }
     private static readonly Dictionary<string,SolidColorBrush> brushCache=new(StringComparer.OrdinalIgnoreCase);
@@ -316,12 +318,14 @@ internal sealed partial class MainWindow : Window
     private int waitingCommands;
     private async Task<Reply> SendReply(Request request)
     {
-        bool priority = request.Op == "panic" || (request.Op is "play" or "pad-down" && last?.Project is {} emergencyProject && (uint)request.Slot<emergencyProject.Slots.Length && emergencyProject.Slots[request.Slot].EmergencyPauseAll);
-        bool independent=priority || request.Op is "marker-context" or "marker-loop" or "export-show" or "import-show" or "test-command" or "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project";
+        bool emergencyRequest=request.Op is "play" or "pad-down" && last?.Project is {} emergencyProject && (uint)request.Slot<emergencyProject.Slots.Length && emergencyProject.Slots[request.Slot].EmergencyPauseAll;
+        bool priority=request.Op=="panic" || emergencyRequest && last!.Project!.Slots[request.Slot].EmergencyHold!=true;
+        bool release=request.Op=="pad-up";
+        bool independent=priority || emergencyRequest || release || request.Op is "marker-context" or "marker-loop" or "export-show" or "import-show" or "test-command" or "save-project" or "load-project" or "rename-project" or "duplicate-project" or "delete-project";
         if (priority) Interlocked.Increment(ref uiPanicEpoch);
         long epoch = Volatile.Read(ref uiPanicEpoch);
         request = request with { Timestamp = request.Timestamp == 0 ? Environment.TickCount64 : request.Timestamp };
-        if (Interlocked.Increment(ref waitingCommands) > 128 && !priority)
+        if (Interlocked.Increment(ref waitingCommands) > 128 && !priority && !release && !emergencyRequest)
         { Interlocked.Decrement(ref waitingCommands); return new(false, "Troppi comandi in attesa."); }
         if (!independent) await commands.WaitAsync();
         try

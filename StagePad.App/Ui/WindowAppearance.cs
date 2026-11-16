@@ -8,6 +8,7 @@ internal static class WindowAppearance
     private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
     public static void Apply(Window window)
     {
+        ScrollSpeed.Install();
         window.Icon=new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/StagePad;component/Assets/StagePad.png",UriKind.Absolute));
         window.Loaded+=(_,_)=>L.Apply(window);
         window.UseLayoutRounding = true; window.SnapsToDevicePixels = true;

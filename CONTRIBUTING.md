@@ -1,14 +1,15 @@
-# Contributing to StagePad Live
+# Contributing
 
-Reports and contributions in Italian, English, Spanish and French are welcome.
+Bug reports, translations and pull requests are welcome in Italian, English, Spanish or French.
 
-- Include app/Windows versions, reproduction steps, expected/actual behavior, screen scaling and relevant device/driver/receiver information.
-- Remove personal file paths and unrelated content from logs/screenshots.
-- Keep code changes focused and decoding, disk/network I/O and blocking work out of the audio callback.
-- Run `Build.ps1` on Windows before submitting. It includes core, simulated integration and native WPF checks.
-- Test UI changes at 100%, 150% and 200% DPI in all four languages.
-- Translations are in `StagePad.App/Localization/strings.json`. Preserve placeholders, protocol fields and user-entered text.
-- Use the ASCII hyphen `-` in maintained text. Do not add long dash punctuation.
-- Do not claim device profiles, supported platforms, certifications or test outcomes without evidence.
+For a bug report, include the app and Windows versions, steps to reproduce, expected behavior and relevant device information. Remove personal paths and unrelated content from logs or screenshots.
 
-Contributions use the repository's MIT License. Preserve third-party notices. See [Windows checklist](docs/TEST-COMPLETI.md) and [verification](docs/VERIFICA.md).
+For code changes:
+
+- Keep changes focused. Decoding, file/network I/O and blocking operations belong outside the audio callback.
+- Run `Build.ps1` on Windows and use the [manual checklist](docs/TESTING.md) for UI or hardware changes.
+- Check UI changes at different display scaling levels and in all four languages.
+- Translations are in `StagePad.App/Localization/strings.json`; preserve placeholders and protocol values.
+- Preserve third-party license notices and use ordinary hyphens in maintained text.
+
+Contributions are distributed under the repository's MIT License. Report vulnerabilities as described in [SECURITY.md](SECURITY.md).

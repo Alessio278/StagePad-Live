@@ -90,11 +90,11 @@ internal sealed partial class MainWindow
         var title=new StackPanel{VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)};
         var label=Text("TRACCIA SELEZIONATA",10);label.Foreground=Brush("#91A6BD");label.FontWeight=FontWeights.SemiBold;
         title.Children.Add(label);title.Children.Add(selected);heading.Children.Add(title);
-        var readouts=new Grid();for(int i=0;i<3;i++)readouts.ColumnDefinitions.Add(new());
+        var readouts=new Grid();playerReadouts=readouts;playerTitle=title;for(int i=0;i<3;i++)readouts.ColumnDefinitions.Add(new());
         var elapsed=Readout("TRASCORSO",selectedTime);var duration=Readout("DURATA TOTALE",durationTime);var remaining=Readout("RIMANENTE",remainingTime);
         durationTime.Foreground=Brush("#9BAFC5");remainingTime.Foreground=Brush("#FFCC80");
         readouts.Children.Add(elapsed);Grid.SetColumn(duration,1);Grid.SetColumn(remaining,2);readouts.Children.Add(duration);readouts.Children.Add(remaining);Grid.SetColumn(readouts,1);heading.Children.Add(readouts);
-        waveform.Height=72;waveform.HorizontalAlignment=HorizontalAlignment.Stretch;Grid.SetRow(waveform,1);audioArea.Children.Add(waveform);Grid.SetRow(position,2);audioArea.Children.Add(position);
+        waveform.Height=72;waveform.HorizontalAlignment=HorizontalAlignment.Stretch;var mediaArea=new Grid{MinHeight=72};mediaArea.Children.Add(waveform);mediaArea.Children.Add(commandDetails);Grid.SetRow(mediaArea,1);audioArea.Children.Add(mediaArea);Grid.SetRow(position,2);audioArea.Children.Add(position);
         var tools=new StackPanel{VerticalAlignment=VerticalAlignment.Center};Grid.SetColumn(tools,1);layout.Children.Add(tools);
         var masterHeading=new DockPanel();var masterLabel=Text("MASTER",10);masterLabel.Foreground=Brush("#91A6BD");masterHeading.Children.Add(masterLabel);
         masterPercent.FontSize=12;masterPercent.HorizontalAlignment=HorizontalAlignment.Right;masterHeading.Children.Add(masterPercent);tools.Children.Add(masterHeading);
@@ -213,7 +213,7 @@ internal sealed partial class MainWindow
         AssignText(selectedTime,UiPlaybackClock.Format(selectedReading.Elapsed));
         AssignText(durationTime,UiPlaybackClock.Format(selectedReading.Duration));
         AssignText(remainingTime,UiPlaybackClock.Format(selectedReading.Remaining));
-        RenderMarkerFeedback(now,anchor);
+        RenderSlotFeedback(now);RenderMarkerFeedback(now,anchor);
     }
     private static void AssignText(TextBlock target,string text){if(target.Text!=text)target.Text=text;}
 }

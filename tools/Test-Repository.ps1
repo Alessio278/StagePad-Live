@@ -10,6 +10,7 @@ try {
     $textExtensions = @('.cs','.csproj','.props','.json','.xaml','.md','.txt','.yml','.yaml','.ps1','.cmd','.py','.svg')
     foreach ($file in $files) {
         if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { continue }
+        if ($file -match '(?i)\.(exe|dll|pdb|pfx|p12|pem|key|log|zip)$' -or (($file -match '(^|[\\/])\.env($|\.)') -and $file -notmatch '\.env\.example$')) { throw "Local output or credential file in source tree: $file" }
         if ([IO.Path]::GetExtension($file) -notin $textExtensions) { continue }
         $text = [IO.File]::ReadAllText((Join-Path $root $file))
         if ($text.Contains([char]0x2014) -or $text.Contains([char]0x2013)) { throw "Long dash punctuation in $file" }

@@ -13,6 +13,14 @@ internal sealed class SettingsWindow : Window
     private readonly StackPanel memoryControls=new();
     private StateInfo? state;
     private bool saving,mappingSaving;
+    private readonly TextBox defaultMidiChannel=new(),defaultMscDevice=new(),defaultOscHost=new(),defaultOscPort=new(),defaultOscAddress=new();
+    private CommandDefaults? shownDefaults;
+    private readonly TextBox defaultSlotVolume=new(){Text="100"};
+    private float? shownDefaultVolume;
+    private readonly ComboBox feedbackOutput=new(){DisplayMemberPath="Name",SelectedValuePath="Id"};
+    private readonly TextBlock feedbackStatus=new(){Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};
+    private string? shownFeedbackOutput;
+    private bool feedbackInitialized;
     private readonly StackPanel volumeControls=new();
     private readonly TextBlock controlledTrack=new(){Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};
     private readonly TextBox masterChannel=new(){Text="1"},masterCc=new(){Text="-1"},trackChannel=new(){Text="1"},trackCc=new(){Text="-1"};
@@ -65,7 +73,28 @@ internal sealed class SettingsWindow : Window
             UpdateNotice();
         }
         follow.Checked+=(_,_)=>SaveFollow();follow.Unchecked+=(_,_)=>SaveFollow();
-        Section(body,"MARKER MIDI (SETUP)");body.Children.Add(markerControls);
+        Section(body,"DESTINAZIONI MIDI / OSC DELLO SHOW");
+        body.Children.Add(CommandForm.Row("Canale MIDI predefinito",defaultMidiChannel));body.Children.Add(CommandForm.Row("Device ID MSC predefinito",defaultMscDevice));
+        body.Children.Add(CommandForm.Row("Host / IP OSC",defaultOscHost));body.Children.Add(CommandForm.Row("Porta UDP",defaultOscPort));body.Children.Add(CommandForm.Row("Percorso OSC predefinito",defaultOscAddress));
+        body.Children.Add(new TextBlock{Text="I valori vengono caricati nei nuovi comandi e ogni campo rimane modificabile. I comandi esistenti non cambiano. La porta MIDI si sceglie in Setup, separata dal controller.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12});
+        body.Children.Add(CommandForm.Button("Salva destinazioni dello show",async()=>
+        {
+            try
+            {
+                var value=new CommandDefaults{MidiChannel=int.Parse(defaultMidiChannel.Text),MscDeviceId=int.Parse(defaultMscDevice.Text),OscHost=defaultOscHost.Text.Trim(),OscPort=int.Parse(defaultOscPort.Text),OscAddress=defaultOscAddress.Text.Trim()};value.Validate();
+                var reply=await send(new("command-defaults",CommandDefaults:value));notice=reply.Ok?"Destinazioni aggiornate.":reply.Error??"Comando non riuscito.";
+            }
+            catch(Exception ex){notice=ex.Message;}UpdateNotice();
+        }));
+        Section(body,"LED CONTROLLER · PROFILO GENERICO");
+        body.Children.Add(CommandForm.Row("Porta MIDI LED dedicata",feedbackOutput));
+        body.Children.Add(new TextBlock{Text="Disattivato per default. Solo per controller che ricevono LED tramite Note On. I valori LED dello slot dipendono dal dispositivo: non sono colori RGB universali. Compatibilità Donner da verificare. Non selezionare la porta dei comandi MIDI.",Foreground=Brushes.LightSlateGray,FontSize=12,TextWrapping=TextWrapping.Wrap});
+        body.Children.Add(CommandForm.Button("Applica porta LED",async()=>
+        {
+            if(state?.Project==null)return;
+            try{var route=state.Project.Routing with{PadFeedbackOutput=string.IsNullOrEmpty(feedbackOutput.SelectedValue as string)?null:feedbackOutput.SelectedValue as string};var reply=await send(new("configure",Routing:route));notice=reply.Ok?"Porta LED aggiornata.":reply.Error??"Comando non riuscito.";}catch(Exception ex){notice=ex.Message;}UpdateNotice();
+        }));body.Children.Add(feedbackStatus);L.Preserve(feedbackStatus);
+        Section(body,"INSERIMENTO RAPIDO MARKER");body.Children.Add(markerControls);
         markerControls.Children.Add(new TextBlock{Text="Un tasto MIDI per inserire marker sulla traccia selezionata in riproduzione. In Serata non modifica lo show. Scegli un tasto non assegnato agli slot.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12,Margin=new Thickness(0,0,0,8)});
         markerControls.Children.Add(markerAssignment);L.Preserve(markerAssignment);
         markerControls.Children.Add(learnMarker);markerControls.Children.Add(clearMarker);
@@ -83,6 +112,20 @@ internal sealed class SettingsWindow : Window
         }
         learnMarker.Click+=async(_,_)=>await MarkerCommand(false);clearMarker.Click+=async(_,_)=>await MarkerCommand(true);
         Closed+=async(_,_)=>{try{await send(new("learn-marker",Flag:false));}catch(Exception ex){Log.Warn("marker-learn",ex.Message);}};
+        Section(body,"VOLUME PREDEFINITO SLOT");
+        body.Children.Add(CommandForm.Row("Volume nuovi slot (%)",defaultSlotVolume));
+        body.Children.Add(new TextBlock{Text="Il valore vale per slot nuovi e nuovi show. Ogni slot conserva il volume modificato con mouse o MIDI, anche alle pressioni successive e dopo il salvataggio.",Foreground=Brushes.LightSlateGray,FontSize=12,TextWrapping=TextWrapping.Wrap});
+        async Task SaveDefaultVolume(bool all)
+        {
+            try
+            {
+                float value=float.Parse(defaultSlotVolume.Text.Replace(',','.'),CultureInfo.InvariantCulture)/100;
+                var reply=await send(new("default-slot-volume",Value:value,Flag:all));notice=reply.Ok?"Volume predefinito aggiornato.":reply.Error??"Comando non riuscito.";
+            }
+            catch(Exception ex){notice=ex.Message;}UpdateNotice();
+        }
+        body.Children.Add(CommandForm.Button("Salva volume predefinito",async()=>await SaveDefaultVolume(false)));
+        body.Children.Add(CommandForm.Button("Applica volume a tutti gli slot (a tracce ferme)",async()=>await SaveDefaultVolume(true)));
         Section(body,"VOLUMI MIDI");body.Children.Add(volumeControls);
         volumeControls.Children.Add(CommandForm.Row("Master: canale MIDI",masterChannel));volumeControls.Children.Add(CommandForm.Row("Master: CC (-1 = disabilitato)",masterCc));
         volumeControls.Children.Add(CommandForm.Row("Modalità master",masterMode));volumeControls.Children.Add(masterPickup);volumeControls.Children.Add(PickupHelp());volumeControls.Children.Add(CommandForm.Row("Passo relativo master (%)",masterStep));volumeControls.Children.Add(learnMaster);
@@ -152,7 +195,7 @@ internal sealed class SettingsWindow : Window
         var actions=new Grid { Margin=new Thickness(0,14,0,0) };actions.ColumnDefinitions.Add(new());actions.ColumnDefinitions.Add(new());
         var logs=new Button { Content="Apri log",Margin=new Thickness(0,0,6,0) };var licenses=new Button { Content="Licenze",Margin=new Thickness(6,0,0,0) };Grid.SetColumn(licenses,1);actions.Children.Add(logs);actions.Children.Add(licenses);body.Children.Add(actions);
         body.Children.Add(new TextBlock { Text="STAGEPAD LIVE · "+AppUpdates.Current.ToString(2),FontSize=10,Foreground=Brushes.SlateGray,Margin=new Thickness(0,18,0,0) });
-        body.Children.Add(new TextBlock{Text="App portatile: aggiorna sostituendo StagePad.exe. Progetti e impostazioni restano salvati.",FontSize=11,Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,8,0,0)});
+        body.Children.Add(new TextBlock{Text=L.T("App portatile: progetti e impostazioni restano salvati durante gli aggiornamenti."),FontSize=11,Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,8,0,0)});
         body.Children.Add(CommandForm.Button("Aggiornamenti",()=>{if(openUpdates!=null)_=openUpdates();}));
         logs.Click+=async(_,_)=>{try{await openLogs();}catch(Exception ex){notice=ex.Message;UpdateNotice();}};
         licenses.Click+=async(_,_)=>{try{await Notices.Open();}catch(Exception ex){notice=ex.Message;UpdateNotice();}};
@@ -193,6 +236,18 @@ internal sealed class SettingsWindow : Window
     private void UpdateNotice()=>status.Text=L.Message(notice);
     public void Update(StateInfo current)
     {
+        var ledPorts=new[]{new DeviceInfo("",L.T("Disattivato"))}.Concat(current.MidiOut?.Devices??[]).ToArray();
+        if(feedbackOutput.ItemsSource is not DeviceInfo[] previousPorts || !previousPorts.SequenceEqual(ledPorts))
+        {var selected=feedbackOutput.SelectedValue;feedbackOutput.ItemsSource=ledPorts;feedbackOutput.SelectedValue=selected??current.Project?.Routing.PadFeedbackOutput??"";}
+        if(!feedbackInitialized || shownFeedbackOutput!=current.Project?.Routing.PadFeedbackOutput)
+        {feedbackInitialized=true;shownFeedbackOutput=current.Project?.Routing.PadFeedbackOutput;feedbackOutput.SelectedValue=shownFeedbackOutput??"";}
+        feedbackStatus.Text=L.Message(current.MidiOut?.FeedbackStatus??"OFF");
+        if(current.Project is {} volumeProject && shownDefaultVolume!=volumeProject.DefaultSlotVolume && !defaultSlotVolume.IsKeyboardFocusWithin)
+        {shownDefaultVolume=volumeProject.DefaultSlotVolume;defaultSlotVolume.Text=(volumeProject.DefaultSlotVolume*100).ToString("0.#",CultureInfo.InvariantCulture);}
+        var defaults=current.Project?.CommandDefaults??new();
+        if(shownDefaults!=defaults && !new[]{defaultMidiChannel,defaultMscDevice,defaultOscHost,defaultOscPort,defaultOscAddress}.Any(c=>c.IsKeyboardFocusWithin))
+        {shownDefaults=defaults;defaultMidiChannel.Text=defaults.MidiChannel.ToString();defaultMscDevice.Text=defaults.MscDeviceId.ToString();defaultOscHost.Text=defaults.OscHost;defaultOscPort.Text=defaults.OscPort.ToString();defaultOscAddress.Text=defaults.OscAddress;}
+
         bool previousMarkerLearn=state?.MarkerLearn==true;var previousMarkerBinding=state?.Project?.MarkerCapture;
         string? previousLearn=state?.VolumeLearn;state=current;
         if(previousMarkerLearn && !current.MarkerLearn && previousMarkerBinding!=current.Project?.MarkerCapture)notice="Tasto marker assegnato.";

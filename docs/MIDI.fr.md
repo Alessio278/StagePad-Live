@@ -15,5 +15,10 @@ CC séparés master/piste en lecture, faders absolus, encodeurs relatifs et repr
 LEARN d’insertion affecte un bouton libre, actif uniquement en Préparation sur la piste sélectionnée en lecture. Les marqueurs envoient Pulse/CC/Program/MSC immédiatement, sans Gate ni reprise des cues ignorés.
 
 Pas d’horloge MIDI ni MIDI thru automatique. Vérifiez messages et récepteurs ; aucun profil certifié. La reconnexion ne rejoue pas les cues.
+## Valeurs par défaut et LED
+
+Les nouvelles commandes chargent le canal MIDI et le Device ID MSC du show. Chaque champ reste modifiable ; changer les valeurs par défaut ne modifie pas les commandes existantes. Un slot + Marker exclusif peut insérer sur la piste sélectionnée en lecture, uniquement dans Setup. Le volume conserve sa dernière valeur souris/MIDI lors des déclenchements et enregistrements.
+
+Le feedback LED optionnel utilise des Note On génériques sur une sortie dédiée et reste désactivé par défaut. Les codes et le comportement RGB dépendent du contrôleur : consultez sa documentation MIDI avant de l’activer.
 
 [Guide](README.fr.md)

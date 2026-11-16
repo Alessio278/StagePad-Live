@@ -33,6 +33,7 @@ internal sealed class MidiCommandEditor : ContentControl
 {
     private readonly MidiSettings original;
     private readonly bool markerTrigger;
+    private FrameworkElement? channelRow,deviceIdRow;
     private readonly StackPanel body=new();
     private readonly Dictionary<string,TextBox> texts=[];
     private readonly Dictionary<string,ComboBox> choices=[];
@@ -53,14 +54,14 @@ internal sealed class MidiCommandEditor : ContentControl
         choices["Protocollo"].SelectionChanged+=(_,_)=>Update();Update();L.Apply(this);
     }
     private void Text(string label,object value,MidiKind[] kinds)
-    {var field=CommandForm.Text(value);texts[label]=field;var row=CommandForm.Row(label,field);body.Children.Add(row);rows.Add((row,kinds));}
+    {var field=CommandForm.Text(value);texts[label]=field;var row=CommandForm.Row(label,field);body.Children.Add(row);rows.Add((row,kinds));if(label=="Canale OUT 1-16")channelRow=row;if(label=="Device ID 0-127")deviceIdRow=row;}
     private void Choice<T>(string label,T value,MidiKind[]? kinds,Func<T,string>? captions=null)where T:struct,Enum
     {var combo=CommandForm.Choice(value,captions);choices[label]=combo;var row=CommandForm.Row(label,combo);body.Children.Add(row);if(kinds!=null)rows.Add((row,kinds));}
     private void Update(){var kind=(MidiKind)choices["Protocollo"].SelectedValue;foreach(var row in rows)row.Row.Visibility=row.Kinds.Contains(kind)?Visibility.Visible:Visibility.Collapsed;}
     private int N(string label)=>int.Parse(texts[label].Text,CultureInfo.InvariantCulture);
     public MidiSettings Read()
     {
-        var kind=(MidiKind)choices["Protocollo"].SelectedValue;var value=original with{Kind=kind,DelayMs=markerTrigger?0:N("Attesa prima (ms)")};
+        var kind=(MidiKind)choices["Protocollo"].SelectedValue;var value=original with{UseShowDestination=false,Kind=kind,DelayMs=markerTrigger?0:N("Attesa prima (ms)")};
         value=kind switch
         {
             MidiKind.Note=>value with{Channel=N("Canale OUT 1-16"),Note=N("Nota OUT 0-127"),Velocity=N("Velocity 1-127"),PulseMs=N("Durata impulso ms"),Behavior=markerTrigger?NoteBehavior.Pulse:(NoteBehavior)choices["Nota"].SelectedValue},
@@ -84,7 +85,8 @@ internal sealed class OscCommandEditor : ContentControl
         CommandForm.Tools(body,move,test==null?null:()=>test(Read()));
         delay=CommandForm.Text(markerTrigger?0:value.DelayMs);if(!markerTrigger)body.Children.Add(CommandForm.Row("Attesa prima (ms)",delay));
         host=CommandForm.Text(value.Host,253);port=CommandForm.Text(value.Port,5);address=CommandForm.Text(value.Address,512);
-        body.Children.Add(CommandForm.Row("Host / IP OSC",host));body.Children.Add(CommandForm.Row("Porta UDP",port));body.Children.Add(CommandForm.Row("Percorso OSC",address));
+        var hostRow=CommandForm.Row("Host / IP OSC",host);var portRow=CommandForm.Row("Porta UDP",port);
+        body.Children.Add(hostRow);body.Children.Add(portRow);body.Children.Add(CommandForm.Row("Percorso OSC",address));
         body.Children.Add(arguments);add=CommandForm.Button("Aggiungi argomento",()=>AddArgument(new()));body.Children.Add(add);
         foreach(var arg in value.Arguments)AddArgument(arg);L.Apply(this);
     }
@@ -101,7 +103,7 @@ internal sealed class OscCommandEditor : ContentControl
     }
     public OscCommand Read()
     {
-        var result=new OscCommand {DelayMs=int.Parse(delay.Text,CultureInfo.InvariantCulture),Host=host.Text.Trim(),Port=int.Parse(port.Text,CultureInfo.InvariantCulture),Address=address.Text.Trim(),Arguments=values.Select(v=>new OscArgument((OscArgumentType)v.Type.SelectedValue,(OscArgumentType)v.Type.SelectedValue is OscArgumentType.True or OscArgumentType.False?"":(OscArgumentType)v.Type.SelectedValue==OscArgumentType.Float?v.Value.Text.Trim().Replace(',','.'):v.Value.Text)).ToArray()};
+        var result=new OscCommand {UseShowDestination=false,DelayMs=int.Parse(delay.Text,CultureInfo.InvariantCulture),Host=host.Text.Trim(),Port=int.Parse(port.Text,CultureInfo.InvariantCulture),Address=address.Text.Trim(),Arguments=values.Select(v=>new OscArgument((OscArgumentType)v.Type.SelectedValue,(OscArgumentType)v.Type.SelectedValue is OscArgumentType.True or OscArgumentType.False?"":(OscArgumentType)v.Type.SelectedValue==OscArgumentType.Float?v.Value.Text.Trim().Replace(',','.'):v.Value.Text)).ToArray()};
         OscCodec.Validate(result);return result;
     }
 }

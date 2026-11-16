@@ -10,6 +10,7 @@ namespace NAudio.Midi
         public static readonly ConcurrentQueue<int> Notes = new();
         public static readonly ConcurrentQueue<byte[]> SysEx = new();
         public static readonly ManualResetEventSlim OutGate = new(true);
+        public static readonly ManualResetEventSlim OutEntered=new(false);
         public static readonly ConcurrentDictionary<MidiIn, byte> Inputs = new();
         public static void Emit(int raw) { foreach (var input in Inputs.Keys) input.Emit(raw); }
     }
@@ -31,7 +32,7 @@ namespace NAudio.Midi
         public static int NumberOfDevices => FakeMidi.OutputPresent ? 1 : 0;
         public static Caps DeviceInfo(int index) => new();
         public MidiOut(int index) { if (FakeMidi.OutputBusy) throw new IOException("Output occupato simulato"); }
-        private static void Check() { FakeMidi.OutGate.Wait(); if (FakeMidi.OutputError) throw new IOException("Errore uscita simulato"); }
+        private static void Check() { FakeMidi.OutEntered.Set();FakeMidi.OutGate.Wait(); if (FakeMidi.OutputError) throw new IOException("Errore uscita simulato"); }
         public void Send(int raw) { Check(); FakeMidi.Notes.Enqueue(raw); }
         public void SendBuffer(byte[] bytes) { Check(); FakeMidi.SysEx.Enqueue((byte[])bytes.Clone()); }
         public void Dispose() { }

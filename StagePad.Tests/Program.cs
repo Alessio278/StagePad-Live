@@ -184,9 +184,9 @@ Check(Math.Abs(StagePad.App.TitleScrollMotion.Offset(9.4,300,160)+84)<.001,"long
 Check(Math.Abs(StagePad.App.TitleScrollMotion.Offset(12.4,300,160))<.001,"long title repeats from start");
 
 
-Check(StagePad.App.HorizontalWheelMotion.Pixels(120)==48,"horizontal wheel scrolls right");
-Check(StagePad.App.HorizontalWheelMotion.Pixels(-120)==-48,"horizontal wheel scrolls left");
-Check(Math.Abs(StagePad.App.HorizontalWheelMotion.Pixels(1)-.4)<.00001,"trackpad fractional delta is preserved");
+Check(StagePad.App.HorizontalWheelMotion.Pixels(120)==24,"horizontal wheel scrolls right");
+Check(StagePad.App.HorizontalWheelMotion.Pixels(-120)==-24,"horizontal wheel scrolls left");
+Check(Math.Abs(StagePad.App.HorizontalWheelMotion.Pixels(1)-.2)<.00001,"trackpad fractional delta is preserved");
 
 
 var many=Projects.Resize(new ProjectDocument(),100);
@@ -314,7 +314,7 @@ Console.WriteLine($"Stress diagnostic: managed bytes={bytes}, faults={stress.Cal
     Console.WriteLine($"Stress: {blocks} blocks, {blocks*output.Length/2L} stereo frames in {clock.Elapsed.TotalSeconds:0.0}s. Not a real-device endurance test.");
 }
 
-foreach(var action in Enum.GetValues<SlotAction>())
+foreach(var action in Enum.GetValues<SlotAction>().Where(a=>a!=SlotAction.Marker))
 {
     Check(SlotActions.From(SlotActions.Audio(action),SlotActions.Midi(action),SlotActions.Osc(action))==action,"independent action combination "+action);
 }
@@ -342,7 +342,7 @@ foreach(var invalid in new SlotSettings[]{new(){Action=SlotAction.Osc},new(){Act
 var maximumMidi=new SlotSettings {Action=SlotAction.Midi,MidiCommands=Enumerable.Range(0,16).Select(n=>new MidiSettings{Note=n}).ToArray()};
 Projects.ValidateSlot(maximumMidi);Check(true,"16 MIDI commands fit per-slot snapshot budget");
 Projects.ValidateSlot(maximumMidi with{Action=SlotAction.All,OscCommands=Enumerable.Repeat(new OscCommand(),16).ToArray()});Check(true,"16 MIDI and 16 OSC commands can be combined in one slot");
-bool noAction=false;try{SlotActions.From(false,false,false);}catch(InvalidDataException){noAction=true;}Check(noAction,"slot requires at least one selected action");
+Check(SlotActions.From(false,false,false)==SlotAction.None,"slot with no selected actions is disabled");
 
 var automaticTitle=new SlotSettings{Name="Slot 1",AutoName=true,File="C:\\Music\\Prima.wav"};
 Check(SlotTitles.Display(automaticTitle,0)=="Prima" && SlotTitles.Display(automaticTitle with{File="C:\\Music\\Seconda.wav"},0)=="Seconda","automatic title follows Windows audio filename dynamically");
@@ -543,6 +543,45 @@ try
 finally{File.Delete(tinyWave);}
 Check(StagePad.App.UiPreferences.Parse("{}").AutoSaveProjects,"auto-save defaults to enabled for existing settings");
 var autoPrefs=new StagePad.App.UiPreferences(AutoSaveProjects:false);Check(!StagePad.App.UiPreferences.Parse(autoPrefs.ToJson()).AutoSaveProjects,"auto-save preference roundtrips independently of show data");
+// 1.1: emergency guard, defaults, content and device-specific feedback values.
+var guard=new HoldActivation();guard.Press("mouse",1000);guard.Press("mouse",2500);
+Check(!guard.Consume(3999) && guard.Progress(2500)==.5,"hold cannot activate early or be accelerated by repeat presses");
+Check(guard.Consume(4000) && !guard.Consume(9000),"hold activates once at three seconds and never repeats while held");
+guard.Release("mouse");guard.Press("midi",10000);guard.Release("midi");Check(!guard.Consume(14000),"early release cancels emergency without delayed activation");
+guard.Press("midi",15000);guard.Clear();Check(!guard.Consume(19000),"disconnect or panic clears emergency arming");
+guard.Press("mouse",20000);guard.Press("midi",21000);guard.Release("mouse");Check(!guard.Consume(23999) && guard.Consume(24000),"independent inputs each require their own continuous three-second hold");
+var destinations=new CommandDefaults{MidiChannel=7,OscHost="192.168.1.50",OscPort=9000,OscAddress="/mix/main"};destinations.Validate();
+Check(destinations.Midi().Channel==7 && destinations.Osc().Host=="192.168.1.50" && destinations.Osc().Port==9000,"new command templates inherit saved channel and OSC destination");
+var defaultsJson=System.Text.Json.JsonSerializer.Deserialize<ProjectDocument>(System.Text.Json.JsonSerializer.Serialize(new ProjectDocument{CommandDefaults=destinations},Projects.Json),Projects.Json)!;
+Check(defaultsJson.CommandDefaults==destinations,"show command destinations roundtrip independently of slot commands");
+Check(System.Text.Json.JsonSerializer.Deserialize<ProjectDocument>("{}",Projects.Json)!.CommandDefaults.MidiChannel==1,"old shows receive safe default destinations");
+var protectedEmergencySetting=new SlotSettings{EmergencyPauseAll=true,EmergencyHold=true};Check(System.Text.Json.JsonSerializer.Deserialize<SlotSettings>(System.Text.Json.JsonSerializer.Serialize(protectedEmergencySetting,Projects.Json),Projects.Json)!.EmergencyHold,"emergency hold option survives save and reload");
+Check(!new SlotSettings().EmergencyHold,"old emergency slots remain immediate unless protection is selected");
+var commandSlot=new SlotSettings{Action=SlotAction.Midi,MidiCommands=[new(){Channel=7}],PadChannel=3,PadNote=64};
+Check(SlotContent.Configured(commandSlot) && !SlotContent.Configured(new()),"MIDI-only pads are configured and empty audio pads remain unlit");
+Check(SlotContent.Configured(new(){Action=SlotAction.Osc,OscCommands=[new()]}),"OSC-only content is recognized without audio");
+Check(PadLedFrame.Message(commandSlot,false)==MidiCodec.Note(3,64,20,true) && PadLedFrame.Message(commandSlot,true)==MidiCodec.Note(3,64,127,true),"generic LED idle and active codes target mapped note and input channel");
+new PadLedFrame("controller",[PadLedFrame.Message(commandSlot,true)]).Validate();
+bool invalidLed=false;try{new PadLedFrame("controller",[0xB0]).Validate();}catch(InvalidDataException){invalidLed=true;}Check(invalidLed,"feedback profile rejects arbitrary MIDI commands");
+bool sharedLed=false;try{Projects.Validate(new(){Routing=new(){MidiOutput="lights",PadFeedbackOutput="lights"}});}catch(InvalidDataException){sharedLed=true;}Check(sharedLed,"feedback output cannot be routed to the command destination");
+
+Check(destinations.Resolve(destinations.Midi() with{Channel=1}).Channel==1,"preloaded MIDI channel can be customized independently");
+Check(destinations.Resolve(new MidiSettings{Channel=3}).Channel==3,"custom MIDI commands retain their own channel");
+var linkedOsc=destinations.Resolve(new OscCommand{UseShowDestination=true,Host="127.0.0.1",Port=8000,Address="/channel/1/mute"});
+Check(linkedOsc.Host==destinations.OscHost && linkedOsc.Port==9000 && linkedOsc.Address=="/channel/1/mute","shared OSC target changes host/port without changing per-command address");
+Check(destinations.Resolve(new OscCommand{Port=8123}).Port==8123,"custom OSC target does not follow global defaults");
+Projects.Validate(new(){Schema=1});Check(new ProjectDocument().Schema==3,"1.1 accepts legacy shows but writes schema 3 to prevent old apps ignoring emergency protection");
+Check(new ProjectDocument().Slots.All(s=>s.Action==SlotAction.None && !s.EmergencyPauseAll),"new show starts with no actions selected");
+var volumeDefaults=Projects.Resize(new(){DefaultSlotVolume=.42f},20);
+Check(volumeDefaults.Slots[16].Volume==.42f && volumeDefaults.Slots[0].Volume==1,"new slots inherit volume without overwriting existing slots");
+var frozen=Projects.MaterializeDestinations(new(){CommandDefaults=destinations,Slots=[new(){MidiCommands=[new(){UseShowDestination=true}],OscCommands=[new(){UseShowDestination=true,Address="/custom"}],Markers=[new(){MidiTrigger=new(){UseShowDestination=true},OscTrigger=new(){UseShowDestination=true,Address="/cue"}}]}]});
+Check(frozen.Slots[0].MidiCommands![0].Channel==7 && !frozen.Slots[0].MidiCommands![0].UseShowDestination && frozen.Slots[0].OscCommands[0].Port==9000 && frozen.Slots[0].OscCommands[0].Address=="/custom","legacy linked commands freeze effective destination and preserve custom fields");
+var frozenAgain=Projects.MaterializeDestinations(frozen with{CommandDefaults=new(){MidiChannel=2,OscPort=7777}});
+Check(frozenAgain.Slots[0].MidiCommands![0].Channel==7 && frozenAgain.Slots[0].Markers[0].OscTrigger!.Port==9000,"new defaults never reroute existing slot or marker commands");
+Check(destinations.Midi().Channel==7 && !destinations.Midi().UseShowDestination && destinations.Osc().Port==9000 && !destinations.Osc().UseShowDestination,"new commands preload editable destinations without a link");
+Projects.ValidateSlot(new(){Action=SlotAction.Marker});
+bool exclusiveMarker=false;try{Projects.ValidateSlot(new(){Action=SlotAction.Marker,EmergencyPauseAll=true});}catch(InvalidDataException){exclusiveMarker=true;}
+Check(exclusiveMarker,"marker action cannot be combined with emergency");
 Console.WriteLine($"{passed} checks passed. Windows/WASAPI/hardware tests are NOT covered by this suite.");
 
 sealed class ThrowingSource : IAudioSource { public long Frames => 48000; public long ResidentBytes => 0; public string? Error => null; public int ReadAt(long p, Span<float> s) => throw new IOException("Simulated"); public void Dispose() { } }

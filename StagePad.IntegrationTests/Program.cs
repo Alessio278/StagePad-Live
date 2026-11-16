@@ -51,7 +51,7 @@ try
     await Until(s=>s.Project!.Grid==new GridLayout(2,8),"grid update");
     Check(!(await audio.Handle(new("grid",Rows:3,Columns:5))).Ok && (await State()).Project!.Grid==new GridLayout(2,8),"invalid grid preserves current layout");
     await Do(new("configure", Routing: new() { MidiInput = "1:2:Fake MIDI", MidiOutput = "1:2:Fake MIDI" }));
-    await Until(s => s.MidiIn?.Status == "Connesso" && s.MidiOut?.Status.StartsWith("Porta aperta") == true, "MIDI open");
+    await Until(s => s.MidiIn?.Status == "Connesso" && s.MidiOut?.Status=="Connesso", "MIDI open");
     string file = Path.Combine(folder, "audio.wav"); await File.WriteAllTextAsync(file, "OK");
     await LoadReady(0,file,"load");
     var wire = await Wire.Call(pipe, new("state")); Check(wire.State?.Project?.Slots.Length == 16, "serialized protocol project snapshot roundtrip (in-process transport)");
@@ -100,7 +100,7 @@ try
     FakeMidi.OutputError = false;
     await Do(new("stop")); await Until(s => s.Slots[0].State == "Stopped", "stop before MSC");
     await Configure(0,s => s with { Action = SlotAction.Midi, Midi = s.Midi with { Kind = MidiKind.MSC } });
-    await Until(s => s.MidiOut?.Status.StartsWith("Porta aperta") == true, "output recovered");
+    await Until(s => s.MidiOut?.Status=="Connesso", "output recovered");
     await Do(new("pad-down")); await Task.Delay(120);
     Check(FakeMidi.SysEx.TryPeek(out var msc) && msc[0] == 0xF0 && msc[^1] == 0xF7 && (await State()).Slots[0].State == "Stopped", "MSC-only sends SysEx without starting audio");
     await Configure(1,s => s with { Action = SlotAction.Both });
@@ -160,7 +160,7 @@ try
     await Do(new("configure", Routing:route));
     await Until(s => s.MidiOut?.Error?.Contains("occupato") == true, "output busy");
     Check((await State()).Slots[0].State == "Playing", "busy MIDI port and routing changes preserve live audio");
-    FakeMidi.OutputBusy = false; await Until(s => s.MidiOut?.Status.StartsWith("Porta aperta") == true,"busy port recovered");
+    FakeMidi.OutputBusy = false; await Until(s => s.MidiOut?.Status=="Connesso","busy port recovered");
     await Do(new("panic"));
     Check(!(await audio.Handle(new("pad-down",0,Timestamp:1))).Ok, "stale pre-PANIC trigger rejected by coordinator");
     Check(!(await audio.Handle(new("seek",Value:.5f,Timestamp:1))).Ok,"stale pre-PANIC seek rejected by coordinator");
@@ -288,10 +288,10 @@ try
         var midiBatch=new MidiSettings[]{new(){Note=90,Behavior=NoteBehavior.Gate},new(){Note=91,Behavior=NoteBehavior.Gate},new(){Kind=MidiKind.ControlChange,Controller=12,ControlValue=64},new(){Kind=MidiKind.ProgramChange,Program=5},new(){Kind=MidiKind.MSC,Cue="7.000"}};
         await Until(s=>s.Slots.All(v=>!v.Loading && !v.Seeking),"idle imports before combined-output tests");
         await Do(new("configure",Routing:(await State()).Project!.Routing with{MidiInput="1:2:Fake MIDI",MidiOutput="1:2:Fake MIDI"}));
-        await Until(s=>s.MidiOut?.Status.StartsWith("Porta aperta")==true,"MIDI ready for combinations");
+        await Until(s=>s.MidiOut?.Status=="Connesso","MIDI ready for combinations");
         await LoadReady(3,file,"combined audio ready");
         long observedOsc=(await State()).OscSent;
-        foreach(var combination in Enum.GetValues<SlotAction>())
+        foreach(var combination in Enum.GetValues<SlotAction>().Where(a=>a is not (SlotAction.None or SlotAction.Marker)))
         {
             long panicAt=Environment.TickCount64;await Do(new("panic"));
             // A non-audio combination is already idle: wait for the callback to
@@ -483,6 +483,18 @@ try
     Check(!FakeMidi.Notes.Contains(MidiCodec.ControlChange(1,97,2)),"STOP cancels delayed MIDI commands");
     var midiTestReply=await output.Handle(new("test-send",Settings:new(){Action=SlotAction.Midi,MidiCommands=[new(){Kind=MidiKind.ControlChange,Controller=96,ControlValue=42,DelayMs=2000}]})).WaitAsync(TimeSpan.FromSeconds(3));
     Check(midiTestReply.Ok && FakeMidi.Notes.Contains(MidiCodec.ControlChange(1,96,42)),"MIDI test acknowledges actual send after earlier PANIC epochs and skips saved delay");
+    using(var versionHttp=new System.Net.Http.HttpClient(new VersionedUpdateFixture()))
+    {
+        var release=await new AppUpdates(versionHttp,Path.Combine(folder,"versioned-updates")).Check(new Version(1,0,0));
+        Check(release?.Download.EndsWith("StagePad-1.1.0.exe",StringComparison.Ordinal)==true && release.Sha256==new string('b',64),"updater prefers versioned EXE and matches its checksum while legacy alias remains available");
+    }
+    using(var twoPartHttp=new System.Net.Http.HttpClient(new VersionedUpdateFixture("1.1")))
+    {
+        var updates=new AppUpdates(twoPartHttp,Path.Combine(folder,"two-part-updates"));
+        var release=await updates.Check(new Version(1,0,0));
+        Check(release?.Download.EndsWith("StagePad-1.1.exe",StringComparison.Ordinal)==true && release.Sha256==new string('b',64),"two-part release tag selects exact EXE and checksum");
+        Check(await updates.Check(new Version(1,1,0,0))==null,"same installed two-part release is not offered again");
+    }
     // Updater never replaces on a bad digest, and a committed replacement is reversible.
     string updateTarget=Path.Combine(folder,"test-target.exe"),updateCandidate=Path.Combine(folder,"test-candidate.exe");
     File.WriteAllText(updateTarget,"previous");File.WriteAllText(updateCandidate,"new");
@@ -631,6 +643,25 @@ try
     await CaptureContext(true);await Do(new("learn-marker",Flag:true));await CaptureContext(false);await Until(s=>!s.MarkerLearn,"Serata cancels pending marker LEARN");
     await CaptureContext(true);await Do(new("clear-marker-learn"));await Until(s=>s.Project!.MarkerCapture==null,"marker binding reset");
     await Do(new("learn-marker",Flag:true));
+    await Do(new("learn-marker",Flag:false));
+    await Configure(6,s=>s with{Action=SlotAction.Marker,EmergencyPauseAll=false,EmergencyHold=false,PadChannel=16,PadNote=125});
+    await Until(s=>s.Project!.Slots[6].Action==SlotAction.Marker,"marker-only slot ready");
+    await CaptureContext(true);await Do(new("play",5));await Until(s=>s.Slots[5].State=="Playing","audio for marker slot");
+    int beforeMarkerPad=(await State()).Project!.Slots[5].Markers.Length;
+    await Do(new("pad-down",6));await Do(new("pad-up",6));
+    await Until(s=>s.Project!.Slots[5].Markers.Length==beforeMarkerPad+1,"on-screen marker slot inserts into selected playing track");
+    Check((await State()).LastStarted==5 && (await State()).Slots[5].State=="Playing","marker slot never steals player selection or interrupts audio");
+    await CaptureContext(true);await Do(new("midi-down",Channel:16,Note:125,Origin:"marker-slot",Timestamp:Environment.TickCount64));
+    await Do(new("midi-down",Channel:16,Note:125,Origin:"marker-slot",Timestamp:Environment.TickCount64));
+    await Do(new("midi-up",Channel:16,Note:125,Origin:"marker-slot"));
+    await Until(s=>s.Project!.Slots[5].Markers.Length==beforeMarkerPad+2,"MIDI marker slot inserts only once per physical press");
+    await CaptureContext(false);await Do(new("pad-down",6));await Do(new("pad-up",6));await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==beforeMarkerPad+2,"marker slot disabled in Serata");
+    await CaptureContext(true);await Do(new("lock",Flag:true));await Do(new("pad-down",6));await Do(new("pad-up",6));await Task.Delay(120);
+    Check((await State()).Project!.Slots[5].Markers.Length==beforeMarkerPad+2,"SHOW LOCK blocks marker slots");await Do(new("lock",Flag:false));
+    Check(!(await audio.Handle(new("default-slot-volume",Value:.5f,Flag:true))).Ok,"bulk volume never changes a playing show");
+    await Do(new("panic"));await Until(s=>s.Slots.All(v=>v.State is not ("Playing" or "Paused" or "Stopping")),"idle after marker slot tests");
+    await Configure(6,s=>s with{Action=SlotAction.None});
     await Do(new("learn-marker",Flag:false));await Do(new("clear",5));
     string markerArchive=Path.Combine(folder,"markers.stagepad.zip");ShowBundle.Export(markerArchive,(await State()).Project!);
     string markerImported=ShowBundle.Import(markerArchive,Path.Combine(folder,"marker-portable"),"Markers");
@@ -676,6 +707,65 @@ try
     string corruptMigration=Path.Combine(folder,"corrupt-migration"),corruptRecovery=Path.Combine(corruptMigration,"preview-markers","project");Directory.CreateDirectory(corruptRecovery);File.WriteAllText(Path.Combine(corruptRecovery,"last-project.json"),"BROKEN");LegacyDataMigration.Run(corruptMigration);
     Check(File.ReadAllText(Path.Combine(corruptMigration,"backups","legacy-data","project","last-project.json"))=="BROKEN","unreadable legacy recovery remains preserved without preventing normal startup");
     int recoveredFiles=Directory.GetFiles(mainProjects,"*.json").Length;LegacyDataMigration.Run(migrationRoot);Check(Directory.GetFiles(mainProjects,"*.json").Length==recoveredFiles,"migration is idempotent and never duplicates recovered shows");
+    await Do(new("panic"));await Until(s=>s.Slots.All(v=>v.State is not ("Playing" or "Paused" or "Stopping")),"idle before protected emergency test");
+    await Configure(0,s=>s with{EmergencyPauseAll=true,EmergencyHold=true,Action=SlotAction.Audio});
+    await Until(s=>s.Project!.Slots[0].EmergencyHold,"protected emergency configuration published");
+    Check(!(await audio.Handle(new("play",0))).Ok,"plain play cannot bypass emergency hold protection");
+    long emergencyBefore=(await State()).Slots[0].TriggerCount;
+    await Do(new("pad-down",0));await Until(s=>s.Slots[0].HoldProgress>0,"mouse hold arming is visible");await Do(new("pad-up",0));
+    await Task.Delay(3100);Check((await State()).Slots[0].TriggerCount==emergencyBefore,"released mouse emergency never activates later");
+    int protectedCount=(await State()).Project!.SlotCount;int alternateCount=protectedCount==16?15:16;
+    await Do(new("pad-down",0));await Do(new("slot-count",Value:alternateCount));await Do(new("slot-count",Value:protectedCount));await Task.Delay(3100);
+    Check((await State()).Slots[0].TriggerCount==emergencyBefore,"grid slot-count changes cancel pending emergency arming");await Do(new("pad-up",0));
+    await Do(new("pad-down",0));await Until(s=>s.Slots[0].TriggerCount==emergencyBefore+1,"three-second mouse hold activates once",4500);await Task.Delay(350);
+    Check((await State()).Slots[0].TriggerCount==emergencyBefore+1,"held emergency does not repeatedly send actions");await Do(new("pad-up",0));
+    await Configure(0,s=>s with{PadChannel=16,PadNote=122});
+    await Do(new("configure",Routing:(await State()).Project!.Routing with{MidiInput="1:2:Fake MIDI"}));
+    await Until(s=>s.MidiIn?.Status=="Connesso","input ready for protected emergency");
+    long midiEmergencyBefore=(await State()).Slots[0].TriggerCount;
+    await Do(new("midi-down",Channel:16,Note:122,Origin:"hold-midi"));await Task.Delay(200);await Do(new("midi-up",Channel:16,Note:122,Origin:"hold-midi"));await Task.Delay(3100);
+    Check((await State()).Slots[0].TriggerCount==midiEmergencyBefore,"early MIDI release cancels protected emergency");
+    await Do(new("midi-down",Channel:16,Note:122,Origin:"hold-midi"));await Until(s=>s.Slots[0].TriggerCount==midiEmergencyBefore+1,"continuous MIDI hold activates protected emergency",4500);await Do(new("midi-up",Channel:16,Note:122,Origin:"hold-midi"));
+    await Do(new("midi-down",Channel:16,Note:122,Origin:"hold-midi"));await Do(new("midi-disconnected",Origin:"hold-midi"));await Task.Delay(3100);
+    Check((await State()).Slots[0].TriggerCount==midiEmergencyBefore+1,"MIDI disconnect cancels emergency arming");
+    await Do(new("command-defaults",CommandDefaults:new(){MidiChannel=6,OscHost="127.0.0.1",OscPort=9100,OscAddress="/mixer"}));
+    await Until(s=>s.Project!.CommandDefaults.MidiChannel==6,"show destinations saved in coordinator snapshot");
+    await Do(new("lock",Flag:true));Check(!(await audio.Handle(new("command-defaults",CommandDefaults:new()))).Ok,"show lock protects shared destinations");await Do(new("lock",Flag:false));
+    await Do(new("default-slot-volume",Value:.38f));await Until(s=>s.Project!.DefaultSlotVolume==.38f,"default slot volume saved");
+    int beforeGrow=(await State()).Project!.SlotCount;
+    int storedCount=(await State()).Project!.Slots.Length;
+    if(storedCount<100)
+    {
+        await Do(new("slot-count",Value:storedCount+1));await Until(s=>s.Project!.SlotCount==storedCount+1,"grow for default volume");
+        Check((await State()).Project!.Slots[storedCount].Volume==.38f && (await State()).Project!.Slots[storedCount].Action==SlotAction.None,"new slot inherits default volume and stays disabled");
+    }
+    await Do(new("volume",0,Value:.22f));await Until(s=>s.Project!.Slots[0].Volume==.22f,"custom slot volume");
+    await Do(new("default-slot-volume",Value:.6f));await Until(s=>s.Project!.DefaultSlotVolume==.6f,"change default only");
+    Check((await State()).Project!.Slots[0].Volume==.22f,"changing default preserves existing slot volume");
+    await Do(new("default-slot-volume",Value:.45f,Flag:true));await Until(s=>s.Project!.Slots.All(v=>v.Volume==.45f),"explicit bulk volume applies all slots");
+    await Configure(0,s=>s with{Action=SlotAction.None,EmergencyPauseAll=false,EmergencyHold=false});
+    long noActionCount=(await State()).Slots[0].TriggerCount;await Do(new("play",0));await Task.Delay(120);
+    Check((await State()).Slots[0].TriggerCount==noActionCount,"disabled slot produces no activation");
+    await LoadReady(0,file,"audio load automatically enables audio");
+    Check(SlotActions.Audio((await State()).Project!.Slots[0].Action),"loading audio selects Audio action");
+    await Do(new("volume",0,Value:.31f));await Until(s=>s.Project!.Slots[0].Volume==.31f,"manual volume before repeat play");
+    await Do(new("play",0));await Until(s=>s.Slots[0].State=="Playing","repeat volume test playing");
+    await Do(new("play",0));await Task.Delay(120);
+    Check((await State()).Project!.Slots[0].Volume==.31f && (await State()).Slots[0].Volume==.31f,"retrigger preserves last per-slot volume");
+    await Do(new("panic"));await Until(s=>s.Slots[0].State=="Stopped","idle before volume persistence");
+    string volumeShow=Path.Combine(folder,"volume-show.json");await Do(new("save-project",Path:volumeShow));
+    Check(ProjectFiles.Read(volumeShow).DefaultSlotVolume==.45f && ProjectFiles.Read(volumeShow).Slots[0].Volume==.31f,"show save retains default and current individual volumes");
+    var ledDriver=new MidiPadFeedback();FakeMidi.OutEntered.Reset();FakeMidi.OutGate.Reset();
+    try
+    {
+        var ledTimer=System.Diagnostics.Stopwatch.StartNew();
+        ledDriver.Apply(new PadLedFrame("1:2:Fake MIDI",[MidiCodec.Note(16,120,20,true)],Environment.TickCount64),null);
+        Check(ledTimer.ElapsedMilliseconds<500,"LED state submission never waits on the hardware driver");
+        Check(await Task.Run(()=>FakeMidi.OutEntered.Wait(1500)),"LED worker reaches simulated blocked driver independently");
+        ledTimer.Restart();ledDriver.Dispose();
+        Check(ledTimer.ElapsedMilliseconds<1200,"LED shutdown remains bounded when the driver hangs");
+    }
+    finally{FakeMidi.OutGate.Set();await Task.Delay(60);}
     var children=new List<System.Diagnostics.Process>();
     System.Diagnostics.Process? externalChild=null;
     try
@@ -698,8 +788,8 @@ try
         Check(!externalChild.HasExited,"cleanup does not terminate external descendants of an application process");
     }
     finally{foreach(var child in children){try{if(!child.HasExited)child.Kill();}catch{}child.Dispose();}if(externalChild!=null){try{if(!externalChild.HasExited)externalChild.Kill();}catch{}externalChild.Dispose();}}
-    await Do(new("autosave-settings",Path:automaticFolder,Flag:true));await Do(new("master",Value:.48f));audio.Dispose();
-    Check(Math.Abs(ProjectFiles.Read(autoPath).Master-.48f)<.001,"graceful close flushes the latest edit without waiting for auto-save debounce");audio.Dispose();
+    await Do(new("autosave-settings",Path:automaticFolder,Flag:true));await Do(new("master",Value:.48f));string closePath=(await State()).ProjectPath??volumeShow;audio.Dispose();
+    Check(Math.Abs(ProjectFiles.Read(closePath).Master-.48f)<.001,"graceful close flushes the latest edit without waiting for auto-save debounce");audio.Dispose();
     Console.WriteLine($"{checks} integration checks passed with simulated hardware. Native IPC, Windows drivers and WPF are NOT covered.");
 }
 finally
@@ -714,5 +804,16 @@ sealed class UpdateHttpFixture : System.Net.Http.HttpMessageHandler
     {
         var content=System.Text.Json.JsonSerializer.Serialize(new{draft=false,prerelease=false,tag_name="v0.13.0",assets=new[]{new{name="StagePad.exe",browser_download_url="https://github.com/Alessio278/StagePad-Live/releases/download/v0.13.0/StagePad.exe",digest="sha256:"+new string('a',64)}}});
         return Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK){Content=new System.Net.Http.StringContent(content)});
+    }
+}
+
+sealed class VersionedUpdateFixture(string version="1.1.0") : System.Net.Http.HttpMessageHandler
+{
+    protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request,CancellationToken cancellationToken)
+    {
+        string root="https://github.com/Alessio278/StagePad-Live/releases/download/v"+version+"/";
+        string exe="StagePad-"+version+".exe";
+        string text=request.RequestUri!.AbsolutePath.EndsWith("SHA256.txt",StringComparison.Ordinal)?new string('b',64)+"  "+exe+"\n"+new string('a',64)+"  StagePad.exe\n":System.Text.Json.JsonSerializer.Serialize(new{draft=false,prerelease=false,tag_name="v"+version,assets=new[]{new{name="StagePad.exe",browser_download_url=root+"StagePad.exe",digest="sha256:"+new string('a',64)},new{name=exe,browser_download_url=root+exe,digest=""},new{name="SHA256.txt",browser_download_url=root+"SHA256.txt",digest=""}}});
+        return Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK){Content=new System.Net.Http.StringContent(text)});
     }
 }

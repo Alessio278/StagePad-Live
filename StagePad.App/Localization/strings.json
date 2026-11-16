@@ -2329,11 +2329,6 @@
     "es": "Cola de disparadores llena: algunos comandos no se enviaron.",
     "fr": "File des déclencheurs pleine : certaines commandes n’ont pas été envoyées."
   },
-  "MARKER MIDI (SETUP)": {
-    "en": "MIDI MARKERS (SETUP)",
-    "es": "MARCADORES MIDI (PREPARACIÓN)",
-    "fr": "MARQUEURS MIDI (PRÉPARATION)"
-  },
   "LEARN inserimento marker": {
     "en": "LEARN marker insertion",
     "es": "LEARN insertar marcador",
@@ -2548,5 +2543,270 @@
     "en": "Remove the loop before moving or deleting its start/end markers.",
     "es": "Quita el bucle antes de mover o eliminar sus marcadores inicial y final.",
     "fr": "Supprimez la boucle avant de déplacer ou supprimer ses marqueurs de début/fin."
+  },
+  "Tieni premuto 3 secondi per attivare": {
+    "en": "Hold for 3 seconds to activate",
+    "es": "Mantén pulsado 3 segundos para activar",
+    "fr": "Maintenir 3 secondes pour activer"
+  },
+  "Tieni premuto il pad per 3 secondi.": {
+    "en": "Hold the pad for 3 seconds.",
+    "es": "Mantén pulsado el pad durante 3 segundos.",
+    "fr": "Maintenez le pad pendant 3 secondes."
+  },
+  "TIENI PREMUTO · {0:0.0} s": {
+    "en": "HOLD · {0:0.0} s",
+    "es": "MANTÉN · {0:0.0} s",
+    "fr": "MAINTENIR · {0:0.0} s"
+  },
+  "ATTIVATO": {
+    "en": "TRIGGERED",
+    "es": "ACTIVADO",
+    "fr": "DÉCLENCHÉ"
+  },
+  "ERRORE INVIO": {
+    "en": "SEND ERROR",
+    "es": "ERROR DE ENVÍO",
+    "fr": "ERREUR D’ENVOI"
+  },
+  "DESTINAZIONI MIDI / OSC DELLO SHOW": {
+    "en": "SHOW MIDI / OSC DESTINATIONS",
+    "es": "DESTINOS MIDI / OSC DEL SHOW",
+    "fr": "DESTINATIONS MIDI / OSC DU SHOW"
+  },
+  "Canale MIDI predefinito": {
+    "en": "Default MIDI channel",
+    "es": "Canal MIDI predeterminado",
+    "fr": "Canal MIDI par défaut"
+  },
+  "Device ID MSC predefinito": {
+    "en": "Default MSC device ID",
+    "es": "Device ID MSC predeterminado",
+    "fr": "Device ID MSC par défaut"
+  },
+  "Percorso OSC predefinito": {
+    "en": "Default OSC address",
+    "es": "Ruta OSC predeterminada",
+    "fr": "Adresse OSC par défaut"
+  },
+  "Salva destinazioni dello show": {
+    "en": "Save show destinations",
+    "es": "Guardar destinos del show",
+    "fr": "Enregistrer les destinations"
+  },
+  "Destinazioni aggiornate.": {
+    "en": "Destinations updated.",
+    "es": "Destinos actualizados.",
+    "fr": "Destinations mises à jour."
+  },
+  "Duplica ultimo MIDI": {
+    "en": "Duplicate last MIDI",
+    "es": "Duplicar último MIDI",
+    "fr": "Dupliquer le dernier MIDI"
+  },
+  "Duplica ultimo OSC": {
+    "en": "Duplicate last OSC",
+    "es": "Duplicar último OSC",
+    "fr": "Dupliquer le dernier OSC"
+  },
+  "Riepilogo sequenze": {
+    "en": "Sequence timeline",
+    "es": "Resumen de secuencias",
+    "fr": "Chronologie des séquences"
+  },
+  "Valore LED a riposo": {
+    "en": "Idle LED value",
+    "es": "Valor LED en reposo",
+    "fr": "Valeur LED au repos"
+  },
+  "Valore LED premuto": {
+    "en": "Pressed LED value",
+    "es": "Valor LED pulsado",
+    "fr": "Valeur LED appuyé"
+  },
+  "LED CONTROLLER · PROFILO GENERICO": {
+    "en": "CONTROLLER LEDS · GENERIC PROFILE",
+    "es": "LED DEL CONTROLADOR · PERFIL GENÉRICO",
+    "fr": "LED CONTRÔLEUR · PROFIL GÉNÉRIQUE"
+  },
+  "Porta MIDI LED dedicata": {
+    "en": "Dedicated MIDI LED port",
+    "es": "Puerto MIDI LED dedicado",
+    "fr": "Port MIDI LED dédié"
+  },
+  "Applica porta LED": {
+    "en": "Apply LED port",
+    "es": "Aplicar puerto LED",
+    "fr": "Appliquer le port LED"
+  },
+  "Porta LED aggiornata.": {
+    "en": "LED port updated.",
+    "es": "Puerto LED actualizado.",
+    "fr": "Port LED mis à jour."
+  },
+  "Connesso · profilo LED generico": {
+    "en": "Connected · generic LED profile",
+    "es": "Conectado · perfil LED genérico",
+    "fr": "Connecté · profil LED générique"
+  },
+  "La porta LED deve essere separata dalla porta MIDI dei comandi.": {
+    "en": "The LED port must be separate from the MIDI command port.",
+    "es": "El puerto LED debe ser distinto del puerto MIDI de comandos.",
+    "fr": "Le port LED doit être distinct du port MIDI des commandes."
+  },
+  "Porta LED e comandi MIDI devono essere diverse.": {
+    "en": "LED and MIDI command ports must differ.",
+    "es": "Los puertos LED y MIDI de comandos deben ser distintos.",
+    "fr": "Les ports LED et MIDI des commandes doivent être distincts."
+  },
+  "Porta LED non disponibile o ambigua.": {
+    "en": "LED port unavailable or ambiguous.",
+    "es": "Puerto LED no disponible o ambiguo.",
+    "fr": "Port LED indisponible ou ambigu."
+  },
+  "Le attese sono cumulative nella sequenza. MIDI e OSC partono insieme e avanzano indipendentemente. STOP annulla i comandi ancora in attesa.": {
+    "en": "Waits accumulate within each sequence. MIDI and OSC start together and advance independently. STOP cancels pending commands.",
+    "es": "Las esperas se acumulan en cada secuencia. MIDI y OSC empiezan juntos y avanzan de forma independiente. STOP cancela los comandos pendientes.",
+    "fr": "Les délais s’additionnent dans chaque séquence. MIDI et OSC démarrent ensemble et progressent indépendamment. STOP annule les commandes en attente."
+  },
+  "Disattivato per default. Solo per controller che ricevono LED tramite Note On. I valori LED dello slot dipendono dal dispositivo: non sono colori RGB universali. Compatibilità Donner da verificare. Non selezionare la porta delle luci.": {
+    "en": "Disabled by default. Only for controllers receiving LED feedback via Note On. Slot LED values depend on the device: they are not universal RGB colors. Donner compatibility needs testing. Do not select the lighting output.",
+    "es": "Desactivado por defecto. Solo para controladores con LED mediante Note On. Los valores dependen del dispositivo: no son colores RGB universales. Compatibilidad Donner por verificar. No elijas la salida de luces.",
+    "fr": "Désactivé par défaut. Uniquement pour les contrôleurs recevant leurs LED via Note On. Les valeurs dépendent du matériel : ce ne sont pas des couleurs RGB universelles. Compatibilité Donner à vérifier. Ne choisissez pas la sortie lumières."
+  },
+  "Valori LED da 0 a 127.": {
+    "en": "LED values must be 0-127.",
+    "es": "Valores LED de 0 a 127.",
+    "fr": "Valeurs LED de 0 à 127."
+  },
+  "Destinazioni non valide.": {
+    "en": "Invalid destinations.",
+    "es": "Destinos no válidos.",
+    "fr": "Destinations invalides."
+  },
+  "Profilo LED non valido.": {
+    "en": "Invalid LED profile.",
+    "es": "Perfil LED no válido.",
+    "fr": "Profil LED invalide."
+  },
+  "Messaggio LED non valido.": {
+    "en": "Invalid LED message.",
+    "es": "Mensaje LED no válido.",
+    "fr": "Message LED invalide."
+  },
+  "Progetto non valido: schema 1/2 e da 1 a 100 slot richiesti.": {
+    "en": "Invalid project: schema 1/2 and 1-100 slots required.",
+    "es": "Proyecto no válido: esquema 1/2 y 1-100 slots requeridos.",
+    "fr": "Projet invalide : schéma 1/2 et 1-100 slots requis."
+  },
+  "App portatile: progetti e impostazioni restano salvati durante gli aggiornamenti.": {
+    "en": "Portable app: shows and settings are retained during updates.",
+    "es": "Aplicación portátil: los shows y ajustes se conservan al actualizar.",
+    "fr": "Application portable : shows et réglages sont conservés lors des mises à jour."
+  },
+  "PAUSA GLOBALE": {
+    "en": "GLOBAL PAUSE",
+    "es": "PAUSA GLOBAL",
+    "fr": "PAUSE GLOBALE"
+  },
+  "MIDI: usa un pad momentaneo che invii Note Off al rilascio.": {
+    "en": "MIDI: use a momentary pad that sends Note Off on release.",
+    "es": "MIDI: usa un pad momentáneo que envíe Note Off al soltar.",
+    "fr": "MIDI : utilisez un pad momentané envoyant Note Off au relâchement."
+  },
+  "Emergenza": {
+    "en": "Emergency",
+    "es": "Emergencia",
+    "fr": "Urgence"
+  },
+  "INSERIMENTO RAPIDO MARKER": {
+    "en": "QUICK MARKER INSERTION",
+    "es": "INSERCIÓN RÁPIDA DE MARCADORES",
+    "fr": "INSERTION RAPIDE DE MARQUEURS"
+  },
+  "VOLUME PREDEFINITO SLOT": {
+    "en": "DEFAULT SLOT VOLUME",
+    "es": "VOLUMEN PREDETERMINADO DE SLOTS",
+    "fr": "VOLUME PAR DÉFAUT DES SLOTS"
+  },
+  "Volume nuovi slot (%)": {
+    "en": "New slot volume (%)",
+    "es": "Volumen de nuevos slots (%)",
+    "fr": "Volume des nouveaux slots (%)"
+  },
+  "Salva volume predefinito": {
+    "en": "Save default volume",
+    "es": "Guardar volumen predeterminado",
+    "fr": "Enregistrer le volume par défaut"
+  },
+  "Applica volume a tutti gli slot (a tracce ferme)": {
+    "en": "Apply volume to all slots (tracks stopped)",
+    "es": "Aplicar volumen a todos los slots (pistas detenidas)",
+    "fr": "Appliquer le volume à tous les slots (pistes arrêtées)"
+  },
+  "Volume predefinito aggiornato.": {
+    "en": "Default volume updated.",
+    "es": "Volumen predeterminado actualizado.",
+    "fr": "Volume par défaut mis à jour."
+  },
+  "Ferma le tracce prima di applicare il volume a tutti gli slot.": {
+    "en": "Stop tracks before applying volume to all slots.",
+    "es": "Detén las pistas antes de aplicar el volumen a todos los slots.",
+    "fr": "Arrêtez les pistes avant d’appliquer le volume à tous les slots."
+  },
+  "Il valore vale per slot nuovi e nuovi show. Ogni slot conserva il volume modificato con mouse o MIDI, anche alle pressioni successive e dopo il salvataggio.": {
+    "en": "Used for new slots and new shows. Each slot retains its mouse or MIDI volume changes across retriggers and after saving.",
+    "es": "Se usa para nuevos slots y shows. Cada slot conserva los cambios de volumen del ratón o MIDI al volver a activarlo y después de guardar.",
+    "fr": "Utilisé pour les nouveaux slots et shows. Chaque slot conserve les changements de volume à la souris ou MIDI lors des déclenchements suivants et après enregistrement."
+  },
+  "I valori vengono caricati nei nuovi comandi e ogni campo rimane modificabile. I comandi esistenti non cambiano. La porta MIDI si sceglie in Setup, separata dal controller.": {
+    "en": "Values are preloaded into new commands and each field remains editable. Existing commands do not change. Select the MIDI port in Setup, separate from the controller.",
+    "es": "Los valores se cargan en los nuevos comandos y cada campo se puede editar. Los comandos existentes no cambian. El puerto MIDI se elige en Setup, separado del controlador.",
+    "fr": "Les valeurs sont préremplies dans les nouvelles commandes et chaque champ reste modifiable. Les commandes existantes ne changent pas. Le port MIDI se choisit dans Setup, séparément du contrôleur."
+  },
+  "+ Marker è esclusivo: inserisce marker nella traccia selezionata in riproduzione, solo in Setup.": {
+    "en": "+ Marker is exclusive: adds markers to the selected playing track, only in Setup.",
+    "es": "+ Marker es exclusivo: añade marcadores a la pista seleccionada en reproducción, solo en Setup.",
+    "fr": "+ Marker est exclusif : ajoute des marqueurs à la piste sélectionnée en lecture, uniquement dans Setup."
+  },
+  "+ Marker è un’azione esclusiva.": {
+    "en": "+ Marker is an exclusive action.",
+    "es": "+ Marker es una acción exclusiva.",
+    "fr": "+ Marker est une action exclusive."
+  },
+  "SOLO SETUP": {
+    "en": "SETUP ONLY",
+    "es": "SOLO SETUP",
+    "fr": "SETUP UNIQUEMENT"
+  },
+  "NESSUNA AZIONE": {
+    "en": "NO ACTION",
+    "es": "SIN ACCIÓN",
+    "fr": "AUCUNE ACTION"
+  },
+  "+ MARKER": {
+    "en": "+ MARKER",
+    "es": "+ MARCADOR",
+    "fr": "+ MARQUEUR"
+  },
+  "Inserisce un marker nella traccia selezionata in riproduzione, solo in Setup.": {
+    "en": "Adds a marker to the selected playing track, only in Setup.",
+    "es": "Añade un marcador a la pista seleccionada en reproducción, solo en Setup.",
+    "fr": "Ajoute un marqueur à la piste sélectionnée en lecture, uniquement dans Setup."
+  },
+  "Disattivato per default. Solo per controller che ricevono LED tramite Note On. I valori LED dello slot dipendono dal dispositivo: non sono colori RGB universali. Compatibilità Donner da verificare. Non selezionare la porta dei comandi MIDI.": {
+    "en": "Disabled by default. Only for controllers receiving LED feedback via Note On. Slot LED values are device-specific, not universal RGB colors. Donner compatibility is unverified. Do not select the MIDI command output.",
+    "es": "Desactivado por defecto. Solo para controladores que reciben LED mediante Note On. Los valores dependen del dispositivo y no son colores RGB universales. Compatibilidad Donner sin verificar. No selecciones la salida de comandos MIDI.",
+    "fr": "Désactivé par défaut. Uniquement pour les contrôleurs recevant les LED via Note On. Les valeurs dépendent du matériel et ne sont pas des couleurs RGB universelles. Compatibilité Donner non vérifiée. Ne sélectionnez pas la sortie des commandes MIDI."
+  },
+  "Progetto non valido: schema 1/2/3 e da 1 a 100 slot richiesti.": {
+    "en": "Invalid project: schema 1/2/3 and 1-100 slots required.",
+    "es": "Proyecto no válido: esquema 1/2/3 y de 1 a 100 slots requeridos.",
+    "fr": "Projet invalide : schéma 1/2/3 et de 1 à 100 slots requis."
+  },
+  "+MARKER": {
+    "en": "+MARKER",
+    "es": "+MARCADOR",
+    "fr": "+MARQUEUR"
   }
 }

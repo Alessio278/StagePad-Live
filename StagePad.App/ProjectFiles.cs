@@ -53,7 +53,7 @@ internal static class ProjectFiles
         var p = JsonSerializer.Deserialize<ProjectDocument>(File.ReadAllText(path), Projects.Json) ?? throw new InvalidDataException("Progetto vuoto.");
         if(p.Grid!=null && p.SetupGrid!=null && p.SlotCount is >=1 and <=Projects.MaxSlots)
             p=p with { Grid=Projects.FitGrid(p.Grid,p.SlotCount),SetupGrid=Projects.FitGrid(p.SetupGrid,p.SlotCount) };
-        Projects.Validate(p);
+        Projects.Validate(p);p=Projects.MaterializeDestinations(p);
         string folder = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path))!;
         return p with { Slots = p.Slots.Select(s => s with { File = string.IsNullOrWhiteSpace(s.File) ? null : System.IO.Path.GetFullPath(s.File, folder) }).ToArray() };
     }
