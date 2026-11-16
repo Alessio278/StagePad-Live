@@ -133,7 +133,7 @@ internal static class UiAssetsCheck
         }
         finally{window.Close();app.Shutdown();}
         System.IO.Directory.CreateDirectory(Log.Root);
-        System.IO.File.WriteAllText(System.IO.Path.Combine(Log.Root,"ui-check-success.json"),System.Text.Json.JsonSerializer.Serialize(new{version=AppUpdates.Current.ToString(3),passed=true,platform=Environment.OSVersion.ToString(),checks=new[]{"themed checkbox checked/unchecked/indeterminate","logo rasterization","slot editor roundtrip","MIDI volume settings","marker trigger editors","empty player without cursor","dark scrollbar corner","two-axis scrolling","waveform resize","project browser layout","marker window","quick marker insertion in applied loop","cursor-following marker field","loop controls without checkbox","close signals","window icon"}}));
+        System.IO.File.WriteAllText(System.IO.Path.Combine(Log.Root,"ui-check-success.json"),System.Text.Json.JsonSerializer.Serialize(new{version=AppUpdates.Current.ToString(2),passed=true,platform=Environment.OSVersion.ToString(),checks=new[]{"themed checkbox checked/unchecked/indeterminate","logo rasterization","slot editor roundtrip","MIDI volume settings","marker trigger editors","empty player without cursor","dark scrollbar corner","two-axis scrolling","waveform resize","project browser layout","marker window","quick marker insertion in applied loop","cursor-following marker field","loop controls without checkbox","close signals","window icon"}}));
         return 0;
     }
 }

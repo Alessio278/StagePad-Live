@@ -31,7 +31,7 @@ Created by **Alessio Natalucci**. Application name: **StagePad Live**. The porta
 
 ## Quick start
 
-1. Download `StagePad-Live-1.0.0-Windows.zip` from [Releases](https://github.com/Alessio278/StagePad-Live/releases), extract it and launch `StagePad.exe`.
+1. Download `StagePad-Live-1.0-Windows.zip` from [Releases](https://github.com/Alessio278/StagePad-Live/releases), extract it and launch `StagePad.exe`.
 2. In Setup choose the audio device, start with a **40 ms** buffer and run the audio test.
 3. Choose 1-100 slots and a grid up to **10 x 10**. Load audio and wait until it is ready.
 4. Configure each slot's actions, playback mode, title, color and fades. Use **LEARN** to assign a MIDI pad; the learning press does not trigger playback.

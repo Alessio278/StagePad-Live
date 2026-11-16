@@ -10,7 +10,7 @@ EN: each recoverable numbered build has its own entry. Unnumbered prototypes are
 ES: cada build numerada recuperable tiene su propia entrada; los prototipos sin número se indican aparte.
 FR: chaque build numérotée retrouvée dispose de sa propre entrée ; les prototypes sans numéro restent séparés.
 
-## 1.0.0 - 2026-11-13
+## 1.0 - 2026-11-13
 
 First stable release of StagePad Live. Prepared release; publication is tracked by GitHub Releases, not implied by this file.
 

@@ -25,7 +25,7 @@ try {
         }
     }
     $version = ([xml](Get-Content 'StagePad.App/StagePad.App.csproj' -Raw)).Project.PropertyGroup.Version
-    if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Stable semantic version required.' }
+    if ($version -notmatch '^\d+\.\d+$') { throw 'Version must use major.minor format.' }
     if (-not (Test-Path "docs/releases/v$version.md")) { throw 'Release notes missing.' }
     foreach ($file in @('.gitignore','.github/workflows/ci.yml','.github/workflows/release.yml','.github/ISSUE_TEMPLATE/bug_report.yml','LICENSE','README.md','SECURITY.md')) {
         if (-not (Test-Path $file)) { throw "Required repository file missing: $file" }

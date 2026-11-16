@@ -15,7 +15,7 @@ internal sealed class UpdateWindow : Window
         WindowAppearance.Apply(this);Title="Aggiornamenti";Width=540;Height=420;MinWidth=440;MinHeight=340;WindowStartupLocation=WindowStartupLocation.CenterOwner;
         Background=new SolidColorBrush(Color.FromRgb(11,17,26));Foreground=Brushes.White;
         var panel=new StackPanel{Margin=new Thickness(24)};Content=panel;
-        panel.Children.Add(new TextBlock{Text="StagePad Live "+AppUpdates.Current.ToString(3),FontSize=23});
+        panel.Children.Add(new TextBlock{Text="StagePad Live "+AppUpdates.Current.ToString(2),FontSize=23});
         panel.Children.Add(new TextBlock{Text="Aggiornamenti solo a riproduzione ferma. L’app verrà riavviata; progetti e impostazioni restano conservati.",TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,12,0,8)});
         foreach(var button in new[]{check,install,rollback}){button.Margin=new Thickness(0,4,0,4);panel.Children.Add(button);}
         panel.Children.Add(status);L.Preserve(status);

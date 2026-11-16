@@ -151,7 +151,7 @@ internal sealed class SettingsWindow : Window
         Section(body,"DIAGNOSTICA");body.Children.Add(diagnostics);
         var actions=new Grid { Margin=new Thickness(0,14,0,0) };actions.ColumnDefinitions.Add(new());actions.ColumnDefinitions.Add(new());
         var logs=new Button { Content="Apri log",Margin=new Thickness(0,0,6,0) };var licenses=new Button { Content="Licenze",Margin=new Thickness(6,0,0,0) };Grid.SetColumn(licenses,1);actions.Children.Add(logs);actions.Children.Add(licenses);body.Children.Add(actions);
-        body.Children.Add(new TextBlock { Text="STAGEPAD LIVE · "+AppUpdates.Current.ToString(3),FontSize=10,Foreground=Brushes.SlateGray,Margin=new Thickness(0,18,0,0) });
+        body.Children.Add(new TextBlock { Text="STAGEPAD LIVE · "+AppUpdates.Current.ToString(2),FontSize=10,Foreground=Brushes.SlateGray,Margin=new Thickness(0,18,0,0) });
         body.Children.Add(new TextBlock{Text="App portatile: aggiorna sostituendo StagePad.exe. Progetti e impostazioni restano salvati.",FontSize=11,Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,8,0,0)});
         body.Children.Add(CommandForm.Button("Aggiornamenti",()=>{if(openUpdates!=null)_=openUpdates();}));
         logs.Click+=async(_,_)=>{try{await openLogs();}catch(Exception ex){notice=ex.Message;UpdateNotice();}};

@@ -1,4 +1,4 @@
-# StagePad Live 1.0.0 - verification
+# StagePad Live 1.0 - verification
 
 ## Automated coverage
 
