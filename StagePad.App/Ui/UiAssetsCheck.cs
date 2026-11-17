@@ -173,7 +173,9 @@ internal static class UiAssetsCheck
         int outsideRange=(45*200+10)*4,insideRange=(45*200+100)*4;
         if(Math.Abs(rangePixels[insideRange]-0xDE)>2 || Math.Abs(rangePixels[insideRange+1]-0xD8)>2 || Math.Abs(rangePixels[insideRange+2]-0xD4)>2)throw new InvalidOperationException("Loop waveform is not light gray.");
         if(Math.Abs(rangePixels[outsideRange]-0xB1)>2 || Math.Abs(rangePixels[outsideRange+1]-0xB9)>2 || Math.Abs(rangePixels[outsideRange+2]-0x75)>2)throw new InvalidOperationException("Waveform outside the loop changed color.");
-        rangeWave.SetRegions(null,5);rangeBitmap.Clear();rangeBitmap.Render(rangeWave);rangeBitmap.CopyPixels(rangePixels,200*4,0);
+        rangeWave.SetRegions(null,5);
+        // InvalidateVisual schedules the redraw; flush layout before sampling the retained visual.
+        rangeWave.UpdateLayout();rangeBitmap.Clear();rangeBitmap.Render(rangeWave);rangeBitmap.CopyPixels(rangePixels,200*4,0);
         if(Math.Abs(rangePixels[insideRange]-0xB1)>2 || Math.Abs(rangePixels[insideRange+1]-0xB9)>2 || Math.Abs(rangePixels[insideRange+2]-0x75)>2)throw new InvalidOperationException("Removing the loop did not restore waveform color.");
         var trimCheckDialog=new MarkerWindow(0,captureState,0,null,_=>Task.FromResult(new Reply(true)),_=>Task.CompletedTask);
         if(!LogicalChildren(trimCheckDialog).OfType<System.Windows.Controls.Expander>().Any(e=>e.Header?.ToString()==L.T("Inizio e fine traccia")))throw new InvalidOperationException("Track trim controls are missing.");
