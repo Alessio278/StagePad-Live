@@ -11,6 +11,7 @@ Créé par **Alessio Natalucci**.
 ## Sommaire
 
 - [Démarrage rapide](#démarrage-rapide)
+- [Screenshots](#screenshots)
 - [Fonctions](#fonctions)
 - [Marqueurs et boucles](#marqueurs-et-boucles)
 - [Shows et sauvegarde](#shows-et-sauvegarde)
@@ -25,6 +26,21 @@ Créé par **Alessio Natalucci**.
 2. Dans Setup, choisissez le périphérique audio et les ports MIDI. Commencez avec un tampon de 40 ms et lancez le test audio.
 3. Chargez les pistes, configurez les actions et assignez les pads avec LEARN. Choisissez la langue depuis la roue dentée.
 4. Enregistrez le show, passez en Direct et activez SHOW LOCK. F11 ouvre le plein écran ; STOP ALL arrête l’audio et les commandes en attente.
+
+## Screenshots
+
+StagePad Live 1.1 avec un Show de démonstration. Les connexions aux appareils et l’activité des commandes sont simulées.
+
+![Vue Live avec Pads Audio et MIDI/OSC](screenshots/fr/02-live.png)
+
+<details>
+<summary>Vue Setup</summary>
+
+![Vue Setup](screenshots/fr/01-setup.png)
+
+</details>
+
+[Voir les 13 screenshots](screenshots/fr/README.md)
 
 ## Fonctions
 
@@ -53,6 +69,8 @@ Créé par **Alessio Natalucci**.
 Un slot peut utiliser l’action exclusive **+ Marker**. Une autre touche MIDI s’assigne dans **Paramètres > Insertion rapide de marqueurs**. Les deux agissent sur la piste sélectionnée en lecture, uniquement dans Setup et sans SHOW LOCK.
 
 Choisissez deux marqueurs existants et cliquez sur **Appliquer la boucle**. La lecture commence au premier ; **Retirer la boucle** supprime l’intervalle. Arrêtez la piste avant de changer la boucle. Dans une boucle, le cadre pulse lentement en rouge ; hors boucle, les marqueurs produisent sept flashs de leur couleur. Les commandes des marqueurs sont envoyées à chaque passage.
+
+![Player avec Markers colorés](screenshots/fr/03-player-marker.png)
 
 ## Shows et sauvegarde
 

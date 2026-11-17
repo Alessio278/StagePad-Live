@@ -11,6 +11,7 @@ Creato da **Alessio Natalucci**.
 ## Indice
 
 - [Avvio rapido](#avvio-rapido)
+- [Screenshot](#screenshot)
 - [Funzioni](#funzioni)
 - [Marker e loop](#marker-e-loop)
 - [Show e salvataggio](#show-e-salvataggio)
@@ -25,6 +26,21 @@ Creato da **Alessio Natalucci**.
 2. In Setup scegli dispositivo audio e porte MIDI. Parti da un buffer di 40 ms ed esegui il test audio.
 3. Carica le tracce, configura le azioni degli slot e assegna i pad con LEARN. La lingua si sceglie dall’icona ingranaggio.
 4. Salva lo show, passa a Serata e attiva SHOW LOCK. F11 apre lo schermo intero; STOP ALL ferma audio e comandi in attesa.
+
+## Screenshot
+
+StagePad Live 1.1 con uno Show dimostrativo. Connessioni ai dispositivi e invio dei comandi sono simulati.
+
+![Vista Live con Pad Audio e MIDI/OSC](screenshots/it/02-live.png)
+
+<details>
+<summary>Vista Setup</summary>
+
+![Vista Setup](screenshots/it/01-setup.png)
+
+</details>
+
+[Vedi tutti i 13 screenshot](screenshots/it/README.md)
 
 ## Funzioni
 
@@ -53,6 +69,8 @@ Creato da **Alessio Natalucci**.
 Uno slot può avere l’azione esclusiva **+ Marker**; un tasto MIDI aggiuntivo si assegna in **Impostazioni > Inserimento rapido marker**. Entrambi agiscono sulla traccia selezionata in riproduzione, solo in Setup e con SHOW LOCK disattivato.
 
 Scegli due marker esistenti e premi **Applica loop**. La riproduzione parte dal primo marker; **Rimuovi loop** elimina l’intervallo. Ferma la traccia prima di cambiare il loop. Nel loop la cornice pulsa lentamente in rosso; fuori dal loop i marker producono sette lampeggi del proprio colore. I comandi dei marker vengono inviati a ogni passaggio nel loop.
+
+![Player con Marker colorati](screenshots/it/03-player-marker.png)
 
 ## Show e salvataggio
 

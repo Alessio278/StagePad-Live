@@ -11,6 +11,7 @@ Created by **Alessio Natalucci**.
 ## Contents
 
 - [Quick start](#quick-start)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Markers and loops](#markers-and-loops)
 - [Shows and saving](#shows-and-saving)
@@ -25,6 +26,21 @@ Created by **Alessio Natalucci**.
 2. In Setup, choose the audio device and MIDI ports. Start with a 40 ms audio buffer and run the audio test.
 3. Load audio, configure slot actions and use LEARN to assign MIDI pads. Choose the interface language from the gear icon.
 4. Save the show, switch to Live and enable SHOW LOCK. F11 toggles full screen; STOP ALL stops audio and cancels pending commands.
+
+## Screenshots
+
+StagePad Live 1.1 with a demo show. Device connections and command activity are simulated.
+
+![Live view with Audio and MIDI/OSC Pads](docs/screenshots/en/02-live.png)
+
+<details>
+<summary>Setup view</summary>
+
+![Setup view](docs/screenshots/en/01-setup.png)
+
+</details>
+
+[View all 13 screenshots](docs/screenshots/en/README.md)
 
 ## Features
 
@@ -53,6 +69,8 @@ Use **+ Marker** in the player to add at the cursor. During playback it inserts 
 A slot can use the exclusive **+ Marker** action; an additional MIDI key can be learned in **Settings > Quick marker insertion**. Both capture on the selected playing track in Setup, with SHOW LOCK off.
 
 Choose two existing markers and press **Apply loop**. Playback starts at the first marker; **Remove loop** clears the interval. Stop the track before changing the loop. During loops the player frame pulses slowly in red; outside loops, marker crossings flash seven times in the marker color. Marker output commands continue on each loop pass.
+
+![Player with colored Markers](docs/screenshots/en/03-player-marker.png)
 
 ## Shows and saving
 
