@@ -44,6 +44,7 @@ public sealed record SlotSettings
     public string Color { get; init; } = "#4A78BC";
     public AudioMarker[] Markers {get;init;}=[];
     public MarkerLoop? MarkerLoop {get;init;}
+    public MarkerTrim? MarkerTrim {get;init;}
     public string? File { get; init; }
     public float Volume { get; init; } = 1;
     public PlayMode Mode { get; init; }
@@ -68,7 +69,7 @@ public sealed record RoutingSettings
 public sealed record GridLayout(int Rows=4,int Columns=4);
 public sealed record ProjectDocument
 {
-    public int Schema { get; init; } = 3;
+    public int Schema { get; init; } = 4;
     public int SlotCount { get; init; } = 16;
     public GridLayout Grid { get; init; } = new();
     public GridLayout SetupGrid { get; init; } = new();
@@ -130,7 +131,7 @@ public static partial class Projects
         if(p.CommandDefaults==null)throw new InvalidDataException("Destinazioni non valide.");
         p.CommandDefaults.Validate();
         if(p.Routing?.PadFeedbackOutput is {} selectedLed && string.IsNullOrWhiteSpace(selectedLed) || (p.Routing?.PadFeedbackOutput?.Length??0)>512 || p.Routing?.PadFeedbackOutput is {} led && led==p.Routing.MidiOutput)throw new InvalidDataException("La porta LED deve essere separata dalla porta MIDI dei comandi.");
-        if (p.Schema is not (1 or 2 or 3) || p.Slots is not { Length: >=1 and <=MaxSlots } || p.SlotCount is <1 or >MaxSlots || p.SlotCount>p.Slots.Length || p.Routing == null) throw new InvalidDataException("Progetto non valido: schema 1/2/3 e da 1 a 100 slot richiesti.");
+        if (p.Schema is not (1 or 2 or 3 or 4) || p.Slots is not { Length: >=1 and <=MaxSlots } || p.SlotCount is <1 or >MaxSlots || p.SlotCount>p.Slots.Length || p.Routing == null) throw new InvalidDataException("Progetto non valido: schema 1/2/3/4 e da 1 a 100 slot richiesti.");
         if (string.IsNullOrWhiteSpace(p.Name) || p.Name.Length > 100 || !float.IsFinite(p.Master) || p.Master is < 0 or > 1 || !float.IsFinite(p.DefaultSlotVolume) || p.DefaultSlotVolume is <0 or >1 || p.MemoryMiB is < 128 or > 4096) throw new InvalidDataException("Nome, master o budget RAM non validi.");
         if ((p.Routing.AudioDevice?.Length ?? 0) > 512 || (p.Routing.MidiInput?.Length ?? 0) > 512 || (p.Routing.MidiOutput?.Length ?? 0) > 512) throw new InvalidDataException("Identificatore dispositivo troppo lungo.");
         if (p.Routing.BufferMs is not (20 or 40 or 80)) throw new InvalidDataException("Buffer audio non valido.");
@@ -155,6 +156,7 @@ public static partial class Projects
         if(s.Action==SlotAction.Marker && (s.EmergencyPauseAll || s.EmergencyHold))throw new InvalidDataException("+ Marker è un’azione esclusiva.");
         AudioMarkers.Validate(s.Markers);
         MarkerLoops.Validate(s.MarkerLoop,s.Markers);
+        MarkerTrims.ValidateLoop(s.MarkerTrim,s.MarkerLoop,s.Markers);
         ValidateMidi(s.Midi);
         if(s.MidiCommands is {Length: >16} || s.OscCommands is null || s.OscCommands.Length>16)throw new InvalidDataException("Massimo 16 comandi MIDI e 16 OSC per slot.");
         if(s.MidiCommands!=null)foreach(var command in s.MidiCommands){if(command==null)throw new InvalidDataException("Comando MIDI non valido.");ValidateMidi(command);}

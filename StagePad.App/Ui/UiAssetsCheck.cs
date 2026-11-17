@@ -146,6 +146,7 @@ internal static class UiAssetsCheck
         using(var closeSignal=LifecycleSignals.Create(signalSuffix))
         {
             var main=new MainWindow("ui-check-no-transport",Environment.ProcessId,()=>LifecycleSignals.RequestClose(signalSuffix));
+            if(!LogicalChildren(main).OfType<System.Windows.Controls.TextBlock>().Any(c=>c.Text=="Created by @Alessio278"))throw new InvalidOperationException("Creator credit is missing from the header.");
             new WindowInteropHelper(main).EnsureHandle();
             var commandState=new StateInfo("check","Audio pronto",null,null,40,1,0,0,false,[],[new(0,"MIDI cue","Empty",0,0,1,0,null,false,TriggerCount:1,TriggeredAt:Environment.TickCount64)],Project:new(){SlotCount=1,Slots=[new(){Action=SlotAction.Midi,MidiCommands=[new(){Channel=4}]}]});
             // Poll stores the snapshot before rendering; mirror that setup without IPC or timers.
@@ -166,6 +167,17 @@ internal static class UiAssetsCheck
         }
         finally{window.Close();app.Shutdown();}
         System.IO.Directory.CreateDirectory(Log.Root);
+        var rangeWave=new WaveformView();rangeWave.SetPeaks([.8f,.8f]);rangeWave.SetMarkers([a,b],5);
+        rangeWave.Measure(new Size(200,80));rangeWave.Arrange(new Rect(0,0,200,80));rangeWave.SetRegions(captureState.Project!.Slots[0],5);rangeWave.UpdateLayout();
+        var rangeBitmap=new RenderTargetBitmap(200,80,96,96,PixelFormats.Pbgra32);rangeBitmap.Render(rangeWave);var rangePixels=new byte[200*80*4];rangeBitmap.CopyPixels(rangePixels,200*4,0);
+        int outsideRange=(45*200+10)*4,insideRange=(45*200+100)*4;
+        if(Math.Abs(rangePixels[insideRange]-0xDE)>2 || Math.Abs(rangePixels[insideRange+1]-0xD8)>2 || Math.Abs(rangePixels[insideRange+2]-0xD4)>2)throw new InvalidOperationException("Loop waveform is not light gray.");
+        if(Math.Abs(rangePixels[outsideRange]-0xB1)>2 || Math.Abs(rangePixels[outsideRange+1]-0xB9)>2 || Math.Abs(rangePixels[outsideRange+2]-0x75)>2)throw new InvalidOperationException("Waveform outside the loop changed color.");
+        rangeWave.SetRegions(null,5);rangeBitmap.Clear();rangeBitmap.Render(rangeWave);rangeBitmap.CopyPixels(rangePixels,200*4,0);
+        if(Math.Abs(rangePixels[insideRange]-0xB1)>2 || Math.Abs(rangePixels[insideRange+1]-0xB9)>2 || Math.Abs(rangePixels[insideRange+2]-0x75)>2)throw new InvalidOperationException("Removing the loop did not restore waveform color.");
+        var trimCheckDialog=new MarkerWindow(0,captureState,0,null,_=>Task.FromResult(new Reply(true)),_=>Task.CompletedTask);
+        if(!LogicalChildren(trimCheckDialog).OfType<System.Windows.Controls.Expander>().Any(e=>e.Header?.ToString()==L.T("Inizio e fine traccia")))throw new InvalidOperationException("Track trim controls are missing.");
+        trimCheckDialog.Close();
         System.IO.File.WriteAllText(System.IO.Path.Combine(Log.Root,"ui-check-success.json"),System.Text.Json.JsonSerializer.Serialize(new{version=AppUpdates.Current.ToString(2),passed=true,platform=Environment.OSVersion.ToString(),checks=new[]{"themed checkbox checked/unchecked/indeterminate","logo rasterization","slot editor roundtrip","MIDI volume settings","marker trigger editors","empty player without cursor","dark scrollbar corner","two-axis scrolling","waveform resize","project browser layout","marker window","quick marker insertion in applied loop","cursor-following marker field","loop controls without checkbox","command-only pad presentation","close signals","window icon"}}));
         return 0;
     }

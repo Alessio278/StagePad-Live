@@ -11,7 +11,9 @@ internal sealed class WaveformView : FrameworkElement
     private AudioMarker[] markers=[];
     private sealed record MarkerInk(AudioMarker Marker,double X,SolidColorBrush Brush,Pen Pen,FormattedText? Text,double LabelX);
     private MarkerInk[] markerInk=[];
-    private double duration,position;
+    private double duration,position,loopStart,loopEnd,trimStart,trimEnd=1;
+    private static readonly SolidColorBrush LoopWaveInk=Frozen("#D4D8DE"),TrimInk=Frozen("#A5000000");
+    private RectangleGeometry? loopClip;
     private StreamGeometry? geometry;
     private static readonly SolidColorBrush Ink=Frozen("#75B9B1"),BackgroundInk=Frozen("#101B28");
     private static readonly Pen CursorPen=new(Brushes.White,1.5);
@@ -62,6 +64,29 @@ internal sealed class WaveformView : FrameworkElement
         if(duration==trackDuration && AudioMarkers.Same(markers,value,true))return;
         duration=trackDuration;markers=value;BuildMarkerInk();InvalidateVisual();
     }
+    public void SetRegions(SlotSettings? settings,double trackDuration)
+    {
+        double a=0,b=0,c=0,d=1;
+        if(settings!=null && trackDuration>0)
+        {
+            c=PlaybackLimits.Start(settings,trackDuration)/trackDuration;d=PlaybackLimits.End(settings,trackDuration)/trackDuration;
+            if(settings.MarkerLoop is {Enabled:true} loop)
+            {
+                a=(settings.Markers.FirstOrDefault(m=>m.Id==loop.StartId)?.Seconds??0)/trackDuration;
+                b=(settings.Markers.FirstOrDefault(m=>m.Id==loop.EndId)?.Seconds??0)/trackDuration;
+            }
+        }
+        if((a,b,c,d)==(loopStart,loopEnd,trimStart,trimEnd))return;
+        (loopStart,loopEnd,trimStart,trimEnd)=(a,b,c,d);BuildLoopClip();InvalidateVisual();
+    }
+    private void BuildLoopClip()
+    {
+        loopClip=null;
+        if(loopEnd<=loopStart || ActualWidth<=0 || ActualHeight<=MarkerBand)return;
+        double start=Math.Clamp(loopStart,0,1)*ActualWidth,end=Math.Clamp(loopEnd,0,1)*ActualWidth;
+        if(end<=start)return;
+        loopClip=new RectangleGeometry(new Rect(start,MarkerBand,end-start,ActualHeight-MarkerBand));loopClip.Freeze();
+    }
     private void BuildMarkerInk()
     {
         var drawings=new List<MarkerInk>();double nextLabel=0;
@@ -80,7 +105,7 @@ internal sealed class WaveformView : FrameworkElement
     }
     protected override void OnDpiChanged(DpiScale oldDpi,DpiScale newDpi){base.OnDpiChanged(oldDpi,newDpi);BuildMarkerInk();InvalidateVisual();}
     public void SetPosition(double value){value=Math.Clamp(value,0,1);if(Math.Abs(position-value)<.000001)return;position=value;InvalidateVisual();}
-    protected override void OnRenderSizeChanged(SizeChangedInfo info){base.OnRenderSizeChanged(info);geometry=null;BuildMarkerInk();InvalidateVisual();}
+    protected override void OnRenderSizeChanged(SizeChangedInfo info){base.OnRenderSizeChanged(info);geometry=null;BuildMarkerInk();BuildLoopClip();InvalidateVisual();}
     protected override void OnRender(DrawingContext dc)
     {
         dc.DrawRectangle(BackgroundInk,null,new Rect(RenderSize));
@@ -100,7 +125,16 @@ internal sealed class WaveformView : FrameworkElement
             }
             g.Freeze();geometry=g;
         }
-        if(geometry!=null)dc.DrawGeometry(Ink,null,geometry);
+        if(geometry!=null)
+        {
+            dc.DrawGeometry(Ink,null,geometry);
+            if(loopClip!=null)
+            {
+                dc.PushClip(loopClip);dc.DrawGeometry(LoopWaveInk,null,geometry);dc.Pop();
+            }
+        }
+        if(trimStart>0)dc.DrawRectangle(TrimInk,null,new Rect(0,MarkerBand,Math.Clamp(trimStart,0,1)*ActualWidth,ActualHeight-MarkerBand));
+        if(trimEnd<1)dc.DrawRectangle(TrimInk,null,new Rect(Math.Clamp(trimEnd,0,1)*ActualWidth,MarkerBand,(1-Math.Clamp(trimEnd,0,1))*ActualWidth,ActualHeight-MarkerBand));
         foreach(var item in markerInk)
         {
             dc.DrawLine(item.Pen,new Point(item.X,MarkerBand),new Point(item.X,ActualHeight));

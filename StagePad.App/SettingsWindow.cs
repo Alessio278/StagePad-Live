@@ -55,7 +55,7 @@ internal sealed class SettingsWindow : Window
         var root=new DockPanel { Margin=new Thickness(26) };Content=root;
         var footer=new DockPanel { Margin=new Thickness(0,14,0,0) };DockPanel.SetDock(footer,Dock.Bottom);root.Children.Add(footer);
         var done=new Button { Content="Fatto",MinWidth=90,HorizontalAlignment=HorizontalAlignment.Right };DockPanel.SetDock(done,Dock.Right);footer.Children.Add(done);done.Click+=(_,_)=>Close();
-        footer.Children.Add(new TextBlock { Text="Created by Alessio Natalucci",FontSize=10,Foreground=Brushes.SlateGray,VerticalAlignment=VerticalAlignment.Center });
+        footer.Children.Add(new TextBlock { Text="",FontSize=10,Foreground=Brushes.SlateGray,VerticalAlignment=VerticalAlignment.Center });
         var body=new StackPanel();root.Children.Add(new ScrollViewer { Content=body,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled });
         body.Children.Add(new TextBlock { Text="Impostazioni",FontSize=25,FontWeight=FontWeights.SemiBold });
         body.Children.Add(new TextBlock { Text="Lingua dell’interfaccia",FontSize=13,Margin=new Thickness(0,22,0,7) });

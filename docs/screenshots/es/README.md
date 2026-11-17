@@ -32,13 +32,13 @@ Los términos técnicos universales como MIDI, OSC, Setup, Live, Loop, Marker y 
 
 ![Slot Audio - configuración de la pista](06-slot-audio.png)
 
-### Slot MIDI - editor (vista parcial)
+### Slot MIDI - secuencia y esperas
 
-![Slot MIDI - editor (vista parcial)](07-slot-midi.png)
+![Slot MIDI - secuencia y esperas](07-slot-midi.png)
 
-### Slot OSC - editor (vista parcial)
+### Slot OSC - comandos y esperas
 
-![Slot OSC - editor (vista parcial)](08-slot-osc.png)
+![Slot OSC - comandos y esperas](08-slot-osc.png)
 
 ### Emergencia - protección con pulsación de tres segundos
 

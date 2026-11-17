@@ -16,6 +16,7 @@ internal sealed class AudioCoordinator : IDisposable
     private readonly string?[] errors = new string?[Projects.MaxSlots];
     private readonly bool[] loading = new bool[Projects.MaxSlots], seeking=new bool[Projects.MaxSlots];
     private readonly int[] seekSerial=new int[Projects.MaxSlots];
+    private readonly TrimRegion?[] trimBuffers=new TrimRegion?[Projects.MaxSlots];
     private readonly LoopRegion?[] loopBuffers=new LoopRegion?[Projects.MaxSlots];
     private readonly bool[] loopPreparing=new bool[Projects.MaxSlots];
     private readonly SeekBuffer?[] seekBuffers=new SeekBuffer?[Projects.MaxSlots];
@@ -78,6 +79,7 @@ internal sealed class AudioCoordinator : IDisposable
     }
     private readonly long[] audioOrder=new long[Projects.MaxSlots];
     private long audioSequence,lastTriggerTick;
+    private readonly long[] pendingStartTickets=new long[Projects.MaxSlots];
     private readonly HoldActivation[] emergencyHolds=Enumerable.Range(0,Projects.MaxSlots).Select(_=>new HoldActivation()).ToArray();
     private readonly long[] slotTriggers=new long[Projects.MaxSlots],slotTriggeredAt=new long[Projects.MaxSlots];
     private readonly bool[] slotTriggerOk=Enumerable.Repeat(true,Projects.MaxSlots).ToArray();
@@ -147,7 +149,8 @@ internal sealed class AudioCoordinator : IDisposable
             try
             {
                 if(r.Op is "play" or "pad-down" or "midi-down" or "seek" && acceptedEpoch!=Volatile.Read(ref controlEpoch)){tcs.TrySetResult(new(false,"Sequenza annullata."));return;}
-                if(r.Op=="marker-loop")StartLoop(r,tcs);
+                if(r.Op=="marker-trim")StartTrim(r,tcs);
+                else if(r.Op=="marker-loop")StartLoop(r,tcs);
                 else if(r.Op=="save-project")StartSave(r,tcs);
                 else if(r.Op=="load-project")StartOpen(r,tcs);
                 else if(r.Op is "export-show" or "import-show")StartBundle(r,tcs);
@@ -269,9 +272,9 @@ internal sealed class AudioCoordinator : IDisposable
             },100)){savingProject=false;completion.TrySetResult(new(false,error??"Coda comandi piena."));}
         });
     }
-    private bool Busy(int? slot = null) => slot is int i ? mixer.View(i).State is VoiceState.Playing or VoiceState.Paused or VoiceState.Stopping : Enumerable.Range(0, project.SlotCount).Any(i => Busy(i));
+    private bool Busy(int? slot = null) => slot is int i ? mixer.AppliedTicket<pendingStartTickets[i] || mixer.View(i).State is VoiceState.Playing or VoiceState.Paused or VoiceState.Stopping : Enumerable.Range(0, project.SlotCount).Any(i => Busy(i));
     private void Changed()
-    { project=project with{Schema=3};projectRevision++;autoSaveDue=Environment.TickCount64+1500; recovery.Schedule(project,projectPath); }
+    { project=project with{Schema=4};projectRevision++;autoSaveDue=Environment.TickCount64+1500; recovery.Schedule(project,projectPath); }
     private void SetSlot(int i, SlotSettings settings)
     { emergencyHolds[i].Clear();var slots = (SlotSettings[])project.Slots.Clone(); slots[i] = settings; var next = project with { Slots = slots }; Projects.Validate(next); project = next; Changed(); }
     private Reply Execute(Request r)
@@ -418,6 +421,7 @@ internal sealed class AudioCoordinator : IDisposable
                 if(r.Origin!=instance || r.SourceRevision!=generation[i])return new(false,"La traccia è cambiata. Riapri la gestione marker.");
                 if(loading[i] || sources[i]==null || errors[i]!=null)return new(false,"Attendi che la traccia sia pronta.");
                 if(settings.MarkerLoop is {Enabled:true} loop && r.Op!="marker-add" && (r.MarkerId==loop.StartId || r.MarkerId==loop.EndId) && (r.Op=="marker-delete" || r.Marker?.Seconds!=settings.Markers.First(m=>m.Id==r.MarkerId).Seconds))return new(false,"Rimuovi il loop prima di spostare o eliminare i marker di inizio/fine.");
+                if(settings.MarkerTrim is {} trim && r.Op!="marker-add" && (r.MarkerId==trim.StartId || r.MarkerId==trim.EndId) && (r.Op=="marker-delete" || r.Marker?.Seconds!=settings.Markers.First(m=>m.Id==r.MarkerId).Seconds))return new(false,"Ripristina la traccia intera prima di spostare o eliminare i marker di taglio.");
                 var updated=AudioMarkers.Change(settings.Markers,r.Op,r.Marker,r.MarkerId,sources[i]!.Frames/(double)Mixer.Rate);
                 var retainedLoop=settings.MarkerLoop;
                 if(retainedLoop!=null && (!updated.Any(m=>m.Id==retainedLoop.StartId) || !updated.Any(m=>m.Id==retainedLoop.EndId)))retainedLoop=null;
@@ -428,7 +432,7 @@ internal sealed class AudioCoordinator : IDisposable
             case "settings":
                 if (r.Settings == null) return new(false, "Parametri mancanti.");
                 if (Busy(i) || loading[i] || seeking[i]) return new(false, "Ferma lo slot prima di modificarlo.");
-                var proposed=r.Settings with {File=settings.File,Volume=settings.Volume,Markers=settings.Markers,MarkerLoop=settings.MarkerLoop};
+                var proposed=r.Settings with {File=settings.File,Volume=settings.Volume,Markers=settings.Markers,MarkerLoop=settings.MarkerLoop,MarkerTrim=settings.MarkerTrim};
                 if(proposed.Name!=settings.Name && !string.IsNullOrWhiteSpace(proposed.Name) && proposed.Name!=$"Slot {i+1}")proposed=proposed with{AutoName=false};
                 proposed=SlotTitles.Normalize(proposed,i);
                 SetSlot(i, proposed); return ConfigureVoice(i);
@@ -437,11 +441,11 @@ internal sealed class AudioCoordinator : IDisposable
                 if (string.IsNullOrWhiteSpace(r.Path)) return new(false, "Seleziona un file.");
                 if (loading[i] || seeking[i] || Busy(i)) return new(false, "Ferma lo slot e attendi il caricamento.");
                 string path = System.IO.Path.GetFullPath(r.Path);
-                SetSlot(i, SlotTitles.Normalize(settings,i) with { File = path,Action=settings.Action==SlotAction.Marker?SlotAction.Audio:SlotActions.From(true,SlotActions.Midi(settings.Action),SlotActions.Osc(settings.Action)),EmergencyHold=settings.Action==SlotAction.Marker?false:settings.EmergencyHold,Markers=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.Markers:[],MarkerLoop=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.MarkerLoop:null });
+                SetSlot(i, SlotTitles.Normalize(settings,i) with { File = path,Action=settings.Action==SlotAction.Marker?SlotAction.Audio:SlotActions.From(true,SlotActions.Midi(settings.Action),SlotActions.Osc(settings.Action)),EmergencyHold=settings.Action==SlotAction.Marker?false:settings.EmergencyHold,Markers=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.Markers:[],MarkerLoop=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.MarkerLoop:null,MarkerTrim=string.Equals(settings.File,path,StringComparison.OrdinalIgnoreCase)?settings.MarkerTrim:null });
                 StartImport(i, path); return new(true);
             case "clear":
                 if (loading[i] || seeking[i] || Busy(i)) return new(false, "Ferma lo slot e attendi il caricamento.");
-                generation[i]++; var cleared = Install(i, null); if (cleared.Ok) SetSlot(i, settings with { File = null,Markers=[],MarkerLoop=null }); return cleared;
+                generation[i]++; var cleared = Install(i, null); if (cleared.Ok) SetSlot(i, settings with { File = null,Markers=[],MarkerLoop=null,MarkerTrim=null }); return cleared;
             case "play": if(settings.EmergencyPauseAll && settings.EmergencyHold)return new(false,"Tieni premuto il pad per 3 secondi.");return Trigger(i);
             case "pad-down": uiHeld.Add(i);return PressSlot(i,"ui",r.Timestamp);
             case "pad-up":
@@ -566,6 +570,41 @@ internal sealed class AudioCoordinator : IDisposable
         slotTriggers[i]++;slotTriggeredAt[i]=Environment.TickCount64;slotTriggerOk[i]=result.Ok;
         lastStarted = i; triggerSerial++; return result;
     }
+    private void StartTrim(Request r,TaskCompletionSource<Reply> completion)
+    {
+        void Fail(string error)=>completion.TrySetResult(new(false,error));
+        int i=r.Slot;
+        if((uint)i>=project.SlotCount){Fail("Slot non valido.");return;}
+        if(locked || readingProject || maintenance){Fail("SHOW LOCK attivo: modifiche bloccate.");return;}
+        if(r.Origin!=instance || r.SourceRevision!=generation[i]){Fail("La traccia è cambiata. Riapri la gestione marker.");return;}
+        if(Busy(i) || loading[i] || seeking[i]){Fail("Ferma lo slot prima di applicare il taglio.");return;}
+        if(sources[i] is not OwnedSource source || errors[i]!=null){Fail("Attendi che la traccia sia pronta.");return;}
+        var settings=project.Slots[i];var trim=r.MarkerTrim;
+        if(trim is {StartId:null,EndId:null})trim=null;
+        MarkerTrims.ValidateLoop(trim,settings.MarkerLoop,settings.Markers);
+        var range=MarkerTrims.Frames(trim,settings.Markers,source.Frames/(double)Mixer.Rate);
+        loading[i]=true;int stamp=generation[i],epoch=Volatile.Read(ref controlEpoch);
+        _=Task.Run(async()=>
+        {
+            SeekBuffer? preview=null;string? error=null;bool entered=false;
+            try{await importLimit.WaitAsync(stop.Token);entered=true;if(trim!=null && range.Start>0)preview=source.PrepareSeek(range.Start,stop.Token);}
+            catch(Exception ex){error=ex.Message;Log.Error("trim-prepare",ex);}
+            finally{if(entered)importLimit.Release();}
+            if(!jobs.TryAdd(()=>
+            {
+                if(stamp==generation[i] && ReferenceEquals(source,sources[i]))loading[i]=false;
+                if(error!=null || stamp!=generation[i] || epoch!=Volatile.Read(ref controlEpoch) || locked || !ReferenceEquals(source,sources[i]))
+                {if(preview!=null)budget.Release(preview.ResidentBytes);Fail(error??"Preparazione taglio annullata.");return;}
+                var region=trim==null?null:new TrimRegion(range.Start,range.End,preview);long next=++ticket;
+                if(!mixer.Post(new(AudioOp.Trim,i,Ticket:next,Trim:region)))
+                {if(preview!=null)budget.Release(preview.ResidentBytes);Fail("Coda audio piena.");return;}
+                if(trimBuffers[i]?.Preview is {} old)retiredBuffers.Add((next,old));trimBuffers[i]=region;
+                if(seekBuffers[i] is {} oldSeek){retiredBuffers.Add((next,oldSeek));seekBuffers[i]=null;}
+                SetSlot(i,project.Slots[i] with{MarkerTrim=trim});completion.TrySetResult(new(true));
+            },100))
+            {if(preview!=null)budget.Release(preview.ResidentBytes);failedCompletions.Enqueue((i,stamp));Fail("Coda comandi piena.");}
+        });
+    }
     private void StartLoop(Request r,TaskCompletionSource<Reply> completion)
     {
         void Fail(string error)=>completion.TrySetResult(new(false,error));
@@ -576,6 +615,7 @@ internal sealed class AudioCoordinator : IDisposable
         if(Busy(i) || loading[i] || seeking[i]){Fail("Ferma lo slot e attendi il caricamento prima di configurare il loop.");return;}
         var settings=project.Slots[i];var loop=r.MarkerLoop;
         MarkerLoops.Validate(loop,settings.Markers);
+        MarkerTrims.ValidateLoop(settings.MarkerTrim,loop,settings.Markers);
         if(loop is not {Enabled:true})
         {
             long next=++ticket;
@@ -613,7 +653,7 @@ internal sealed class AudioCoordinator : IDisposable
         if(loading[i] || sources[i]==null || errors[i]!=null)return new(false,"Audio dello slot non pronto.");
         if(seeking[i])return new(false,"Spostamento già in preparazione.");
         var markerPlan=UpdateMarkerPlan(i,project.Slots[i].Markers,true);if(!markerPlan.Ok)return markerPlan;CancelMarkerOutputs(i);
-        var source=sources[i]!;long frame=(long)Math.Round(normalized*source.Frames);int stamp=++seekSerial[i];long epoch=Volatile.Read(ref seekEpoch);
+        var source=sources[i]!;var limits=MarkerTrims.Frames(project.Slots[i].MarkerTrim,project.Slots[i].Markers,source.Frames/(double)Mixer.Rate);long frame=Math.Clamp((long)Math.Round(normalized*source.Frames),limits.Start,limits.End);int stamp=++seekSerial[i];long epoch=Volatile.Read(ref seekEpoch);
         seeking[i]=true;
         _=Task.Run(()=>
         {
@@ -661,21 +701,25 @@ internal sealed class AudioCoordinator : IDisposable
         loading[i] = true; errors[i] = null; int stamp = ++generation[i];var markerSettings=project.Slots[i];
         _ = Task.Run(async () =>
         {
-            IAudioSource? prepared = null;LoopRegion? preparedLoop=null; string? error = null; bool entered = false;
+            IAudioSource? prepared = null;LoopRegion? preparedLoop=null;TrimRegion? preparedTrim=null; string? error = null; bool entered = false;
             try { await importLimit.WaitAsync(stop.Token); entered = true; prepared = Importer.Import(path, cache, budget, stop.Token);
+                if(prepared is OwnedSource trimmedSource){AudioMarkers.Validate(markerSettings.Markers,trimmedSource.Frames/(double)Mixer.Rate);var bounds=MarkerTrims.Frames(markerSettings.MarkerTrim,markerSettings.Markers,trimmedSource.Frames/(double)Mixer.Rate);if(markerSettings.MarkerTrim!=null)preparedTrim=new(bounds.Start,bounds.End,bounds.Start>0?trimmedSource.PrepareSeek(bounds.Start,stop.Token):null);}
                 if(markerSettings.MarkerLoop is {Enabled:true} activeLoop && prepared is OwnedSource owned){var range=MarkerLoops.Frames(activeLoop,markerSettings.Markers,owned.Frames/(double)Mixer.Rate);preparedLoop=owned.PrepareLoop(range.Start,range.End,stop.Token);} }
             catch (Exception ex) { error = ex.Message; Log.Error("import", ex); }
             finally { if (entered) importLimit.Release(); }
             var result = prepared; var problem = error;
-            if (!jobs.TryAdd(() => Complete(i, stamp, result, problem,preparedLoop)))
-            { if(preparedLoop!=null)budget.Release(preparedLoop.Buffer.ResidentBytes);result?.Dispose(); failedCompletions.Enqueue((i, stamp)); }
+            if (!jobs.TryAdd(() => Complete(i, stamp, result, problem,preparedLoop,preparedTrim)))
+            { if(preparedLoop!=null)budget.Release(preparedLoop.Buffer.ResidentBytes);if(preparedTrim?.Preview is {} trimmedPreview)budget.Release(trimmedPreview.ResidentBytes);result?.Dispose(); failedCompletions.Enqueue((i, stamp)); }
         });
     }
     private Reply Posted(AudioCommand command)
     {
         bool signal=command.Op is AudioOp.Play or AudioOp.Trigger or AudioOp.Stop or AudioOp.Pause || command.Op==AudioOp.Release && project.Slots[command.Slot].Mode==PlayMode.Hold;
         int i=command.Slot,next=signal?signalEpochs[i]+1:0;
+        long startTicket=command.Op is AudioOp.Play or AudioOp.Trigger?++ticket:0;
+        if(startTicket>0)command=command with{Ticket=startTicket};
         if(!mixer.Post(signal?command with{SignalEpoch=next}:command))return new(false,"Coda audio piena. PANIC resta disponibile.");
+        if(startTicket>0)pendingStartTickets[i]=startTicket;
         if(signal){signalEpochs[i]=next;if(command.Op is AudioOp.Stop or AudioOp.Pause or AudioOp.Release || command.Op==AudioOp.Trigger && project.Slots[i].Mode==PlayMode.TogglePause && mixer.View(i).State==VoiceState.Playing)CancelMarkerOutputs(i);}
         return new(true);
     }
@@ -702,23 +746,24 @@ internal sealed class AudioCoordinator : IDisposable
         }
         if(mixer.MarkerDrops!=markerDrops){markerDrops=mixer.MarkerDrops;projectError="Coda trigger marker piena: alcuni comandi non inviati.";Log.Warn("marker-trigger",projectError);}
     }
-    private Reply Install(int i, IAudioSource? source,LoopRegion? loop=null)
+    private Reply Install(int i, IAudioSource? source,LoopRegion? loop=null,TrimRegion? trim=null)
     {
         long next = ++ticket;
-        if (!mixer.Post(new(AudioOp.Install, i, Source: source, Ticket: next,Loop:loop,Markers:(uint)i<project.Slots.Length?project.Slots[i].Markers:[],MarkerVersion:markerVersions[i]+1,SignalEpoch:signalEpochs[i]+1))) return new(false, "Coda audio piena.");
+        if (!mixer.Post(new(AudioOp.Install, i, Source: source, Ticket: next,Loop:loop,Markers:(uint)i<project.Slots.Length?project.Slots[i].Markers:[],MarkerVersion:markerVersions[i]+1,SignalEpoch:signalEpochs[i]+1,Trim:trim))) return new(false, "Coda audio piena.");
         markerVersions[i]++;signalEpochs[i]++;
         if (sources[i] is { } previous) retired.Add((next, previous));
         if(seekBuffers[i] is {} preview){retiredBuffers.Add((next,preview));seekBuffers[i]=null;}
         if(loopBuffers[i] is {} oldLoop)retiredBuffers.Add((next,oldLoop.Buffer));loopBuffers[i]=loop;
+        if(trimBuffers[i]?.Preview is {} oldTrim)retiredBuffers.Add((next,oldTrim));trimBuffers[i]=trim;
         sources[i] = source; errors[i] = null; return new(true);
     }
-    private void Complete(int i, int stamp, IAudioSource? source, string? error,LoopRegion? loop=null)
+    private void Complete(int i, int stamp, IAudioSource? source, string? error,LoopRegion? loop=null,TrimRegion? trim=null)
     {
-        if (generation[i] != stamp) { if(loop!=null)budget.Release(loop.Buffer.ResidentBytes);source?.Dispose(); return; }
+        if (generation[i] != stamp) { if(loop!=null)budget.Release(loop.Buffer.ResidentBytes);if(trim?.Preview is {} staleTrim)budget.Release(staleTrim.ResidentBytes);source?.Dispose(); return; }
         loading[i] = false;
-        if (error != null) { errors[i] = error;if(loop!=null)budget.Release(loop.Buffer.ResidentBytes); source?.Dispose(); return; }
-        var reply = Install(i, source,loop);
-        if (!reply.Ok) { errors[i] = reply.Error;if(loop!=null)budget.Release(loop.Buffer.ResidentBytes); source?.Dispose(); }
+        if (error != null) { errors[i] = error;if(loop!=null)budget.Release(loop.Buffer.ResidentBytes);if(trim?.Preview is {} trimPreview)budget.Release(trimPreview.ResidentBytes); source?.Dispose(); return; }
+        var reply = Install(i, source,loop,trim);
+        if (!reply.Ok) { errors[i] = reply.Error;if(loop!=null)budget.Release(loop.Buffer.ResidentBytes);if(trim?.Preview is {} trimPreview)budget.Release(trimPreview.ResidentBytes); source?.Dispose(); }
     }
     private async Task MonitorMidi()
     {

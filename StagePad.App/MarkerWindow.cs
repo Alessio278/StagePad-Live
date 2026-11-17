@@ -19,7 +19,10 @@ internal sealed class MarkerWindow : Window
     private readonly TextBlock count=new(){Foreground=Brushes.LightSlateGray};
     private readonly Button save=new(){Content="Salva marker"},remove=new(){Content="Elimina marker"};
     private readonly StackPanel colorHost=new();
-    private readonly ComboBox loopStart=new(),loopEnd=new();
+    private readonly ComboBox loopStart=new(),loopEnd=new(),trimStart=new(),trimEnd=new();
+    private MarkerTrim? shownTrim;
+    private bool trimInitialized;
+    private readonly TextBlock trimStatus=new(){Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};
     private readonly TextBlock loopStatus=new(){Foreground=Brushes.MediumAquamarine,TextWrapping=TextWrapping.Wrap};
     private MarkerLoop? shownLoop;
     private readonly StackPanel triggerHost=new();
@@ -39,7 +42,7 @@ internal sealed class MarkerWindow : Window
         Background=new SolidColorBrush(Color.FromRgb(11,17,26));Foreground=Brushes.White;
         var root=new DockPanel{Margin=new Thickness(22)};Content=root;
         var header=new StackPanel{Margin=new Thickness(0,0,0,12)};DockPanel.SetDock(header,Dock.Top);root.Children.Add(header);
-        header.Children.Add(new TextBlock{Text=$"{slot+1:00} · {state.Slots[slot].Name}",FontSize=20,TextTrimming=TextTrimming.CharacterEllipsis,Foreground=Brushes.White});header.Children.Add(count);header.Children.Add(loopStatus);L.Preserve(loopStatus);
+        header.Children.Add(new TextBlock{Text=$"{slot+1:00} · {state.Slots[slot].Name}",FontSize=20,TextTrimming=TextTrimming.CharacterEllipsis,Foreground=Brushes.White});header.Children.Add(count);header.Children.Add(loopStatus);L.Preserve(loopStatus);header.Children.Add(trimStatus);L.Preserve(trimStatus);
         var bottom=new StackPanel();DockPanel.SetDock(bottom,Dock.Bottom);root.Children.Add(bottom);
         bottom.Children.Add(notice);L.Preserve(notice);
         var done=CommandForm.Button("Fatto",Close);bottom.Children.Add(done);
@@ -55,6 +58,12 @@ internal sealed class MarkerWindow : Window
         form.Children.Add(new Expander{Header="Trigger MIDI / OSC",Content=triggerForm,Foreground=Brushes.White,Margin=new Thickness(0,8,0,0)});
         var actions=new Grid();actions.ColumnDefinitions.Add(new());actions.ColumnDefinitions.Add(new());save.Margin=new Thickness(0,10,5,0);remove.Margin=new Thickness(5,10,0,0);actions.Children.Add(save);Grid.SetColumn(remove,1);actions.Children.Add(remove);form.Children.Add(actions);
         form.Children.Add(new TextBlock{Text="Doppio clic su un marker per saltare al punto. Le modifiche sono salvate nello show.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12,Margin=new Thickness(0,10,0,0)});
+        var trimForm=new StackPanel{Margin=new Thickness(0,10,0,0)};
+        trimForm.Children.Add(CommandForm.Row("Inizio traccia",trimStart));trimForm.Children.Add(CommandForm.Row("Fine traccia",trimEnd));
+        trimForm.Children.Add(CommandForm.Button("Applica taglio",async()=>await SaveTrim(false)));
+        trimForm.Children.Add(CommandForm.Button("Ripristina traccia intera",async()=>await SaveTrim(true)));
+        trimForm.Children.Add(new TextBlock{Text="Il taglio limita la riproduzione senza modificare il file originale. Ferma lo slot prima di applicarlo. Il loop deve restare dentro il tratto scelto.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12,Margin=new Thickness(0,8,0,0)});
+        form.Children.Add(new Expander{Header="Inizio e fine traccia",Content=trimForm,IsExpanded=true,Foreground=Brushes.White,Margin=new Thickness(0,14,0,0)});
         var loopForm=new StackPanel{Margin=new Thickness(0,10,0,0)};
         loopForm.Children.Add(CommandForm.Row("Inizio loop",loopStart));loopForm.Children.Add(CommandForm.Row("Fine loop",loopEnd));
         loopForm.Children.Add(CommandForm.Button("Applica loop",async()=>await SaveLoop(false)));
@@ -74,7 +83,7 @@ internal sealed class MarkerWindow : Window
         var loop=settings?.MarkerLoop;var markers=settings?.Markers??[];
         double start=loop is {Enabled:true}?markers.FirstOrDefault(m=>m.Id==loop.StartId)?.Seconds??0:0;
         double end=loop is {Enabled:true}?markers.FirstOrDefault(m=>m.Id==loop.EndId)?.Seconds??0:0;
-        return UiPlaybackClock.Read(slot.Position,slot.Duration,slot.State=="Playing" && latestState.AudioError==null,slot.State=="Ended",latestState.RenderHeartbeat>0?latestState.RenderHeartbeat:latestState.Heartbeat,Environment.TickCount64,start,end).Position;
+        return UiPlaybackClock.Read(slot.Position,slot.Duration,slot.State=="Playing" && latestState.AudioError==null,slot.State=="Ended",latestState.RenderHeartbeat>0?latestState.RenderHeartbeat:latestState.Heartbeat,Environment.TickCount64,start,end,PlaybackLimits.Start(settings,duration),PlaybackLimits.End(settings,duration)).Position;
     }
     internal async Task AddAt(double position)
     {
@@ -140,6 +149,33 @@ internal sealed class MarkerWindow : Window
             }
         }
     }
+    private void FillTrimChoices(string? start,string? end)
+    {
+        foreach(var choice in new[]{trimStart,trimEnd})
+        {
+            string? selected=ReferenceEquals(choice,trimStart)?start:end;choice.Items.Clear();
+            var original=new ComboBoxItem{Content=L.T(ReferenceEquals(choice,trimStart)?"Inizio file":"Fine file")};L.Preserve(original);choice.Items.Add(original);choice.SelectedItem=original;
+            foreach(var marker in shown)
+            {
+                var item=new ComboBoxItem{Tag=marker.Id,Content=AudioMarkers.Format(marker.Seconds)+"   "+marker.Label};L.Preserve(item);choice.Items.Add(item);if(marker.Id==selected)choice.SelectedItem=item;
+            }
+        }
+    }
+    private async Task SaveTrim(bool restore)
+    {
+        if(busy || stale || showLocked)return;
+        try
+        {
+            MarkerTrim? trim=restore?null:new(SelectedId(trimStart),SelectedId(trimEnd));
+            MarkerTrims.ValidateLoop(trim,latestState?.Project?.Slots[Slot].MarkerLoop,shown);if(trim is {StartId:null,EndId:null})trim=null;MarkerTrims.Frames(trim,shown,duration);
+            busy=true;Buttons();notice.Text=L.T("Preparazione taglio in corso...");
+            var reply=await send(new("marker-trim",Slot,Origin:instance,SourceRevision:revision,MarkerTrim:trim));
+            notice.Text=reply.Ok?L.T("Limiti traccia aggiornati."):L.Message(reply.Error??"Comando non riuscito.");
+            if(reply.Ok && (await send(new("state"))).State is {} snapshot)Update(snapshot);
+        }
+        catch(Exception ex){notice.Text=L.Message(ex.Message);}
+        finally{busy=false;Buttons();}
+    }
     private async Task SaveLoop(bool removeLoop)
     {
         if(busy || stale || showLocked)return;
@@ -166,7 +202,7 @@ internal sealed class MarkerWindow : Window
         if(!AudioMarkers.Same(shown,markers))
         {
             string? start=SelectedId(loopStart),end=SelectedId(loopEnd);
-            shown=markers;FillLoopChoices(start,end);string? selected=(list.SelectedItem as ListBoxItem)?.Tag is AudioMarker m?m.Id:null;
+            var a=SelectedId(trimStart);var b=SelectedId(trimEnd);shown=markers;FillLoopChoices(start,end);FillTrimChoices(a,b);string? selected=(list.SelectedItem as ListBoxItem)?.Tag is AudioMarker m?m.Id:null;
             bool oldBusy=busy;busy=true;list.Items.Clear();
             foreach(var marker in markers)
             {
@@ -177,6 +213,9 @@ internal sealed class MarkerWindow : Window
             }
             busy=oldBusy;
         }
+        var activeTrim=state.Project?.Slots[Slot].MarkerTrim;
+        if(!trimInitialized || shownTrim!=activeTrim){trimInitialized=true;shownTrim=activeTrim;FillTrimChoices(activeTrim?.StartId,activeTrim?.EndId);}
+        trimStatus.Text=L.T(activeTrim==null?"Traccia intera":"Taglio attivo");
         var activeLoop=state.Project?.Slots[Slot].MarkerLoop;
         if(!loopInitialized || shownLoop!=activeLoop)
         {

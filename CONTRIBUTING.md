@@ -13,3 +13,9 @@ For code changes:
 - Preserve third-party license notices and use ordinary hyphens in maintained text.
 
 Contributions are distributed under the repository's MIT License. Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
+
+## Documentation screenshots
+
+The optional [screenshot generator](tools/screenshots/README.md) contains the
+demo projects and capture scripts. Generated documentation images are in
+`docs/screenshots`.

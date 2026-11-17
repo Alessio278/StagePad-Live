@@ -2,6 +2,15 @@
 
 Includes public releases and development builds. Version numbers before 1.1 retain their original format; some early build dates are unavailable.
 
+## 1.2 - Unreleased
+
+- Restored the creator credit below the header wordmark.
+
+- Non-destructive track start and end from existing Markers, with full-track restore.
+- Trim-aware playback, seeking, time displays and Show schema 4 persistence.
+- Light gray waveform inside the Loop and dimmed excluded Audio in the waveform.
+- Four localized README pages with clickable square previews and contextual screenshots.
+
 ## 1.1 - 2026-11-16
 
 - Compact +MARKER label on marker pads.

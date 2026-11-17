@@ -78,7 +78,7 @@ internal sealed partial class MainWindow : Window
         var wordmark=Text("STAGEPAD",20);wordmark.FontWeight=FontWeights.SemiBold;wordmark.Margin=new Thickness(0);brandLine.Children.Add(wordmark);
         var liveBadge=Text("LIVE",10);liveBadge.FontWeight=FontWeights.SemiBold;liveBadge.Foreground=Brush("#75E2C1");liveBadge.Margin=new Thickness(3,0,0,3);liveBadge.VerticalAlignment=VerticalAlignment.Bottom;brandLine.Children.Add(liveBadge);
         brandText.Children.Add(brandLine);
-        var credit=Text("Created by Alessio Natalucci",9);credit.Foreground=Brush("#6D859E");credit.Margin=new Thickness(0,1,0,0);brandText.Children.Add(credit);brand.Children.Add(brandText);header.Children.Add(brand);
+        var credit=Text("Created by @Alessio278",9);L.Preserve(credit);credit.Foreground=Brush("#6D859E");credit.Margin=new Thickness(0,1,0,0);brandText.Children.Add(credit);brand.Children.Add(brandText);header.Children.Add(brand);
         var navigation = new StackPanel { Orientation = Orientation.Horizontal };
         setupSwitch = Button("Setup", () => { SetView(false); return Task.CompletedTask; });
         showSwitch = Button("Serata", EnterLive);

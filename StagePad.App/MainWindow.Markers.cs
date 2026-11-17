@@ -53,7 +53,7 @@ internal sealed partial class MainWindow
     {
         if(last==null || (uint)current>=last.Slots.Length)return 0;
         var slot=last.Slots[current];long anchor=last.RenderHeartbeat>0?last.RenderHeartbeat:last.Heartbeat;
-        return UiPlaybackClock.Read(slot.Position,slot.Duration,slot.State=="Playing" && last.AudioError==null,slot.State=="Ended",anchor,Environment.TickCount64,LoopBounds(last.Project?.Slots[current]).Start,LoopBounds(last.Project?.Slots[current]).End).Position;
+        return UiPlaybackClock.Read(slot.Position,slot.Duration,slot.State=="Playing" && last.AudioError==null,slot.State=="Ended",anchor,Environment.TickCount64,LoopBounds(last.Project?.Slots[current]).Start,LoopBounds(last.Project?.Slots[current]).End,PlaybackLimits.Start(last.Project?.Slots[current],slot.Duration),PlaybackLimits.End(last.Project?.Slots[current],slot.Duration)).Position;
     }
     private static (double Start,double End) LoopBounds(SlotSettings? settings)
     {
@@ -81,7 +81,7 @@ internal sealed partial class MainWindow
     {
         markerWindow?.Update(state);
         var slot=state.Slots[current];var markers=state.Project?.Slots[current].Markers??[];
-        waveform.SetMarkers(markers,slot.Duration);
+        waveform.SetMarkers(markers,slot.Duration);waveform.SetRegions(state.Project?.Slots[current],slot.Duration);
         if(addMarkerButton!=null)addMarkerButton.IsEnabled=!state.ShowLocked && !slot.Loading && slot.Duration>0 && markers.Length<AudioMarkers.Maximum;
         if(manageMarkersButton!=null)manageMarkersButton.IsEnabled=!slot.Loading && slot.Duration>0;
     }

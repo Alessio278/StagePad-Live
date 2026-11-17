@@ -38,3 +38,14 @@ Record the app and Windows versions, display scaling, audio driver, MIDI control
 - [ ] Open schema-1/2 shows and save schema 3. Keep originals for older app versions.
 - [ ] Update and rollback while idle; original shows and audio remain available.
 - [ ] Run the intended show duration with the actual equipment; check audio continuity, CPU/RAM and shutdown.
+
+## Version 1.2 - playback boundaries and waveform selection
+
+- Choose start-only, end-only and two-Marker cuts on short and streamed tracks. Confirm no excluded Audio is heard.
+- Check Play, MIDI retrigger, pause/resume, Hold release, STOP ALL and emergency pause with a cut.
+- Seek before and after the selected interval; confirm the cursor stays inside playback boundaries.
+- Apply a Loop inside the cut. Reject a Loop outside it, reversed boundaries and intervals under 50 ms.
+- Confirm the light gray Loop waveform is visible at different window sizes. The waveform and Marker labels must remain readable.
+- Save, close and reopen the Show. Confirm the cut survives, time displays use the cut duration and the original Audio file is unchanged.
+- Restore the full track and confirm normal playback. Used boundary Markers must be protected from moving/deletion until then.
+- Run the native WPF checks on Windows before publishing. Keep a 1.1 Show backup: schema 4 is not readable by older versions.

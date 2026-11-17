@@ -32,13 +32,13 @@ Technical labels such as MIDI, OSC, Setup, Live, Loop, Marker and LEARN remain i
 
 ![Audio Slot - track configuration](06-slot-audio.png)
 
-### MIDI Slot - editor (partial view)
+### MIDI Slot - sequence and delays
 
-![MIDI Slot - editor (partial view)](07-slot-midi.png)
+![MIDI Slot - sequence and delays](07-slot-midi.png)
 
-### OSC Slot - editor (partial view)
+### OSC Slot - commands and delays
 
-![OSC Slot - editor (partial view)](08-slot-osc.png)
+![OSC Slot - commands and delays](08-slot-osc.png)
 
 ### Emergency - three-second hold protection
 

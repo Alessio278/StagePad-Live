@@ -2808,5 +2808,105 @@
     "en": "+MARKER",
     "es": "+MARCADOR",
     "fr": "+MARQUEUR"
+  },
+  "Inizio traccia": {
+    "en": "Track start",
+    "es": "Inicio de la pista",
+    "fr": "Début de la piste"
+  },
+  "Fine traccia": {
+    "en": "Track end",
+    "es": "Fin de la pista",
+    "fr": "Fin de la piste"
+  },
+  "Inizio file": {
+    "en": "File start",
+    "es": "Inicio del archivo",
+    "fr": "Début du fichier"
+  },
+  "Fine file": {
+    "en": "File end",
+    "es": "Fin del archivo",
+    "fr": "Fin du fichier"
+  },
+  "Inizio e fine traccia": {
+    "en": "Track start and end",
+    "es": "Inicio y fin de la pista",
+    "fr": "Début et fin de la piste"
+  },
+  "Applica taglio": {
+    "en": "Apply trim",
+    "es": "Aplicar recorte",
+    "fr": "Appliquer la découpe"
+  },
+  "Ripristina traccia intera": {
+    "en": "Restore full track",
+    "es": "Restaurar pista completa",
+    "fr": "Restaurer la piste entière"
+  },
+  "Traccia intera": {
+    "en": "Full track",
+    "es": "Pista completa",
+    "fr": "Piste entière"
+  },
+  "Taglio attivo": {
+    "en": "Trim active",
+    "es": "Recorte activo",
+    "fr": "Découpe active"
+  },
+  "Preparazione taglio in corso...": {
+    "en": "Preparing trim...",
+    "es": "Preparando recorte...",
+    "fr": "Préparation de la découpe..."
+  },
+  "Limiti traccia aggiornati.": {
+    "en": "Track boundaries updated.",
+    "es": "Límites de la pista actualizados.",
+    "fr": "Limites de la piste mises à jour."
+  },
+  "Ferma lo slot prima di applicare il taglio.": {
+    "en": "Stop the Slot before applying a trim.",
+    "es": "Detén el Slot antes de aplicar el recorte.",
+    "fr": "Arrêtez le Slot avant d’appliquer la découpe."
+  },
+  "Preparazione taglio annullata.": {
+    "en": "Trim preparation cancelled.",
+    "es": "Preparación del recorte cancelada.",
+    "fr": "Préparation de la découpe annulée."
+  },
+  "Marker di taglio non trovato.": {
+    "en": "Trim Marker not found.",
+    "es": "No se encuentra el Marker del recorte.",
+    "fr": "Marker de découpe introuvable."
+  },
+  "Fine traccia dopo inizio: distanza minima 50 ms.": {
+    "en": "Track end must follow track start by at least 50 ms.",
+    "es": "El fin debe seguir al inicio al menos 50 ms.",
+    "fr": "La fin doit suivre le début d’au moins 50 ms."
+  },
+  "Il taglio deve restare dentro la traccia, con almeno 50 ms di audio.": {
+    "en": "Trim must stay inside the track and retain at least 50 ms of Audio.",
+    "es": "El recorte debe estar dentro de la pista y conservar al menos 50 ms de Audio.",
+    "fr": "La découpe doit rester dans la piste et conserver au moins 50 ms d’Audio."
+  },
+  "Il loop deve essere compreso tra inizio e fine traccia.": {
+    "en": "The Loop must stay between track start and end.",
+    "es": "El Loop debe estar entre el inicio y el fin de la pista.",
+    "fr": "Le Loop doit rester entre le début et la fin de la piste."
+  },
+  "Ripristina la traccia intera prima di spostare o eliminare i marker di taglio.": {
+    "en": "Restore the full track before moving or deleting trim Markers.",
+    "es": "Restaura la pista completa antes de mover o eliminar los Markers del recorte.",
+    "fr": "Restaurez la piste entière avant de déplacer ou supprimer les Markers de découpe."
+  },
+  "Durata traccia non valida.": {
+    "en": "Invalid track duration.",
+    "es": "Duración de pista no válida.",
+    "fr": "Durée de piste invalide."
+  },
+  "Il taglio limita la riproduzione senza modificare il file originale. Ferma lo slot prima di applicarlo. Il loop deve restare dentro il tratto scelto.": {
+    "en": "Trim limits playback without changing the original file. Stop the Slot before applying it. The Loop must stay within the selected interval.",
+    "es": "El recorte limita la reproducción sin modificar el archivo original. Detén el Slot antes de aplicarlo. El Loop debe estar dentro del intervalo seleccionado.",
+    "fr": "La découpe limite la lecture sans modifier le fichier original. Arrêtez le Slot avant de l’appliquer. Le Loop doit rester dans l’intervalle sélectionné."
   }
 }

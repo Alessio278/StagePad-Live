@@ -6,23 +6,25 @@ internal readonly record struct PlayerReading(double Position, long Elapsed, lon
 /// <summary>Presentation-only clock. Uses the engine's boot-time timestamp, never IPC receipt time.</summary>
 internal static class UiPlaybackClock
 {
-    public static PlayerReading Read(double position, double duration, bool playing, bool ended, long engineTick, long nowTick,double loopStart=0,double loopEnd=0)
+    public static PlayerReading Read(double position, double duration, bool playing, bool ended, long engineTick, long nowTick,double loopStart=0,double loopEnd=0,double trimStart=0,double trimEnd=0)
     {
         duration = double.IsFinite(duration) ? Math.Max(0, duration) : 0;
+        double start=double.IsFinite(trimStart)?Math.Clamp(trimStart,0,duration):0;
+        double end=double.IsFinite(trimEnd) && trimEnd>start?Math.Min(trimEnd,duration):duration;
         position = double.IsFinite(position) ? Math.Clamp(position, 0, duration) : 0;
         // TickCount64 has the same origin in each Windows process. Predict only a short
         // gap; a missing engine response must never let the UI clock run indefinitely.
         if (playing && engineTick > 0 && nowTick >= engineTick)
             position += Math.Min(nowTick - engineTick, 500) / 1000.0;
         if(playing && loopEnd>loopStart && loopStart>=0 && loopEnd<=duration && position>=loopEnd)position=loopStart+(position-loopEnd)%(loopEnd-loopStart);
-        position=Math.Min(duration,position);
-        if (ended) position = duration;
+        position=Math.Clamp(position,start,end);
+        if (ended) position = end;
         // Quantize once. Remaining is the complement of the displayed elapsed value,
         // rather than independently truncating duration-position at a different phase.
-        long total = (long)Math.Ceiling(duration - 0.0000001);
+        long total = (long)Math.Ceiling(end-start - 0.0000001);
         total = Math.Max(0, total);
-        bool finished = ended || (duration > 0 && position >= duration);
-        long elapsed = finished ? total : Math.Clamp((long)Math.Floor(position + 0.0000001), 0, total);
+        bool finished = ended || (end > start && position >= end);
+        long elapsed = finished ? total : Math.Clamp((long)Math.Floor(position-start + 0.0000001), 0, total);
         return new(position, elapsed, total - elapsed, total);
     }
     public static string Format(long seconds)
@@ -31,5 +33,17 @@ internal static class UiPlaybackClock
         return seconds >= 3600
             ? string.Create(CultureInfo.InvariantCulture, $"{seconds / 3600}:{seconds / 60 % 60:00}:{seconds % 60:00}")
             : string.Create(CultureInfo.InvariantCulture, $"{seconds / 60:00}:{seconds % 60:00}");
+    }
+}
+
+internal static class PlaybackLimits
+{
+    public static double Start(StagePad.Core.SlotSettings? settings,double duration)=>Bounds(settings,duration).Start;
+    public static double End(StagePad.Core.SlotSettings? settings,double duration)=>Bounds(settings,duration).End;
+    private static (double Start,double End) Bounds(StagePad.Core.SlotSettings? settings,double duration)
+    {
+        if(settings?.MarkerTrim==null || duration<=0)return(0,Math.Max(0,duration));
+        try{var range=StagePad.Core.MarkerTrims.Frames(settings.MarkerTrim,settings.Markers,duration);return(range.Start/(double)StagePad.Core.Mixer.Rate,range.End/(double)StagePad.Core.Mixer.Rate);}
+        catch(System.IO.InvalidDataException){return(0,duration);}
     }
 }

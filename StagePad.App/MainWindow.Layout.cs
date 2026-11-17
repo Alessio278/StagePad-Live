@@ -197,7 +197,7 @@ internal sealed partial class MainWindow
         {
             bool playing=slot.State=="Playing" && last.AudioError==null && slot.Underruns==0;
             var loop=LoopBounds(last.Project?.Slots[slot.Index]);
-            var reading=UiPlaybackClock.Read(slot.Position,slot.Duration,playing,slot.State=="Ended",anchor,now,loop.Start,loop.End);
+            var reading=UiPlaybackClock.Read(slot.Position,slot.Duration,playing,slot.State=="Ended",anchor,now,loop.Start,loop.End,PlaybackLimits.Start(last.Project?.Slots[slot.Index],slot.Duration),PlaybackLimits.End(last.Project?.Slots[slot.Index],slot.Duration));
             int index=slot.Index;
             if(displayedPadElapsed[index]!=reading.Elapsed || displayedPadDuration[index]!=reading.Duration)
             {

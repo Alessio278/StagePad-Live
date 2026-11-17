@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>StagePad</AssemblyName><RootNamespace>StagePad.App</RootNamespace>
+    <StartupObject>StagePad.App.ScreenshotProgram</StartupObject><Version>1.2</Version>
+    <Product>StagePad Live Screenshot Demo</Product><ApplicationIcon>../../../StagePad.App/Assets/StagePad.ico</ApplicationIcon>
+    <DefineConstants>$(DefineConstants);STAGEPAD_TESTS;STAGEPAD_SCREENSHOTS</DefineConstants>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../StagePad.Core/StagePad.Core.csproj"/>
+    <Compile Include="../../../StagePad.App/**/*.cs" Exclude="../../../StagePad.App/bin/**;../../../StagePad.App/obj/**" Link="App/%(RecursiveDir)%(Filename)%(Extension)"/>
+    <Page Include="../../../StagePad.App/Ui/Theme.xaml" Link="Ui/Theme.xaml"/>
+    <Resource Include="../../../StagePad.App/Assets/StagePad.png" Link="Assets/StagePad.png"/>
+    <Resource Include="../../../StagePad.App/Assets/StagePad.ico" Link="Assets/StagePad.ico"/>
+    <EmbeddedResource Include="../../../StagePad.App/Localization/strings.json" LogicalName="StagePad.Localization.json"/>
+    <EmbeddedResource Include="../../../licenses/*.txt" Link="Notices/%(Filename)%(Extension)"/>
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1"/><PackageReference Include="NAudio.Midi" Version="2.2.1"/><PackageReference Include="NVorbis" Version="0.10.5"/>
+  </ItemGroup>
+</Project>
