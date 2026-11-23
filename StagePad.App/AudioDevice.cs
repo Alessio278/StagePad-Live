@@ -5,11 +5,22 @@ using StagePad.Core;
 namespace StagePad.App;
 internal sealed class AudioDevice : IDisposable
 {
-    private sealed class Provider(Mixer mixer) : IWaveProvider
+    private sealed class Provider(Mixer mixer, int latency) : IWaveProvider
     {
+        private long previousRead, lateReads, longestGap;
+        public long LateReads => Volatile.Read(ref lateReads);
+        public long LongestGap => Volatile.Read(ref longestGap);
         public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(Mixer.Rate, 2);
         public int Read(byte[] buffer, int offset, int count)
         {
+            long now = Environment.TickCount64;
+            long gap = now - previousRead;
+            if (previousRead != 0 && gap > Math.Max(100, latency * 3))
+            {
+                lateReads++;
+                if (gap > longestGap) longestGap = gap;
+            }
+            previousRead = now;
             // WASAPI always receives a complete block, including digital silence.
             var samples = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, float>(buffer.AsSpan(offset, count));
             mixer.Render(samples); return count;
@@ -70,6 +81,8 @@ internal sealed class AudioDevice : IDisposable
     }
     private void Run()
     {
+        Provider? provider = null;
+        long playbackStarted = 0, reportedLate = 0, nextTimingReport = 0;
         int retry = 0; DateTime nextRetry = DateTime.MinValue, nextScan = DateTime.MinValue;
         try
         {
@@ -106,11 +119,26 @@ internal sealed class AudioDevice : IDisposable
                             Volatile.Write(ref actualId, device.ID);
                             var candidate = new WasapiOut(device, AudioClientShareMode.Shared, true, Latency);
                             output = candidate; candidate.PlaybackStopped += Stopped;
-                            candidate.Init(new Provider(mixer));
+                            provider = new Provider(mixer, Latency);
+                            reportedLate = 0;
+                            candidate.Init(provider);
                             mixer.Freeze(false); candidate.Play();
+                            playbackStarted = Environment.TickCount64;
                             Volatile.Write(ref error, null); Volatile.Write(ref status, "Audio pronto · " + device.FriendlyName);
                             retry = 0;
                         }
+                    }
+                    if (output != null && provider != null && provider.LateReads != reportedLate &&
+                        Environment.TickCount64 >= nextTimingReport)
+                    {
+                        reportedLate = provider.LateReads;
+                        Log.Warn("wasapi-timing", $"Delayed reads: {reportedLate}; maximum gap {provider.LongestGap} ms");
+                        nextTimingReport = Environment.TickCount64 + 5000;
+                    }
+                    if (output != null && Environment.TickCount64 - Math.Max(playbackStarted, mixer.RenderHeartbeat) > 5000)
+                    {
+                        Volatile.Write(ref error, "WASAPI callback timeout");
+                        Interlocked.Exchange(ref failed, 1);
                     }
                     // Counter used by the control heartbeat; never wait for UI or IPC here.
                     Volatile.Write(ref callbacks, Environment.TickCount64);

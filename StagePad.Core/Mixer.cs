@@ -120,7 +120,7 @@ public sealed class Mixer
                 continue;
             }
             if (c.Op == AudioOp.Test) { testFrame = 0; continue; }
-            if (c.Op == AudioOp.Master) { master = Math.Clamp(c.Value, 0, 1); continue; }
+            if (c.Op == AudioOp.Master) { if (float.IsFinite(c.Value)) master = Math.Clamp(c.Value, 0, 1); continue; }
             if ((uint)c.Slot >= Projects.MaxSlots) continue;
             var v = voices[c.Slot];
             if(c.Op is AudioOp.Install or AudioOp.Play or AudioOp.Trigger or AudioOp.Stop or AudioOp.Pause or AudioOp.Seek || c.Op==AudioOp.Release && v.Mode==PlayMode.Hold)v.SignalEpoch=c.SignalEpoch;
@@ -175,7 +175,7 @@ public sealed class Mixer
                 case AudioOp.Markers:v.Markers=c.Markers??[];v.MarkerVersion=c.MarkerVersion;v.SignalEpoch=c.SignalEpoch;break;
                 case AudioOp.Loop: v.Loop=c.Loop;break;
                 case AudioOp.Trim: v.Trim=c.Trim;v.Frame=v.Start;v.Seek=null;v.Cued=false;v.EmitInitial=false;v.State=(int)(v.Source==null?VoiceState.Empty:VoiceState.Ready);break;
-                case AudioOp.Volume: v.Volume = Math.Clamp(c.Value, 0, 1); break;
+                case AudioOp.Volume: if (float.IsFinite(c.Value)) v.Volume = Math.Clamp(c.Value, 0, 1); break;
             }
             // After this acknowledgement, the callback no longer references the old source.
             if (c.Ticket > 0) Volatile.Write(ref appliedTicket, c.Ticket);
@@ -301,5 +301,12 @@ public sealed class Mixer
         }
         catch { output.Clear(); Interlocked.Increment(ref callbackFaults); }
     }
-    private static float Safe(float x) => float.IsFinite(x) ? Math.Clamp(x, -1, 1) : 0;
+    private long clippedSamples;
+    public long ClippedSamples => Volatile.Read(ref clippedSamples);
+    private float Safe(float x)
+    {
+        if (x >= -1 && x <= 1) return x;
+        clippedSamples++;
+        return float.IsFinite(x) ? Math.Clamp(x, -1, 1) : 0;
+    }
 }

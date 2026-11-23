@@ -1,4 +1,4 @@
-StagePad Live 1.2 - Screenshot Demo - 4 lingue
+StagePad Live 1.3 - Screenshot Demo - 4 lingue
 
 Estrai tutto lo ZIP e avvia Cattura-Screenshot.cmd su Windows 10/11 x64.
 Non serve installare .NET. Non avviare direttamente il file PS1.
@@ -35,5 +35,5 @@ Dati demo e traduzioni verificati per tutte le lingue; compilazione Windows
 verificata. La cattura WPF nativa va verificata su Windows: non e eseguibile
 nell'ambiente Linux di preparazione.
 Il programma non e firmato, quindi SmartScreen puo mostrare un avviso.
-Questo generatore e separato dalla release StagePad Live 1.2.
+Questo generatore e separato dalla release StagePad Live 1.3.
 

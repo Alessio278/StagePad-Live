@@ -625,6 +625,42 @@ Check(trimCopy.Schema==4 && trimCopy.Slots[0].MarkerTrim==trimValue,"schema 4 ro
 var cancelledStartMixer=new Mixer();cancelledStartMixer.Post(new(AudioOp.Install,Source:new MemorySource(audio)));cancelledStartMixer.Render(output);
 cancelledStartMixer.Post(new(AudioOp.Play,Ticket:1234));cancelledStartMixer.Panic();cancelledStartMixer.Render(output);
 Check(cancelledStartMixer.AppliedTicket==1234 && cancelledStartMixer.View(0).State==VoiceState.Stopped,"PANIC acknowledges cancelled start fences without restarting audio");
+var pcmRegion = new MemorySource(audio).Slice(111, 2511);
+Check(pcmRegion.ResidentBytes == 0 && pcmRegion.Frames == 2400 &&
+    pcmRegion.ReadAt(111, output) == 1024 && output.AsSpan().SequenceEqual(audio.AsSpan(222,2048)),
+    "resident loop shares original PCM at exact frame offset");
+var sustained = new Mixer();
+sustained.Post(new(AudioOp.Install, Source: new ConstantSource()));
+sustained.Post(new(AudioOp.Play));
+sustained.Render(output);
+long sustainedFrames = 25L * 60 * Mixer.Rate;
+for (long frame = 0; frame < sustainedFrames; frame += output.Length / 2)
+{
+    if (frame % 65536 == 0)
+    {
+        sustained.Post(new(AudioOp.Master, Value: frame % 131072 == 0 ? .5f : 1));
+        sustained.Post(new(AudioOp.Volume, Value: frame % 262144 == 0 ? .25f : 1));
+    }
+    sustained.Render(output);
+}
+foreach (var (slotGain, masterGain) in new[] { (1f,1f), (.5f,1f), (1f,.5f), (.5f,.25f) })
+{
+    sustained.Post(new(AudioOp.Master, Value: masterGain));
+    sustained.Post(new(AudioOp.Volume, Value: slotGain));
+    sustained.Render(output);
+    Check(output[^1] == .02f * slotGain * masterGain, "steady PCM output equals source times slot times master");
+}
+sustained.Post(new(AudioOp.Master, Value: float.NaN));
+sustained.Post(new(AudioOp.Volume, Value: float.PositiveInfinity));
+sustained.Render(output);
+Check(output[^1] == .02f * .5f * .25f && sustained.View(0).Frame >= sustainedFrames &&
+    sustained.View(0).Starvations == 0 && sustained.ClippedSamples == 0 && sustained.CallbackFaults == 0,
+    "25 simulated minutes of PCM and invalid gain commands preserve finite output");
+var overload = new Mixer();
+overload.Post(new(AudioOp.Install, Source: new MemorySource(Enumerable.Repeat(2f,4096).ToArray())));
+overload.Post(new(AudioOp.Play));
+overload.Render(output);
+Check(overload.ClippedSamples > 0 && output.Max() == 1, "counts samples exceeding output range");
 Console.WriteLine($"{passed} checks passed. Windows/WASAPI/hardware tests are NOT covered by this suite.");
 
 sealed class ThrowingSource : IAudioSource { public long Frames => 48000; public long ResidentBytes => 0; public string? Error => null; public int ReadAt(long p, Span<float> s) => throw new IOException("Simulated"); public void Dispose() { } }

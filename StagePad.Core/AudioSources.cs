@@ -15,6 +15,8 @@ public interface IAudioSource : IDisposable
 
 public sealed class MemorySource(float[] samples) : IAudioSource
 {
+    public SeekBuffer Slice(long start, long end) =>
+        new(start, samples.AsMemory(checked((int)(start * 2)), checked((int)((end - start) * 2))), 0);
     public long Frames => samples.LongLength / 2;
     public long ResidentBytes => samples.LongLength * sizeof(float);
     public string? Error => null;

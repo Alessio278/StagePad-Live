@@ -261,6 +261,7 @@ internal sealed partial class MainWindow : Window
         liveView=live;
         viewHost.Content = live ? liveScroll : setupScroll;
         RefreshGridControls();
+        waveform.Height = live ? 88 : 72;
         setupRouting.Visibility = live ? Visibility.Collapsed : Visibility.Visible;
         setupHint.Visibility = live ? Visibility.Collapsed : Visibility.Visible;
         setupSwitch.Background=Brush(live?"#121D2B":"#23473F");showSwitch.Background=Brush(live?"#23473F":"#121D2B");

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.IO;
 using StagePad.Core;
 namespace StagePad.App;
@@ -5,18 +6,46 @@ internal sealed class MemoryBudget(long bytes)
 {
     private long used;
     private long limit = bytes;
-    public bool SetLimit(long value, bool force = false) { if (!force && value < Used) return false; Volatile.Write(ref limit, value); return true; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PhysicalMemory
+    {
+        public uint Length, Load;
+        public ulong Total, Available, PageTotal, PageAvailable, VirtualTotal, VirtualAvailable, Extended;
+    }
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GlobalMemoryStatusEx(ref PhysicalMemory status);
+    private static long AvailableBytes()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var status = new PhysicalMemory { Length = (uint)Marshal.SizeOf<PhysicalMemory>() };
+            if (GlobalMemoryStatusEx(ref status)) return (long)status.Available;
+        }
+        var info = GC.GetGCMemoryInfo();
+        return info.MemoryLoadBytes > 0 ? Math.Max(0, info.HighMemoryLoadThresholdBytes - info.MemoryLoadBytes) : long.MaxValue;
+    }
+    private readonly object gate = new();
+    public bool SetLimit(long value, bool force = false)
+    {
+        lock (gate)
+        {
+            if (!force && value < used) return false;
+            limit = value;
+            return true;
+        }
+    }
     public long Used => Volatile.Read(ref used);
     public bool Reserve(long count)
     {
-        while (true)
+        lock (gate)
         {
-            long current = Volatile.Read(ref used);
-            if (count < 0 || current > Volatile.Read(ref limit) - count) return false;
-            if (Interlocked.CompareExchange(ref used, current + count, current) == current) return true;
+            if (count < 0 || count > limit - used || count > AvailableBytes() / 2)
+                return false;
+            used += count;
+            return true;
         }
     }
-    public void Release(long count) => Interlocked.Add(ref used, -count);
+    public void Release(long count) { lock (gate) used -= count; }
 }
 internal sealed class OwnedSource(IAudioSource inner, string cache, MemoryBudget budget, float[] peaks) : IAudioSource
 {
@@ -47,6 +76,8 @@ internal sealed class OwnedSource(IAudioSource inner, string cache, MemoryBudget
     public LoopRegion PrepareLoop(long start,long end,CancellationToken ct)
     {
         if(start<0 || end>Frames || end-start<2400)throw new InvalidDataException("Intervallo loop non valido.");
+        ct.ThrowIfCancellationRequested();
+        if (inner is MemorySource resident) return new LoopRegion(resident.Slice(start, end));
         long frames=end-start,bytes=checked(frames*8);
         if(frames>Array.MaxLength/2 || !budget.Reserve(bytes))throw new InvalidOperationException("Budget RAM insufficiente per il loop. Accorcia l’intervallo o aumenta il budget nelle impostazioni.");
         try

@@ -177,6 +177,10 @@ internal static class UiAssetsCheck
         // InvalidateVisual schedules the redraw; flush layout before sampling the retained visual.
         rangeWave.UpdateLayout();rangeBitmap.Clear();rangeBitmap.Render(rangeWave);rangeBitmap.CopyPixels(rangePixels,200*4,0);
         if(Math.Abs(rangePixels[insideRange]-0xB1)>2 || Math.Abs(rangePixels[insideRange+1]-0xB9)>2 || Math.Abs(rangePixels[insideRange+2]-0x75)>2)throw new InvalidOperationException("Removing the loop did not restore waveform color.");
+        rangeWave.SetPosition(.75);
+        rangeWave.UpdateLayout();rangeBitmap.Clear();rangeBitmap.Render(rangeWave);rangeBitmap.CopyPixels(rangePixels,200*4,0);
+        if(rangePixels[insideRange]!=0x20 || rangePixels[insideRange+1]!=0xA5 || rangePixels[insideRange+2]!=0xDA)
+            throw new InvalidOperationException("Elapsed waveform is not goldenrod.");
         var trimCheckDialog=new MarkerWindow(0,captureState,0,null,_=>Task.FromResult(new Reply(true)),_=>Task.CompletedTask);
         if(!LogicalChildren(trimCheckDialog).OfType<System.Windows.Controls.Expander>().Any(e=>e.Header?.ToString()==L.T("Inizio e fine traccia")))throw new InvalidOperationException("Track trim controls are missing.");
         trimCheckDialog.Close();

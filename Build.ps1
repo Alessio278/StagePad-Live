@@ -16,6 +16,7 @@ $previousDataRoot = $env:STAGEPAD_DATA_DIR
 $smokeRoot = Join-Path ([IO.Path]::GetTempPath()) ('StagePad-ui-check-' + [Guid]::NewGuid().ToString('N'))
 try {
     $env:STAGEPAD_DATA_DIR = $smokeRoot
+    & "$PSScriptRoot/tools/Test-AudioDecode.ps1" -Exe "$PSScriptRoot/artifacts/win-x64/StagePad.exe" -TempRoot $smokeRoot
     $uiCheck = Start-Process -FilePath "$PSScriptRoot/artifacts/win-x64/StagePad.exe" -ArgumentList '--check-ui-assets' -PassThru
     if (-not $uiCheck.WaitForExit(45000)) { $uiCheck.Kill(); throw 'Native WPF check timed out.' }
     if ($uiCheck.ExitCode -ne 0) {

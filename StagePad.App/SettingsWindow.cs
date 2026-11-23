@@ -7,7 +7,7 @@ namespace StagePad.App;
 internal sealed class SettingsWindow : Window
 {
     private sealed record LanguageOption(string Code,string Name);
-    private readonly TextBox memory=new(){Text="512",Width=90,VerticalContentAlignment=VerticalAlignment.Center};
+    private readonly TextBox memory=new(){Width=90,VerticalContentAlignment=VerticalAlignment.Center};
     private readonly TextBlock diagnostics=new(){TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12};
     private readonly TextBlock status=new(){TextWrapping=TextWrapping.Wrap,Foreground=Brushes.Orange};
     private readonly StackPanel memoryControls=new();
@@ -258,7 +258,7 @@ internal sealed class SettingsWindow : Window
         if(automaticSave!=null)automaticSave.IsEnabled=!current.ShowLocked;
         volumeControls.IsEnabled=!current.ShowLocked && !mappingSaving;
         memoryControls.IsEnabled=!current.ShowLocked && !saving;
-        if(!memory.IsKeyboardFocusWithin && !saving)memory.Text=(current.Project?.MemoryMiB??512).ToString(CultureInfo.InvariantCulture);
+        if(!memory.IsKeyboardFocusWithin && !saving)memory.Text=(current.Project?.MemoryMiB??ProjectDocument.DefaultMemoryMiB).ToString(CultureInfo.InvariantCulture);
         if(current.Project is {} project && !mappingSaving && !(masterChannel.IsKeyboardFocusWithin || masterCc.IsKeyboardFocusWithin || trackChannel.IsKeyboardFocusWithin || trackCc.IsKeyboardFocusWithin || masterStep.IsKeyboardFocusWithin || trackStep.IsKeyboardFocusWithin) && shownBindings!=(project.MasterControl,project.CurrentTrackControl))
         {
             shownBindings=(project.MasterControl,project.CurrentTrackControl);

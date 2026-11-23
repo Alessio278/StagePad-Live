@@ -10,6 +10,10 @@ Created by [@Alessio278](https://github.com/Alessio278)
 [English](README.md) - [Italiano](docs/README.it.md) - [Español](docs/README.es.md) - [Français](docs/README.fr.md)
 
 
+## Audio in 1.3
+
+New Shows start with a PCM budget of one eighth of the memory limit reported by .NET (128 to 3072 MiB). The budget is a ceiling. Existing Shows keep their saved setting. Tracks up to 25 minutes can play entirely from RAM. When memory is tight, StagePad prepares a disk read-ahead buffer before playback. A peak above full scale after conversion reduces the entire temporary track by one constant factor. Master and Slot at 100% apply unity gain. In Live view, gold marks elapsed audio and light gray marks the loop.
+
 ## Contents
 
 - [Quick start](#quick-start)
@@ -24,7 +28,7 @@ Created by [@Alessio278](https://github.com/Alessio278)
 
 ## Quick start
 
-1. Download **StagePad-Live-1.2-Windows.zip** from [Releases](https://github.com/Alessio278/StagePad-Live/releases), extract it and run **StagePad-1.2.exe**. No installation is needed.
+1. Download **StagePad-Live-1.3-Windows.zip** from [Releases](https://github.com/Alessio278/StagePad-Live/releases), extract it and run **StagePad-1.3.exe**. No installation is needed.
 2. In Setup, choose the audio device and MIDI ports. Start with a 40 ms audio buffer and run the audio test.
 3. Load audio, configure slot actions and use LEARN to assign MIDI pads. Choose the interface language from the gear icon.
 4. Save the show, switch to Live and enable SHOW LOCK. F11 toggles full screen; STOP ALL stops audio and cancels pending commands.

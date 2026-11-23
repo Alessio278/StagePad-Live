@@ -125,7 +125,7 @@ internal sealed class AudioCoordinator : IDisposable
         catch(Exception ex){Log.Warn("autosave-settings",ex.Message);}
         project=ProjectFiles.ReadStartup(out projectPath,out projectError);
         budget = new(project.MemoryMiB * 1048576L);
-        cache = System.IO.Path.Combine(Log.Root, "cache", instance);
+        cache = System.IO.Path.Combine(Log.Root, "cache", Environment.ProcessId + "-" + instance);
         device = new(mixer); inputLink = new(pipe + ".in"); outputLink = new(pipe + ".out");
         control = new Thread(Run) { IsBackground = true, Name = "StagePad audio control" };
         jobs.Add(()=>
@@ -788,6 +788,7 @@ internal sealed class AudioCoordinator : IDisposable
     {
         try
         {
+            long previousClip = 0, nextClipLog = 0;
             long nextSnapshot = 0; int previousFaults = 0;
             while (!stop.IsCancellationRequested)
             {
@@ -800,6 +801,13 @@ internal sealed class AudioCoordinator : IDisposable
                     StartSave(new("save-project",Path:projectPath,Origin:"auto-save"),new TaskCompletionSource<Reply>(TaskCreationOptions.RunContinuationsAsynchronously));
                 CheckEmergencyHolds();DispatchMarkers();
                 if (Environment.TickCount64 < nextSnapshot) continue; nextSnapshot = Environment.TickCount64 + 100;
+                long clipped = mixer.ClippedSamples;
+                if (clipped != previousClip && Environment.TickCount64 >= nextClipLog)
+                {
+                    Log.Warn("audio-clip", $"Output samples outside range: {clipped} total");
+                    previousClip = clipped;
+                    nextClipLog = Environment.TickCount64 + 5000;
+                }
                 if (mixer.CallbackFaults != previousFaults) { Log.Warn("audio-callback", $"Errori isolati: {mixer.CallbackFaults}"); previousFaults = mixer.CallbackFaults; }
                 var slots = Enumerable.Range(0, project.SlotCount).Select(i => { var v = mixer.View(i); return new SlotInfo(i, SlotTitles.Display(project.Slots[i],i), v.State.ToString(), v.Frame / (double)Mixer.Rate, v.Frames / (double)Mixer.Rate, v.Volume, v.Starvations, errors[i] ?? sources[i]?.Error, loading[i], generation[i],seeking[i],v.LoopPass,loopPreparing[i],slotTriggers[i],slotTriggeredAt[i],slotTriggerOk[i],emergencyHolds[i].Progress(Environment.TickCount64),uiHeld.Contains(i)||heldNotes.Values.Contains(i)); }).ToArray();
                 if(project.Routing.PadFeedbackOutput!=null || feedbackWasEnabled)

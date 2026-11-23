@@ -2,6 +2,12 @@
 
 Includes public releases and development builds. Version numbers before 1.1 retain their original format; some early build dates are unavailable.
 
+## 1.3 - Release candidate
+
+- Adaptive resident PCM, offline sample peak correction and output clipping diagnostics.
+- WASAPI stall recovery, owner-aware startup cleanup and clearer live playback position.
+- [Release notes](docs/releases/v1.3.md).
+
 ## 1.2 - Unreleased
 
 - Restored the creator credit below the header wordmark.

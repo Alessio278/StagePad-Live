@@ -79,7 +79,9 @@ public sealed record ProjectDocument
     public MarkerCaptureBinding? MarkerCapture {get;init;}
     public MidiCcBinding MasterControl {get;init;}=new();
     public MidiCcBinding CurrentTrackControl {get;init;}=new();
-    public int MemoryMiB { get; init; } = 512;
+    public static int DefaultMemoryMiB => (int)Math.Clamp(
+        GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (8 * 1048576L), 128, 3072);
+    public int MemoryMiB { get; init; } = DefaultMemoryMiB;
     public RoutingSettings Routing { get; init; } = new();
     public CommandDefaults CommandDefaults {get;init;}=new();
     public SlotSettings[] Slots { get; init; } = Enumerable.Range(0, 16).Select(Projects.DefaultSlot).ToArray();

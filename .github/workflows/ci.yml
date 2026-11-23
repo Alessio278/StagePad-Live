@@ -18,3 +18,6 @@ jobs:
       - name: Validate, test and build Windows
         shell: pwsh
         run: ./Build.ps1
+      - name: Exercise 25-minute PCM import in RAM and on disk
+        shell: pwsh
+        run: dotnet run --project tools/audio-tests -c Release

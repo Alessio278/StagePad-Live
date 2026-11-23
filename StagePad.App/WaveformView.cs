@@ -16,7 +16,7 @@ internal sealed class WaveformView : FrameworkElement
     private RectangleGeometry? loopClip;
     private StreamGeometry? geometry;
     private static readonly SolidColorBrush Ink=Frozen("#75B9B1"),BackgroundInk=Frozen("#101B28");
-    private static readonly Pen CursorPen=new(Brushes.White,1.5);
+    private static readonly Pen CursorPen=new(Brushes.White,3);
     private static SolidColorBrush Frozen(string hex){var b=new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));b.Freeze();return b;}
     static WaveformView()=>CursorPen.Freeze();
     public event Action<double>? SeekRequested,AddMarkerRequested;
@@ -128,6 +128,12 @@ internal sealed class WaveformView : FrameworkElement
         if(geometry!=null)
         {
             dc.DrawGeometry(Ink,null,geometry);
+            if(position>0)
+            {
+                dc.PushClip(new RectangleGeometry(new Rect(0,MarkerBand,position*ActualWidth,ActualHeight-MarkerBand)));
+                dc.DrawGeometry(Brushes.Goldenrod,null,geometry);
+                dc.Pop();
+            }
             if(loopClip!=null)
             {
                 dc.PushClip(loopClip);dc.DrawGeometry(LoopWaveInk,null,geometry);dc.Pop();

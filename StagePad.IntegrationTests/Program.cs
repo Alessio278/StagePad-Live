@@ -16,6 +16,17 @@ Directory.CreateDirectory(folder);File.WriteAllText(Path.Combine(folder,"setting
 Log.Start("integration");
 int checks = 0;
 void Check(bool value, string name) { if (!value) throw new Exception("FAIL: " + name); checks++; Console.WriteLine("PASS: " + name); }
+var cacheRoot = Path.Combine(folder, "cache-check");
+string CacheFolder(string prefix) => Directory.CreateDirectory(Path.Combine(cacheRoot, prefix + Guid.NewGuid().ToString("N"))).FullName;
+string PcmFile(string directory) => Path.Combine(directory, Guid.NewGuid().ToString("N") + ".pcm");
+var livePcm = PcmFile(CacheFolder(Environment.ProcessId + "-"));
+var stalePcm = PcmFile(CacheFolder(int.MaxValue + "-"));
+var legacyPcm = PcmFile(CacheFolder(""));
+var originalFile = Path.Combine(Path.GetDirectoryName(stalePcm)!, "original.mp3");
+foreach (var file in new[]{livePcm, stalePcm, legacyPcm, originalFile}) File.WriteAllText(file, "preserve");
+SessionCache.Prune(cacheRoot);
+Check(File.Exists(livePcm) && File.Exists(legacyPcm) && File.Exists(originalFile) && !File.Exists(stalePcm),
+    "startup prunes only inactive owner-tagged PCM files");
 string pipe = "stagepad-tests-" + Guid.NewGuid().ToString("N");
 using var input = new MidiInputModule(pipe); using var output = new MidiOutputModule(pipe);
 input.Start(); output.Start();
@@ -564,7 +575,7 @@ try
     await Do(new("marker-loop",4,Origin:markerInstance,SourceRevision:markerRevision,MarkerLoop:loopConfig));
     await Until(s=>s.Project!.Slots[4].MarkerLoop==loopConfig && !s.Slots[4].Loading,"loop prepared before ready");
     await Configure(4,s=>s with{MarkerLoop=null});await Until(s=>s.Project!.Slots[4].MarkerLoop==loopConfig,"slot settings preserve loop managed by marker editor");
-    Check((await State()).MemoryBytes==beforeLoopMemory+9600*8,"prepared loop RAM charged to shared budget");
+    Check((await State()).MemoryBytes==beforeLoopMemory,"resident loop shares budgeted PCM without a second allocation");
     await Do(new("play",4));await Until(s=>s.Slots[4].LoopPass>=3,"multiple engine loop passes",9000);
     Check((await State()).Slots[4].State=="Playing" && (await State()).Slots[4].Position>=2 && (await State()).Slots[4].Position<2.2 && (await State()).Slots[4].Underruns==0,"marker loop repeats without stopping or disk starvation");
     var insideLoopMarker=new AudioMarker{Seconds=2.1,Label="Inside applied loop",Color="#77CCFF"};

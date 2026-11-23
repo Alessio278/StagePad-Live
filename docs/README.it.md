@@ -10,6 +10,10 @@ Created by [@Alessio278](https://github.com/Alessio278)
 [English](../README.md) - [Italiano](README.it.md) - [Español](README.es.md) - [Français](README.fr.md)
 
 
+## Audio nella 1.3
+
+Per i nuovi Show il budget PCM iniziale è un ottavo della memoria utilizzabile indicata da .NET, tra 128 e 3072 MiB. È un tetto di spesa. Gli Show esistenti conservano il valore salvato. Le tracce fino a 25 minuti possono essere riprodotte interamente dalla RAM. Se la memoria scarseggia, StagePad prepara la lettura anticipata da disco prima della riproduzione. Se dopo la conversione un picco supera il fondo scala, un unico fattore riduce il livello di tutta la traccia temporanea. Master e Slot al 100% applicano guadagno unitario. In Serata la forma d’onda già ascoltata è dorata e il Loop resta grigio chiaro.
+
 ## Indice
 
 - [Avvio rapido](#avvio-rapido)
@@ -24,7 +28,7 @@ Created by [@Alessio278](https://github.com/Alessio278)
 
 ## Avvio rapido
 
-1. Scarica **StagePad-Live-1.2-Windows.zip** da [Releases](https://github.com/Alessio278/StagePad-Live/releases), estrailo e avvia **StagePad-1.2.exe**. Non serve installazione.
+1. Scarica **StagePad-Live-1.3-Windows.zip** da [Releases](https://github.com/Alessio278/StagePad-Live/releases), estrailo e avvia **StagePad-1.3.exe**. Non serve installazione.
 2. In Setup scegli dispositivo audio e porte MIDI. Parti da un buffer di 40 ms ed esegui il test audio.
 3. Carica le tracce, configura le azioni degli slot e assegna i pad con LEARN. La lingua si sceglie dall’icona ingranaggio.
 4. Salva lo show, passa a Serata e attiva SHOW LOCK. F11 apre lo schermo intero; STOP ALL ferma audio e comandi in attesa.

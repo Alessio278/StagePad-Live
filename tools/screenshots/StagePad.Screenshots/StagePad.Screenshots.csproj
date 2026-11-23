@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>StagePad</AssemblyName><RootNamespace>StagePad.App</RootNamespace>
-    <StartupObject>StagePad.App.ScreenshotProgram</StartupObject><Version>1.2</Version>
+    <StartupObject>StagePad.App.ScreenshotProgram</StartupObject><Version>1.3</Version>
     <Product>StagePad Live Screenshot Demo</Product><ApplicationIcon>../../../StagePad.App/Assets/StagePad.ico</ApplicationIcon>
     <DefineConstants>$(DefineConstants);STAGEPAD_TESTS;STAGEPAD_SCREENSHOTS</DefineConstants>
     <PublishTrimmed>false</PublishTrimmed>

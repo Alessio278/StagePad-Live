@@ -73,16 +73,8 @@ public static class Program
         if(!legacyFree){MessageBox.Show("Chiudi la precedente applicazione prima di avviare StagePad.","StagePad");return 1;}
         try{LegacyDataMigration.Run(Log.Root);}catch(Exception ex){previousPreview.ReleaseMutex();Log.Error("data-migration",ex);MessageBox.Show("Recupero dei progetti non completato. I dati precedenti sono conservati.\n"+ex.Message,"StagePad");return 2;}
         using var closeSignal=LifecycleSignals.Create("-"+Environment.ProcessId);
-        _=Task.Run(()=>
-        {
-            try
-            {
-                string cache=Path.Combine(Log.Root,"cache");
-                if(Directory.Exists(cache))foreach(string folder in Directory.EnumerateDirectories(cache))
-                    if(Directory.GetLastWriteTimeUtc(folder)<DateTime.UtcNow.AddDays(-1))Directory.Delete(folder,true);
-            }
-            catch(Exception ex){Log.Warn("cache-prune",ex.Message);}
-        });
+        try { SessionCache.Prune(Path.Combine(Log.Root, "cache")); }
+        catch (Exception ex) { Log.Warn("cache-prune", ex.Message); }
         string pipe = "stagepad-" + Guid.NewGuid().ToString("N");
         string[] roles = ["--audio", "--midi-in", "--midi-out", "--ui"];
         var processes = new Dictionary<string, Process>();
