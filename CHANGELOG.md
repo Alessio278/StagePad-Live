@@ -4,6 +4,9 @@ Includes public releases and development builds. Version numbers before 1.1 reta
 
 ## [1.4 - Slot launch protection](docs/releases/v1.4.md)
 
+- Three independent launch controls, Global pause, a reorganized slot editor and configurable multiline tooltips.
+- Running version in the header and contextual LED output status.
+
 ## 1.3 - Release candidate
 
 - Adaptive resident PCM, offline sample peak correction and output clipping diagnostics.

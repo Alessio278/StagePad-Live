@@ -1,22 +1,15 @@
-# Screenshot generator
+# Capture the StagePad Live interface
 
-Development tool for native StagePad Live screenshots in Italian, English,
-Spanish and French. The demo uses isolated sample data and does not open
-Audio/MIDI devices or send OSC.
+This Windows development tool captures the native interface with an isolated demo show in Italian, English, Spanish and French. It uses sample data and sends no audio, MIDI or OSC output.
 
-## Build and capture
-
-On Windows with the .NET SDK from the repository global.json:
+1. Install the Windows .NET SDK specified in [global.json](../../global.json).
+2. From the repository root, run the build command below. It checks the demo data and creates the portable capture tool in `artifacts/screenshot-demo`.
+3. Open `Cattura-Screenshot.cmd` in that folder. Leave the windows untouched until the gallery opens.
 
 ```powershell
 .\tools\screenshots\Build-Screenshots.ps1
 ```
 
-The build runs the demo data checks and prepares `artifacts/screenshot-demo`
-at the repository root. Open `Cattura-Screenshot.cmd` in that output folder.
-It creates four localized folders and a gallery. See the included
-`SCREENSHOTS-README.txt` for capture details.
+Each language folder contains 13 PNG files, a README and a capture report. The top-level HTML index links to all four galleries.
 
-The two projects and all capture scripts are kept here. They are separate
-from the main application build and are not required to run StagePad Live.
-Documentation images remain in `docs/screenshots`.
+[Portable capture instructions in Italian](SCREENSHOTS-README.txt) · [Documentation galleries](../../docs/screenshots/README.md)

@@ -1,39 +1,11 @@
-StagePad Live 1.3 - Screenshot Demo - 4 lingue
+StagePad Live | Guida alla cattura delle schermate
 
-Estrai tutto lo ZIP e avvia Cattura-Screenshot.cmd su Windows 10/11 x64.
-Non serve installare .NET. Non avviare direttamente il file PS1.
+Su Windows 10 o 11 x64, estrai tutto il pacchetto e avvia Cattura-Screenshot.cmd. Il runtime è incluso. Durante la cattura lascia aperte le finestre e attendi il messaggio finale. La procedura può richiedere circa un minuto.
 
-Un solo avvio crea una nuova cartella screenshots-data-ora con:
-  it - Italiano, 13 PNG
-  en - English, 13 PNG
-  es - Espanol, 13 PNG
-  fr - Francais, 13 PNG
-Al termine si apre index.html con i collegamenti alle quattro gallerie.
-Ogni lingua include anche README.md e capture-result.json con testi tradotti.
+Il programma apre index.html nella nuova cartella di cattura. Da qui puoi scegliere italiano, inglese, spagnolo o francese. Ogni lingua ha 13 immagini PNG, un README e il resoconto capture-result.json. I file PNG hanno gli stessi nomi in tutte le lingue.
 
-Sono tradotti interfaccia, nomi demo di tracce e Show, etichette dei Marker,
-nomi degli Slot, descrizioni e testi delle gallerie.
-I termini tecnici universali (MIDI, OSC, Audio, Master, LEARN, Cue, ON/OFF,
-Intro, Setup, Live, Loop, Marker, Soundcheck) e i nomi tecnici dei file
-restano in inglese. Aurora e il nome inventato dello Show.
-I nomi dei file PNG sono identici nelle quattro cartelle per integrarli
-facilmente nei README delle diverse lingue.
+Le schermate mostrano la configurazione, la vista live, il player, i marker, i loop, gli slot e la gestione degli show. Le immagini sono acquisite a risoluzione 2x con sfondo opaco e senza la barra di Windows.
 
-Contenuti: Setup, Live, Player/Marker/Loop, gestione Marker, Slot Audio,
-MIDI, OSC, emergenza, + Marker, Settings, volumi MIDI e Show.
-Le catture mostrano i controlli WPF originali con dati dimostrativi.
-Le immagini sono a risoluzione 2x, senza barra del sistema operativo,
-con sfondo scuro opaco per essere leggibili anche su pagine chiare.
+Ogni lingua usa un processo separato con dati dimostrativi in una cartella temporanea. Gli show personali e le impostazioni dell’app restano intatti. La cattura funziona senza periferiche audio o MIDI e senza inviare comandi OSC.
 
-Non viene riprodotto Audio, aperto alcun dispositivo o inviato MIDI/OSC.
-Ogni lingua usa un processo e una cartella temporanea separati.
-Gli Show e le impostazioni dell'installazione ordinaria non vengono letti
-o modificati. Le finestre si chiudono automaticamente: non interagire.
-La cattura puo richiedere circa un minuto; attendi il messaggio finale.
-
-Dati demo e traduzioni verificati per tutte le lingue; compilazione Windows
-verificata. La cattura WPF nativa va verificata su Windows: non e eseguibile
-nell'ambiente Linux di preparazione.
-Il programma non e firmato, quindi SmartScreen puo mostrare un avviso.
-Questo generatore e separato dalla release StagePad Live 1.3.
-
+Il generatore è uno strumento di sviluppo separato dall’app. L’eseguibile è privo di firma digitale e Windows può mostrare un avviso SmartScreen.

@@ -1,10 +1,10 @@
-# StagePad Live 1.1 - Screenshots
+# Screenshot galleries
 
-Screenshots of the native StagePad Live interface with isolated demo data.
+Choose a language to see all 13 screens from StagePad Live 1.1. Each gallery follows the same demo show through setup, playback, marker editing, MIDI and OSC commands, and saving.
 
-- [Italiano](it/README.md)
 - [English](en/README.md)
+- [Italiano](it/README.md)
 - [Español](es/README.md)
 - [Français](fr/README.md)
 
-Each language has 13 PNG screenshots. Names are consistent across locales; UI text, track names, Show names and Marker labels are localized.
+For the current controls, see the [StagePad Live guide](../../README.md).

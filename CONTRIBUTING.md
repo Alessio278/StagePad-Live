@@ -19,3 +19,13 @@ Contributions are distributed under the repository's MIT License. Report vulnera
 The optional [screenshot generator](tools/screenshots/README.md) contains the
 demo projects and capture scripts. Generated documentation images are in
 `docs/screenshots`.
+
+## Publish a stable Windows release
+
+1. Prepare the changes on a branch. Increase the major.minor Version in `StagePad.App/StagePad.App.csproj` and write `docs/releases/vX.Y.md` for that version. Describe the user-visible changes since the preceding stable release.
+2. Merge into `main`. Actions compares the versions before and after the push. A numeric increase starts the release job, which runs the existing Windows checks before publishing. Commits that retain the version run the regular Windows CI.
+3. After GitHub publishes the release, Actions dispatches **Windows build and tests** on its tag, including the 25-minute audio check. A failure in these additional checks is reported on that workflow. The release is already public at this point.
+
+Each main README links to the latest stable release under **What's New**. The release notes file supplies that page when the workflow publishes it. Keep past notes in `docs/releases`.
+
+The initial creation of main has no previous version to compare. Use the manual release workflow on main for that case or to publish an already committed version. Pushing a tag alone does not start publication. Pull requests and manual Windows CI runs remain available.

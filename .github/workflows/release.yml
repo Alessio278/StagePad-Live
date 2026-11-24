@@ -1,15 +1,26 @@
 name: Publish stable Windows release
 on:
   push:
-    tags: ['v*']
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
-concurrency:
-  group: stable-release
-  cancel-in-progress: false
 jobs:
+  version-change:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/version-change.yml
+    permissions:
+      contents: read
   release:
+    concurrency:
+      group: stable-release
+      cancel-in-progress: false
+    needs: version-change
+    if: >-
+      ${{ !cancelled() && (github.event_name == 'workflow_dispatch' ||
+          needs.version-change.outputs.increased == 'true') }}
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -26,7 +37,6 @@ jobs:
           $version = ([xml](Get-Content 'StagePad.App/StagePad.App.csproj')).Project.PropertyGroup.Version
           $tag = "v$version"
           if ($version -notmatch '^\d+\.\d+$') { throw 'Version must use major.minor format.' }
-          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne $tag) { throw 'Tag and source versions differ.' }
           if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and $env:GITHUB_REF_NAME -ne 'main') { throw 'Run stable publication from main.' }
           if (-not (Test-Path "docs/releases/$tag.md")) { throw 'Release notes missing.' }
           $existing = git tag --list $tag
@@ -70,3 +80,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Release asset upload failed.' }
           gh release edit $env:RELEASE_TAG --draft=false --prerelease=false --latest --title "StagePad Live $env:RELEASE_VERSION" --notes-file "docs/releases/$env:RELEASE_TAG.md"
           if ($LASTEXITCODE -ne 0) { throw 'Stable publication failed.' }
+
+  start-windows-tests:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Run Windows build and tests on the published tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release.outputs.tag }}
+        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"

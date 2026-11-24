@@ -7,7 +7,14 @@ on:
 permissions:
   contents: read
 jobs:
+  version-change:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/version-change.yml
   build:
+    needs: version-change
+    if: >-
+      ${{ !cancelled() && (github.event_name != 'push' ||
+          needs.version-change.outputs.increased == 'false') }}
     runs-on: windows-latest
     timeout-minutes: 25
     steps:

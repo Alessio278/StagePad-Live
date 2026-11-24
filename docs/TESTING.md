@@ -65,3 +65,13 @@ To exercise the production isolated importer outside WPF, run `dotnet run --proj
 Linux, .NET SDK 10.0.100, Release configuration. Core: 466 checks passed. Integration: 541 checks passed using simulated hardware. The production importer processed 72,000,000 stereo frames in each of two independent imports from the 25-minute WAV. With an 800 MiB budget the complete track was resident; with 128 MiB it used disk read-ahead. The measured peak in the checked block was 1.0 in both runs. Both reservations returned to zero after disposal. The separate 25-minute mixer simulation exercised continuous rendering and repeated volume changes faster than wall-clock time.
 
 The Windows-targeted app and screenshot tool compiled with zero warnings/errors; demo data checks passed in four languages. Media Foundation MP3 decoding, native WPF rendering, physical MIDI, long wall-clock WASAPI playback and VLC level matching remain Windows acceptance items.
+
+
+## Windows acceptance for the 1.4 preview
+
+1. Open a copy of a 1.3 Show. Check that existing slots keep their launch behavior. Save and reopen in 1.4.
+2. Play a backing track, then launch a pad that blocks other audio starts. Check that the backing continues and pressing another mixed cue sends neither audio nor its MIDI/OSC commands. After the blocking pad ends, check that a fresh press starts the cue.
+3. Start a pad that stops other slots. Check immediate entry and the outgoing fade duration of each track. Compare with Global pause, which preserves track positions.
+4. Release a protected pad before three seconds, then hold it through the countdown. Repeat with a momentary MIDI controller. Check cancellation and single activation.
+5. Hover over the audio-blocking checkbox near the screen edge. Read the last line, move to another control and switch windows. Disable tips in Settings, restart, and verify that the preference persists.
+6. Check the version beside the wordmark. With LED output disabled, verify the selector shows its state only once. Apply a dedicated port and check connection or error feedback.
