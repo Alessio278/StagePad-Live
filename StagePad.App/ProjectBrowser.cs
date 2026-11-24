@@ -11,7 +11,7 @@ internal sealed class ProjectBrowser : Border
     { public string Display=>System.IO.Path.GetFileNameWithoutExtension(FileName)+"   ·   "+Modified.ToLocalTime().ToString("g"); }
     private readonly ListBox projects=new(){Background=new SolidColorBrush(Color.FromRgb(15,25,38)),Foreground=Brushes.White,BorderThickness=new Thickness(1),BorderBrush=new SolidColorBrush(Color.FromRgb(41,60,81)),DisplayMemberPath="Display",Margin=new Thickness(0,8,0,8)};
     private readonly TextBox packagePath=new(){MaxLength=1024};
-    private readonly ComboBox packages=new(){Margin=new Thickness(0,5,0,5)};
+    private readonly ComboBox packages=new(){ToolTip="Scegli il pacchetto show da importare.",Margin=new Thickness(0,5,0,5)};
     private readonly StackPanel packagePanel=new(){Visibility=Visibility.Collapsed};
     private readonly TextBox name=new(){MaxLength=110,Margin=new Thickness(0,5,0,8)};
     private readonly TextBlock autosaveStatus=new(){Foreground=Brushes.MediumAquamarine,FontSize=12,Margin=new Thickness(0,4,0,4)};

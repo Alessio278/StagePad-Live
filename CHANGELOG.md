@@ -2,6 +2,8 @@
 
 Includes public releases and development builds. Version numbers before 1.1 retain their original format; some early build dates are unavailable.
 
+## [1.4 - Slot launch protection](docs/releases/v1.4.md)
+
 ## 1.3 - Release candidate
 
 - Adaptive resident PCM, offline sample peak correction and output clipping diagnostics.
@@ -42,7 +44,7 @@ Includes public releases and development builds. Version numbers before 1.1 reta
 - Shared show destinations with linked/custom per-command targeting, cumulative wait timeline and duplicate-last command shortcuts.
 - Configured-pad tint and stronger activation feedback; command-only player details and per-slot trigger counters.
 - Optional continuous three-second emergency hold across mouse/keyboard/MIDI, with early-release/disconnect/STOP/panic cancellation and one activation per hold.
-- Optional generic Note On LED feedback on a separate isolated MIDI output; no verified Donner RGB profile claimed.
+- Optional generic Note On LED feedback on a separate isolated MIDI output.
 - Show schema 2 protects new settings from being silently ignored by 1.0; schema-1 import retained.
 
 ## 1.0.0 - 2026-11-13

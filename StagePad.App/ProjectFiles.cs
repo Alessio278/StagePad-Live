@@ -59,7 +59,7 @@ internal static class ProjectFiles
     }
     public static void Write(string path, ProjectDocument p, bool relative, bool session=false, string? activePath=null)
     {
-        p=p with{Schema=4};Projects.Validate(p); path = System.IO.Path.GetFullPath(path);
+        p=p with{Schema=5};Projects.Validate(p); path = System.IO.Path.GetFullPath(path);
         string folder = System.IO.Path.GetDirectoryName(path)!; Directory.CreateDirectory(folder);
         if (relative) p = p with { Slots = p.Slots.Select(s => s with { File = s.File == null ? null : System.IO.Path.GetRelativePath(folder, s.File) }).ToArray() };
         string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";

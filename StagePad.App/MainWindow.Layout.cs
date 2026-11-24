@@ -8,11 +8,11 @@ internal sealed partial class MainWindow
 {
     private readonly TextBlock inputBadge=Text("● MIDI IN · AVVIO",11), outputBadge=Text("● MIDI OUT · AVVIO",11);
     private Panel? sidebarSettings;
-    private readonly ComboBox gridRows=new(){ItemsSource=Enumerable.Range(1,10).ToArray(),SelectedItem=4},gridColumns=new(){ItemsSource=Enumerable.Range(1,10).ToArray(),SelectedItem=4};
+    private readonly ComboBox gridRows=new(){ToolTip="Imposta il numero di righe della griglia.",ItemsSource=Enumerable.Range(1,10).ToArray(),SelectedItem=4},gridColumns=new(){ToolTip="Imposta il numero di colonne della griglia.",ItemsSource=Enumerable.Range(1,10).ToArray(),SelectedItem=4};
     private StagePad.Core.GridLayout? appliedGrid, appliedSetupGrid;
     private bool liveView;
     private StackPanel? gridToolbar;
-    private readonly ComboBox slotCount=new(){ItemsSource=Enumerable.Range(1,StagePad.Core.Projects.MaxSlots).ToArray(),SelectedItem=16};
+    private readonly ComboBox slotCount=new(){ToolTip="Scegli quanti slot rendere disponibili nello show.",ItemsSource=Enumerable.Range(1,StagePad.Core.Projects.MaxSlots).ToArray(),SelectedItem=16};
     private int appliedSlotCount=16,appliedGridSlotCount=-1;
     private static FrameworkElement HealthChip(TextBlock label)
     {

@@ -9,7 +9,7 @@ internal static class CommandForm
     public static readonly Brush Accent=new SolidColorBrush(Color.FromRgb(117,226,193));
     public static FrameworkElement Row(string label,FrameworkElement editor)
     {
-        var grid=new Grid {Margin=new Thickness(0,4,0,4)};grid.ColumnDefinitions.Add(new(){Width=new GridLength(.4,GridUnitType.Star)});grid.ColumnDefinitions.Add(new(){Width=new GridLength(.6,GridUnitType.Star)});
+        var grid=new Grid {Margin=new Thickness(0,5,0,5)};grid.ColumnDefinitions.Add(new(){Width=new GridLength(.4,GridUnitType.Star)});grid.ColumnDefinitions.Add(new(){Width=new GridLength(.6,GridUnitType.Star)});
         grid.Children.Add(new TextBlock {Text=label,TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)});
         Grid.SetColumn(editor,1);grid.Children.Add(editor);return grid;
     }
@@ -27,7 +27,7 @@ internal static class CommandForm
         var button=new Button{Content="Test ora",Margin=new Thickness(0,6,0,6)};L.Bind(button,ContentControl.ContentProperty,"Test ora");row.Children.Add(button);body.Children.Add(status);
         button.Click+=async(_,_)=>{button.IsEnabled=false;try{var reply=await test();status.Text=reply.Ok?L.T("Comando trasmesso."):L.Message(reply.Error??"Comando non riuscito.");}catch(Exception ex){status.Text=L.Message(ex.Message);}finally{button.IsEnabled=true;}};
     }
-    public static Border Card(UIElement child)=>new(){Child=child,Background=new SolidColorBrush(Color.FromRgb(18,29,43)),BorderBrush=new SolidColorBrush(Color.FromRgb(41,60,81)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(8),Padding=new Thickness(12),Margin=new Thickness(0,6,0,6)};
+    public static Border Card(UIElement child)=>new(){Child=child,Background=new SolidColorBrush(Color.FromRgb(18,29,43)),BorderBrush=new SolidColorBrush(Color.FromRgb(41,60,81)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(8),Padding=new Thickness(14),Margin=new Thickness(0,8,0,8)};
 }
 internal sealed class MidiCommandEditor : ContentControl
 {
@@ -56,7 +56,7 @@ internal sealed class MidiCommandEditor : ContentControl
     private void Text(string label,object value,MidiKind[] kinds)
     {var field=CommandForm.Text(value);texts[label]=field;var row=CommandForm.Row(label,field);body.Children.Add(row);rows.Add((row,kinds));if(label=="Canale OUT 1-16")channelRow=row;if(label=="Device ID 0-127")deviceIdRow=row;}
     private void Choice<T>(string label,T value,MidiKind[]? kinds,Func<T,string>? captions=null)where T:struct,Enum
-    {var combo=CommandForm.Choice(value,captions);choices[label]=combo;var row=CommandForm.Row(label,combo);body.Children.Add(row);if(kinds!=null)rows.Add((row,kinds));}
+    {var combo=CommandForm.Choice(value,captions);combo.ToolTip=label switch { "Protocollo" => "Scegli il tipo di messaggio MIDI da inviare.", "Nota" => "Scegli quando inviare Note Off per chiudere la nota.", "Comando MSC" => "Scegli il comando da inviare al dispositivo MSC.", _ => "Scegli il formato dell’indirizzo executor e pagina." };choices[label]=combo;var row=CommandForm.Row(label,combo);body.Children.Add(row);if(kinds!=null)rows.Add((row,kinds));}
     private void Update(){var kind=(MidiKind)choices["Protocollo"].SelectedValue;foreach(var row in rows)row.Row.Visibility=row.Kinds.Contains(kind)?Visibility.Visible:Visibility.Collapsed;}
     private int N(string label)=>int.Parse(texts[label].Text,CultureInfo.InvariantCulture);
     public MidiSettings Read()
@@ -99,6 +99,7 @@ internal sealed class OscCommandEditor : ContentControl
         var remove=CommandForm.Button("Rimuovi",()=>{values.RemoveAll(v=>ReferenceEquals(v.Row,row));arguments.Children.Remove(row);add.IsEnabled=true;});
         row.Children.Add(type);Grid.SetColumn(text,1);row.Children.Add(text);Grid.SetColumn(remove,2);row.Children.Add(remove);
         void Update()=>text.Visibility=(OscArgumentType)type.SelectedValue is OscArgumentType.True or OscArgumentType.False?Visibility.Collapsed:Visibility.Visible;
+        type.ToolTip="Scegli il tipo di dato da inviare in questo argomento OSC.";
         type.SelectionChanged+=(_,_)=>Update();Update();values.Add((row,type,text));arguments.Children.Add(row);add.IsEnabled=values.Count<16;L.Apply(row);
     }
     public OscCommand Read()

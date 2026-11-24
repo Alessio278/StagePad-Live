@@ -15,8 +15,8 @@ internal sealed partial class MainWindow : Window
     private readonly TextBlock showName = Text("Show: …", 11);
     private readonly TextBlock status = Text("● AUDIO · CONNESSIONE", 11);
     private readonly TextBlock warning = Text("", 12);
-    private readonly ComboBox outputs = new() { MinWidth = 280, DisplayMemberPath = "Name", SelectedValuePath = "Id" };
-    private readonly ComboBox latency = new() { Width = 90, ItemsSource = new[] { 20, 40, 80 }, SelectedItem = 40 };
+    private readonly ComboBox outputs = new() {ToolTip="Seleziona il dispositivo su cui ascoltare l’audio dello show.", MinWidth = 280, DisplayMemberPath = "Name", SelectedValuePath = "Id" };
+    private readonly ComboBox latency = new() {ToolTip="Scegli la durata del buffer audio in millisecondi.", Width = 90, ItemsSource = new[] { 20, 40, 80 }, SelectedItem = 40 };
     private readonly Slider master = new() { Minimum = 0, Maximum = 1, Value = 1, Width = 160 };
     private readonly Slider[] volumes = new Slider[StagePad.Core.Projects.MaxSlots];
     private readonly TextBlock[] titles = new TextBlock[StagePad.Core.Projects.MaxSlots], states = new TextBlock[StagePad.Core.Projects.MaxSlots], times = new TextBlock[StagePad.Core.Projects.MaxSlots];
@@ -77,6 +77,9 @@ internal sealed partial class MainWindow : Window
         var brandText=new StackPanel();var brandLine=new StackPanel { Orientation=Orientation.Horizontal };
         var wordmark=Text("STAGEPAD",20);wordmark.FontWeight=FontWeights.SemiBold;wordmark.Margin=new Thickness(0);brandLine.Children.Add(wordmark);
         var liveBadge=Text("LIVE",10);liveBadge.FontWeight=FontWeights.SemiBold;liveBadge.Foreground=Brush("#75E2C1");liveBadge.Margin=new Thickness(3,0,0,3);liveBadge.VerticalAlignment=VerticalAlignment.Bottom;brandLine.Children.Add(liveBadge);
+        var version=Text("v"+AppUpdates.Current.ToString(2),11);
+        version.Foreground=Brush("#A6BAD0");version.Margin=new Thickness(9,0,0,3);
+        version.VerticalAlignment=VerticalAlignment.Bottom;brandLine.Children.Add(version);
         brandText.Children.Add(brandLine);
         var credit=Text("Created by @Alessio278",9);L.Preserve(credit);credit.Foreground=Brush("#6D859E");credit.Margin=new Thickness(0,1,0,0);brandText.Children.Add(credit);brand.Children.Add(brandText);header.Children.Add(brand);
         var navigation = new StackPanel { Orientation = Orientation.Horizontal };
@@ -394,7 +397,7 @@ internal sealed partial class MainWindow : Window
             foreach (var v in s.Slots)
             {
                 int i = v.Index; titles[i].Text = v.Name;
-                states[i].Text = L.Message(s.Project?.Slots[i].EmergencyPauseAll==true?"EMERGENZA":v.Seeking?"POSIZIONE…":v.Loading ? "CARICAMENTO…" : v.Error != null ? "ERRORE · " + Label(v.State) : s.Project is {} activeProject && !StagePad.Core.SlotActions.Audio(activeProject.Slots[i].Action) ? (StagePad.Core.SlotActions.Osc(activeProject.Slots[i].Action)?(StagePad.Core.SlotActions.Midi(activeProject.Slots[i].Action)?"MIDI + OSC":"COMANDO OSC"):"COMANDO MIDI") : Label(v.State));
+                states[i].Text = L.Message(s.Project?.Slots[i].EmergencyPauseAll==true?"PAUSA GLOBALE":v.Seeking?"POSIZIONE…":v.Loading ? "CARICAMENTO…" : v.Error != null ? "ERRORE · " + Label(v.State) : s.Project is {} activeProject && !StagePad.Core.SlotActions.Audio(activeProject.Slots[i].Action) ? (StagePad.Core.SlotActions.Osc(activeProject.Slots[i].Action)?(StagePad.Core.SlotActions.Midi(activeProject.Slots[i].Action)?"MIDI + OSC":"COMANDO OSC"):"COMANDO MIDI") : Label(v.State));
                 titles[i].Foreground=liveTitles[i].Foreground=Brushes.White;
                 var stateBrush = Brush(v.Error!=null?"#EF7E8A":v.State=="Playing"?"#75E2C1":i==current?"#95ABF8":"#293C51");
                 cards[i].BorderBrush = stateBrush; liveCards[i].BorderBrush = stateBrush;

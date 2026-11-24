@@ -19,7 +19,7 @@ internal sealed class MarkerWindow : Window
     private readonly TextBlock count=new(){Foreground=Brushes.LightSlateGray};
     private readonly Button save=new(){Content="Salva marker"},remove=new(){Content="Elimina marker"};
     private readonly StackPanel colorHost=new();
-    private readonly ComboBox loopStart=new(),loopEnd=new(),trimStart=new(),trimEnd=new();
+    private readonly ComboBox loopStart=new(){ToolTip="Scegli il marker da cui riparte il loop."},loopEnd=new(){ToolTip="Scegli il marker che chiude il loop."},trimStart=new(){ToolTip="Scegli il marker da cui parte la traccia."},trimEnd=new(){ToolTip="Scegli il marker in cui termina la traccia."};
     private MarkerTrim? shownTrim;
     private bool trimInitialized;
     private readonly TextBlock trimStatus=new(){Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};

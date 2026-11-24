@@ -13,8 +13,8 @@ internal sealed partial class MainWindow
         if(updatesWindow==null){updatesWindow=new UpdateWindow(SendReply,parent){Owner=this};updatesWindow.Closed+=(_,_)=>updatesWindow=null;updatesWindow.Show();}else updatesWindow.Activate();return Task.CompletedTask;
     }
     private readonly WaveformView waveform = new() { Height = 40, Margin = new Thickness(0,3,0,3) };
-    private readonly ComboBox midiInput = new() { MinWidth = 200, DisplayMemberPath = "Name", SelectedValuePath = "Id" };
-    private readonly ComboBox midiOutput = new() { MinWidth = 200, DisplayMemberPath = "Name", SelectedValuePath = "Id" };
+    private readonly ComboBox midiInput = new() {ToolTip="Scegli il controller che aziona i pad.", MinWidth = 200, DisplayMemberPath = "Name", SelectedValuePath = "Id" };
+    private readonly ComboBox midiOutput = new() {ToolTip="Scegli la porta che riceve i comandi MIDI dello show.", MinWidth = 200, DisplayMemberPath = "Name", SelectedValuePath = "Id" };
     private readonly TextBlock masterPercent = Text("100%", 16);
     private Button? lockSwitch;
     private RoutingSettings? lastRoute;

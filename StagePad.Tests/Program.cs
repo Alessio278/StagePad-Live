@@ -542,6 +542,8 @@ try
 }
 finally{File.Delete(tinyWave);}
 Check(StagePad.App.UiPreferences.Parse("{}").AutoSaveProjects,"auto-save defaults to enabled for existing settings");
+Check(StagePad.App.UiPreferences.Parse("{}").ShowTooltips,"tooltips enabled for existing settings");
+Check(!StagePad.App.UiPreferences.Parse((customPreferences with {ShowTooltips=false}).ToJson()).ShowTooltips,"disabled tooltips persist across restart");
 var autoPrefs=new StagePad.App.UiPreferences(AutoSaveProjects:false);Check(!StagePad.App.UiPreferences.Parse(autoPrefs.ToJson()).AutoSaveProjects,"auto-save preference roundtrips independently of show data");
 // 1.1: emergency guard, defaults, content and device-specific feedback values.
 var guard=new HoldActivation();guard.Press("mouse",1000);guard.Press("mouse",2500);
@@ -570,7 +572,7 @@ Check(destinations.Resolve(new MidiSettings{Channel=3}).Channel==3,"custom MIDI 
 var linkedOsc=destinations.Resolve(new OscCommand{UseShowDestination=true,Host="127.0.0.1",Port=8000,Address="/channel/1/mute"});
 Check(linkedOsc.Host==destinations.OscHost && linkedOsc.Port==9000 && linkedOsc.Address=="/channel/1/mute","shared OSC target changes host/port without changing per-command address");
 Check(destinations.Resolve(new OscCommand{Port=8123}).Port==8123,"custom OSC target does not follow global defaults");
-Projects.Validate(new(){Schema=1});Check(new ProjectDocument().Schema==4,"1.2 accepts legacy shows but writes schema 4 to prevent old apps ignoring playback cuts");
+Projects.Validate(new(){Schema=1});Check(new ProjectDocument().Schema==5,"1.4 accepts legacy shows and writes schema 5");
 Check(new ProjectDocument().Slots.All(s=>s.Action==SlotAction.None && !s.EmergencyPauseAll),"new show starts with no actions selected");
 var volumeDefaults=Projects.Resize(new(){DefaultSlotVolume=.42f},20);
 Check(volumeDefaults.Slots[16].Volume==.42f && volumeDefaults.Slots[0].Volume==1,"new slots inherit volume without overwriting existing slots");
@@ -619,9 +621,15 @@ Check(trimAllocatedBytes==0,"trimmed loop audio callback allocates no managed me
 var trimReading=StagePad.App.UiPlaybackClock.Read(.15,1,false,false,1000,1000,trimStart:.1,trimEnd:.3);
 Check(Math.Abs(trimReading.Position-.15)<.000001 && trimReading.Duration==1 && trimReading.Elapsed==0 && trimReading.Remaining==1,"trimmed UI clock reports effective duration without losing source coordinates");
 Check(StagePad.App.UiPlaybackClock.Read(.3,1,false,true,1000,1000,trimStart:.1,trimEnd:.3).Remaining==0,"trim end shows zero remaining");
+var legacyLaunchSlot=System.Text.Json.JsonSerializer.Deserialize<SlotSettings>("{}",Projects.Json)!;
+Check(!legacyLaunchSlot.BlockOtherStarts && !legacyLaunchSlot.StopOthersOnStart && !legacyLaunchSlot.RequiresHold,"old slots keep launch behavior");
+var launchShow=new ProjectDocument{SlotCount=1,Slots=[legacyLaunchSlot with{HoldToStart=true,BlockOtherStarts=true,StopOthersOnStart=true}]};
+var launchCopy=System.Text.Json.JsonSerializer.Deserialize<ProjectDocument>(System.Text.Json.JsonSerializer.Serialize(launchShow,Projects.Json),Projects.Json)!;
+Projects.Validate(launchCopy);Projects.Validate(launchCopy with{Schema=4,Slots=[legacyLaunchSlot]});
+Check(launchCopy.Slots[0] is {RequiresHold:true,BlockOtherStarts:true,StopOthersOnStart:true},"launch protections survive show roundtrip");
 var trimShow=new ProjectDocument{Slots=[new(){Markers=trimMarkers,MarkerTrim=trimValue}],SlotCount=1};Projects.Validate(trimShow);
 var trimCopy=System.Text.Json.JsonSerializer.Deserialize<ProjectDocument>(System.Text.Json.JsonSerializer.Serialize(trimShow,Projects.Json),Projects.Json)!;
-Check(trimCopy.Schema==4 && trimCopy.Slots[0].MarkerTrim==trimValue,"schema 4 roundtrip preserves non-destructive playback bounds");
+Check(trimCopy.Schema==5 && trimCopy.Slots[0].MarkerTrim==trimValue,"schema 5 roundtrip preserves non-destructive playback bounds");
 var cancelledStartMixer=new Mixer();cancelledStartMixer.Post(new(AudioOp.Install,Source:new MemorySource(audio)));cancelledStartMixer.Render(output);
 cancelledStartMixer.Post(new(AudioOp.Play,Ticket:1234));cancelledStartMixer.Panic();cancelledStartMixer.Render(output);
 Check(cancelledStartMixer.AppliedTicket==1234 && cancelledStartMixer.View(0).State==VoiceState.Stopped,"PANIC acknowledges cancelled start fences without restarting audio");

@@ -10,6 +10,8 @@ Created by [@Alessio278](https://github.com/Alessio278)
 [English](../README.md) - [Italiano](README.it.md) - [Español](README.es.md) - [Français](README.fr.md)
 
 
+## [Protección de inicio de slots en 1.4](releases/v1.4.md)
+
 ## Audio en la versión 1.3
 
 El presupuesto PCM inicial de un Show nuevo es un octavo de la memoria disponible indicada por .NET, entre 128 y 3072 MiB. Es un límite de uso. Los Shows existentes conservan el valor guardado. Las pistas de hasta 25 minutos pueden reproducirse íntegramente desde la RAM. Si hay poca memoria, StagePad prepara la lectura anticipada desde el disco. Si un pico supera el fondo de escala tras la conversión, se aplica una ganancia constante a toda la pista temporal. Master y Slot al 100% aplican ganancia unitaria. En directo, la parte reproducida aparece en dorado y el Loop en gris claro.
@@ -28,7 +30,7 @@ El presupuesto PCM inicial de un Show nuevo es un octavo de la memoria disponibl
 
 ## Inicio rápido
 
-1. Descarga **StagePad-Live-1.3-Windows.zip** desde [Releases](https://github.com/Alessio278/StagePad-Live/releases), extráelo y ejecuta **StagePad-1.3.exe**. No requiere instalación.
+1. Descarga **StagePad-Live-1.4-Windows.zip** desde [Releases](https://github.com/Alessio278/StagePad-Live/releases), extráelo y ejecuta **StagePad-1.4.exe**. No requiere instalación.
 2. En Setup elige el dispositivo de audio y los puertos MIDI. Empieza con un búfer de 40 ms y realiza la prueba de audio.
 3. Carga las pistas, configura las acciones y asigna pads con LEARN. Selecciona el idioma desde el engranaje.
 4. Guarda el show, cambia a Directo y activa SHOW LOCK. F11 abre la pantalla completa; STOP ALL detiene el audio y los comandos pendientes.

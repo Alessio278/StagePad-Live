@@ -192,6 +192,15 @@
   <Style TargetType="ToolTip">
     <Setter Property="Background" Value="#22354B"/><Setter Property="Foreground" Value="#EDF4FC"/>
     <Setter Property="BorderBrush" Value="#48617A"/><Setter Property="Padding" Value="12,8"/>
-    <Setter Property="MaxWidth" Value="520"/>
+    <Setter Property="MaxWidth" Value="400"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="IsHitTestVisible" Value="False"/>
+    <Setter Property="ContentTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <TextBlock Text="{Binding}" TextWrapping="Wrap" TextTrimming="None"/>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
   </Style>
 </ResourceDictionary>

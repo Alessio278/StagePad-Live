@@ -37,7 +37,7 @@ internal sealed partial class MainWindow
             {
                 string summary=$"MIDI { (SlotActions.Midi(settings.Action)?SlotActions.MidiList(settings).Length:0) } · OSC { (SlotActions.Osc(settings.Action)?settings.OscCommands.Length:0) }";
                 times[i].Text=liveTimes[i].Text=settings.EmergencyPauseAll && !SlotActions.Midi(settings.Action) && !SlotActions.Osc(settings.Action)?L.T("PAUSA GLOBALE"):summary;
-                if(!recent && view.HoldProgress==0)states[i].Text=liveStates[i].Text=L.T(settings.EmergencyPauseAll?"EMERGENZA":SlotContent.Configured(settings)?"PRONTO":"VUOTO");
+                if(!recent && view.HoldProgress==0)states[i].Text=liveStates[i].Text=L.T(settings.EmergencyPauseAll?"PAUSA GLOBALE":SlotContent.Configured(settings)?"PRONTO":"VUOTO");
             }
             if(settings.Action==SlotAction.Marker)
             {times[i].Text=liveTimes[i].Text=L.T("+MARKER");states[i].Text=liveStates[i].Text=L.T(recent?"ATTIVATO":"+MARKER");}
@@ -49,7 +49,7 @@ internal sealed partial class MainWindow
         if(commandsOnly)
         {
             var view=last.Slots[current];bool recent=view.TriggeredAt>0 && now-view.TriggeredAt<1200;
-            string state=view.HoldProgress>0?L.F("TIENI PREMUTO · {0:0.0} s",Math.Max(0,3*(1-view.HoldProgress))):L.T(recent?(view.TriggerOk?"ATTIVATO":"ERRORE INVIO"):selectedSettings.EmergencyPauseAll?"EMERGENZA":"PRONTO");
+            string state=view.HoldProgress>0?L.F("TIENI PREMUTO · {0:0.0} s",Math.Max(0,3*(1-view.HoldProgress))):L.T(recent?(view.TriggerOk?"ATTIVATO":"ERRORE INVIO"):selectedSettings.EmergencyPauseAll?"PAUSA GLOBALE":"PRONTO");
             AssignText(selected,$"{current+1:00} · {view.Name} · {state}");
         }
         waveform.Visibility=commandsOnly?Visibility.Collapsed:Visibility.Visible;commandDetails.Visibility=commandsOnly?Visibility.Visible:Visibility.Collapsed;
@@ -60,7 +60,7 @@ internal sealed partial class MainWindow
             shownCommandSettings=selectedSettings;shownDestinations=last.Project.CommandDefaults;selectedSettings=last.Project.CommandDefaults.Resolve(selectedSettings);
             var rows=new System.Collections.Generic.List<string>();
             if(selectedSettings.Action==SlotAction.Marker)rows.Add(L.T("Inserisce un marker nella traccia selezionata in riproduzione, solo in Setup."));
-            if(selectedSettings.EmergencyPauseAll)rows.Add(L.T("EMERGENZA: pausa tutte le tracce"));
+            if(selectedSettings.EmergencyPauseAll)rows.Add(L.T("PAUSA GLOBALE"));
             if(SlotActions.Midi(selectedSettings.Action))foreach(var m in SlotActions.MidiList(selectedSettings).Take(2))rows.Add($"MIDI · {m.Kind} · CH {m.Channel} · "+(m.Kind==MidiKind.ControlChange?$"CC {m.Controller} = {m.ControlValue}":m.Kind==MidiKind.Note?$"NOTE {m.Note}":m.Kind==MidiKind.ProgramChange?$"PC {m.Program}":m.Cue));
             if(SlotActions.Osc(selectedSettings.Action))foreach(var o in selectedSettings.OscCommands.Take(2))rows.Add($"OSC · {o.Host}:{o.Port} · {o.Address}");
             commandDetails.Text=string.Join("\n",rows);commandDetails.ToolTip=commandDetails.Text;

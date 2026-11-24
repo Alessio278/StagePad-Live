@@ -1,4 +1,175 @@
 {
+  "Usa una porta MIDI dedicata ai LED. Il controller deve ricevere messaggi Note On. I colori associati alle note dipendono dal modello.": {
+    "en": "Use a dedicated MIDI port for LEDs. The controller must receive Note On messages. Note colors vary by model.",
+    "es": "Usa un puerto MIDI dedicado a los LED. El controlador debe recibir mensajes Note On. Los colores de las notas dependen del modelo.",
+    "fr": "Utilisez un port MIDI dédié aux LED. Le contrôleur doit recevoir des messages Note On. Les couleurs associées aux notes dépendent du modèle."
+  },
+  "Impedisci di avviare altri pad audio durante la riproduzione": {
+    "en": "Prevent other audio pads from starting during playback",
+    "es": "Impedir que se inicien otros pads de audio durante la reproducción",
+    "fr": "Empêcher le lancement des autres pads audio pendant la lecture"
+  },
+  "Mostra suggerimenti al passaggio del mouse": {
+    "en": "Show tooltips on hover",
+    "es": "Mostrar ayuda al pasar el ratón",
+    "fr": "Afficher les infobulles au survol"
+  },
+  "Visualizza una spiegazione quando il puntatore si ferma su un controllo.": {
+    "en": "Show help when the pointer rests on a control.",
+    "es": "Muestra ayuda al detener el puntero sobre un control.",
+    "fr": "Affiche une aide lorsque le pointeur reste sur une commande."
+  },
+  "Gli altri pad audio già in riproduzione continuano. Se ne premi un altro, il suo avvio e i comandi MIDI/OSC associati vengono ignorati.": {
+    "en": "Audio already playing continues. Pressing another audio pad discards its launch and its MIDI/OSC commands.",
+    "es": "El audio que ya suena continúa. Al pulsar otro pad de audio se descartan su inicio y sus comandos MIDI/OSC.",
+    "fr": "Les pistes en cours continuent. Un autre pad audio pressé est ignoré, y compris ses commandes MIDI/OSC."
+  },
+  "Avvia subito questo pad e ferma le altre tracce con il fade-out impostato su ciascuna.": {
+    "en": "Start this pad immediately and stop other tracks using each track’s fade-out.",
+    "es": "Inicia este pad y detiene las demás pistas con sus propios fundidos de salida.",
+    "fr": "Lance ce pad immédiatement et arrête les autres pistes avec leur fondu de sortie."
+  },
+  "Rilascia prima di tre secondi per annullare. Via MIDI usa un pad momentaneo con Note Off.": {
+    "en": "Release before three seconds to cancel. For MIDI, use a momentary pad with Note Off.",
+    "es": "Suelta antes de tres segundos para cancelar. Usa un pad MIDI momentáneo con Note Off.",
+    "fr": "Relâchez avant trois secondes pour annuler. En MIDI, utilisez un pad momentané avec Note Off."
+  },
+  "Riproduce il file audio assegnato allo slot.": {
+    "en": "Play the audio file assigned to this slot.",
+    "es": "Reproduce el archivo de audio asignado al slot.",
+    "fr": "Lit le fichier audio affecté au slot."
+  },
+  "Invia i comandi MIDI configurati per questo pad.": {
+    "en": "Send this pad’s configured MIDI commands.",
+    "es": "Envía los comandos MIDI configurados para este pad.",
+    "fr": "Envoie les commandes MIDI configurées pour ce pad."
+  },
+  "Invia i messaggi OSC configurati per questo pad.": {
+    "en": "Send this pad’s configured OSC messages.",
+    "es": "Envía los mensajes OSC configurados para este pad.",
+    "fr": "Envoie les messages OSC configurés pour ce pad."
+  },
+  "Scegli come reagisce la traccia alla pressione e al rilascio del pad.": {
+    "en": "Choose how the track responds when the pad is pressed or released.",
+    "es": "Elige cómo responde la pista al pulsar o soltar el pad.",
+    "fr": "Choisissez la réaction de la piste à la pression et au relâchement du pad."
+  },
+  "Scegli il tipo di messaggio MIDI da inviare.": {
+    "en": "Choose the MIDI message type to send.",
+    "es": "Elige el tipo de mensaje MIDI que se enviará.",
+    "fr": "Choisissez le type de message MIDI à envoyer."
+  },
+  "Scegli quando inviare Note Off per chiudere la nota.": {
+    "en": "Choose when to send Note Off to end the note.",
+    "es": "Elige cuándo enviar Note Off para terminar la nota.",
+    "fr": "Choisissez quand envoyer Note Off pour terminer la note."
+  },
+  "Scegli il comando da inviare al dispositivo MSC.": {
+    "en": "Choose the command sent to the MSC device.",
+    "es": "Elige el comando enviado al dispositivo MSC.",
+    "fr": "Choisissez la commande envoyée à l’appareil MSC."
+  },
+  "Scegli il formato dell’indirizzo executor e pagina.": {
+    "en": "Choose the executor and page address format.",
+    "es": "Elige el formato de dirección del executor y la página.",
+    "fr": "Choisissez le format d’adresse de l’exécuteur et de la page."
+  },
+  "Scegli il tipo di dato da inviare in questo argomento OSC.": {
+    "en": "Choose the data type sent in this OSC argument.",
+    "es": "Elige el tipo de dato enviado en este argumento OSC.",
+    "fr": "Choisissez le type de donnée envoyé dans cet argument OSC."
+  },
+  "Seleziona il dispositivo su cui ascoltare l’audio dello show.": {
+    "en": "Choose the device that plays show audio.",
+    "es": "Selecciona el dispositivo que reproduce el audio del show.",
+    "fr": "Choisissez le périphérique de lecture du spectacle."
+  },
+  "Scegli la durata del buffer audio in millisecondi.": {
+    "en": "Choose the audio buffer duration in milliseconds.",
+    "es": "Elige la duración del búfer de audio en milisegundos.",
+    "fr": "Choisissez la durée du tampon audio en millisecondes."
+  },
+  "Scegli il controller che aziona i pad.": {
+    "en": "Choose the controller that triggers the pads.",
+    "es": "Elige el controlador que activa los pads.",
+    "fr": "Choisissez le contrôleur qui déclenche les pads."
+  },
+  "Scegli la porta che riceve i comandi MIDI dello show.": {
+    "en": "Choose the port that receives show MIDI commands.",
+    "es": "Elige el puerto que recibe los comandos MIDI del show.",
+    "fr": "Choisissez le port qui reçoit les commandes MIDI du spectacle."
+  },
+  "Imposta il numero di righe della griglia.": {
+    "en": "Set the number of grid rows.",
+    "es": "Ajusta el número de filas de la cuadrícula.",
+    "fr": "Définissez le nombre de lignes de la grille."
+  },
+  "Imposta il numero di colonne della griglia.": {
+    "en": "Set the number of grid columns.",
+    "es": "Ajusta el número de columnas de la cuadrícula.",
+    "fr": "Définissez le nombre de colonnes de la grille."
+  },
+  "Scegli quanti slot rendere disponibili nello show.": {
+    "en": "Choose how many slots are available in the show.",
+    "es": "Elige cuántos slots tendrá disponibles el show.",
+    "fr": "Choisissez le nombre de slots disponibles dans le spectacle."
+  },
+  "Scegli il pacchetto show da importare.": {
+    "en": "Choose the show package to import.",
+    "es": "Elige el paquete del show que se importará.",
+    "fr": "Choisissez le paquet du spectacle à importer."
+  },
+  "Scegli la porta che aggiorna i LED del controller.": {
+    "en": "Choose the port used to update controller LEDs.",
+    "es": "Elige el puerto que actualiza los LED del controlador.",
+    "fr": "Choisissez le port qui met à jour les LED du contrôleur."
+  },
+  "Scegli come interpretare i valori del fader o encoder MIDI.": {
+    "en": "Choose how to interpret MIDI fader or encoder values.",
+    "es": "Elige cómo interpretar el fader o encoder MIDI.",
+    "fr": "Choisissez comment interpréter les valeurs du fader ou de l’encodeur MIDI."
+  },
+  "Salva automaticamente le modifiche allo show.": {
+    "en": "Automatically save changes to the show.",
+    "es": "Guarda automáticamente los cambios del show.",
+    "fr": "Enregistre automatiquement les modifications du spectacle."
+  },
+  "Scegli il marker da cui parte la traccia.": {
+    "en": "Choose the marker where playback starts.",
+    "es": "Elige el marcador donde empieza la pista.",
+    "fr": "Choisissez le marqueur de début de la piste."
+  },
+  "Scegli il marker in cui termina la traccia.": {
+    "en": "Choose the marker where playback ends.",
+    "es": "Elige el marcador donde termina la pista.",
+    "fr": "Choisissez le marqueur de fin de la piste."
+  },
+  "Scegli il marker da cui riparte il loop.": {
+    "en": "Choose the marker the loop returns to.",
+    "es": "Elige el marcador al que vuelve el bucle.",
+    "fr": "Choisissez le marqueur où reprend la boucle."
+  },
+  "Scegli il marker che chiude il loop.": {
+    "en": "Choose the marker that ends the loop.",
+    "es": "Elige el marcador que cierra el bucle.",
+    "fr": "Choisissez le marqueur qui termine la boucle."
+  },
+  "Mette in pausa tutte le tracce conservando le posizioni.": {"en": "Pauses all tracks at their current positions.", "es": "Pone en pausa todas las pistas conservando sus posiciones.", "fr": "Met toutes les pistes en pause en conservant leurs positions."},
+  "Riproduzione audio": {"en": "Audio playback", "es": "Reproducción de audio", "fr": "Lecture audio"},
+  "Attivazione": {"en": "Activation", "es": "Activación", "fr": "Activation"},
+  "Comandi di regia": {"en": "Show controls", "es": "Controles del espectáculo", "fr": "Commandes de régie"},
+  "Uscite dello slot": {"en": "Slot outputs", "es": "Salidas del slot", "fr": "Sorties du slot"},
+  "Pausa globale": {"en": "Global pause", "es": "Pausa global", "fr": "Pause globale"},
+  "Blocca altri avvii audio mentre questo slot suona": {
+    "en": "Block other audio starts while this slot plays",
+    "es": "Bloquear otros inicios de audio mientras suena este slot",
+    "fr": "Bloquer les autres départs audio pendant la lecture de ce slot"
+  },
+  "Ferma gli altri slot audio all’avvio": {
+    "en": "Stop other audio slots on start",
+    "es": "Detener los demás slots de audio al iniciar",
+    "fr": "Arrêter les autres slots audio au démarrage"
+  },
   "Impostazioni": {
     "en": "Settings",
     "es": "Ajustes",
@@ -2669,11 +2840,6 @@
     "es": "Las esperas se acumulan en cada secuencia. MIDI y OSC empiezan juntos y avanzan de forma independiente. STOP cancela los comandos pendientes.",
     "fr": "Les délais s’additionnent dans chaque séquence. MIDI et OSC démarrent ensemble et progressent indépendamment. STOP annule les commandes en attente."
   },
-  "Disattivato per default. Solo per controller che ricevono LED tramite Note On. I valori LED dello slot dipendono dal dispositivo: non sono colori RGB universali. Compatibilità Donner da verificare. Non selezionare la porta delle luci.": {
-    "en": "Disabled by default. Only for controllers receiving LED feedback via Note On. Slot LED values depend on the device: they are not universal RGB colors. Donner compatibility needs testing. Do not select the lighting output.",
-    "es": "Desactivado por defecto. Solo para controladores con LED mediante Note On. Los valores dependen del dispositivo: no son colores RGB universales. Compatibilidad Donner por verificar. No elijas la salida de luces.",
-    "fr": "Désactivé par défaut. Uniquement pour les contrôleurs recevant leurs LED via Note On. Les valeurs dépendent du matériel : ce ne sont pas des couleurs RGB universelles. Compatibilité Donner à vérifier. Ne choisissez pas la sortie lumières."
-  },
   "Valori LED da 0 a 127.": {
     "en": "LED values must be 0-127.",
     "es": "Valores LED de 0 a 127.",
@@ -2793,11 +2959,6 @@
     "en": "Adds a marker to the selected playing track, only in Setup.",
     "es": "Añade un marcador a la pista seleccionada en reproducción, solo en Setup.",
     "fr": "Ajoute un marqueur à la piste sélectionnée en lecture, uniquement dans Setup."
-  },
-  "Disattivato per default. Solo per controller che ricevono LED tramite Note On. I valori LED dello slot dipendono dal dispositivo: non sono colori RGB universali. Compatibilità Donner da verificare. Non selezionare la porta dei comandi MIDI.": {
-    "en": "Disabled by default. Only for controllers receiving LED feedback via Note On. Slot LED values are device-specific, not universal RGB colors. Donner compatibility is unverified. Do not select the MIDI command output.",
-    "es": "Desactivado por defecto. Solo para controladores que reciben LED mediante Note On. Los valores dependen del dispositivo y no son colores RGB universales. Compatibilidad Donner sin verificar. No selecciones la salida de comandos MIDI.",
-    "fr": "Désactivé par défaut. Uniquement pour les contrôleurs recevant les LED via Note On. Les valeurs dépendent du matériel et ne sont pas des couleurs RGB universelles. Compatibilité Donner non vérifiée. Ne sélectionnez pas la sortie des commandes MIDI."
   },
   "Progetto non valido: schema 1/2/3 e da 1 a 100 slot richiesti.": {
     "en": "Invalid project: schema 1/2/3 and 1-100 slots required.",

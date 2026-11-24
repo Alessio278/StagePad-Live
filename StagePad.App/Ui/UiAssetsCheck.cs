@@ -19,6 +19,12 @@ internal static class UiAssetsCheck
         AppUpdates.ValidateBinary(Environment.ProcessPath!,new Version(AppUpdates.Current.Major,AppUpdates.Current.Minor));
         var app=new Application {ShutdownMode=ShutdownMode.OnExplicitShutdown};
         app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("pack://application:,,,/StagePad;component/Ui/Theme.xaml",UriKind.Absolute)});
+        var tip=new System.Windows.Controls.ToolTip {Style=(Style)app.FindResource(typeof(System.Windows.Controls.ToolTip))};
+        if (tip.ContentTemplate?.LoadContent() is not System.Windows.Controls.TextBlock tipText || tipText.TextWrapping!=TextWrapping.Wrap)
+            throw new InvalidOperationException("Tooltip text must wrap.");
+        tipText.Text="Gli altri pad audio già in riproduzione continuano. Se ne premi un altro, il suo avvio e i comandi MIDI/OSC associati vengono ignorati.";
+        tipText.Measure(new Size(180,double.PositiveInfinity));
+        if (tipText.DesiredSize.Height<2*tipText.FontSize)throw new InvalidOperationException("Long tooltip did not span multiple lines.");
         var option=new System.Windows.Controls.CheckBox{Content="Dark themed option",IsChecked=true,Width=240};
         option.Measure(new Size(240,50));option.Arrange(new Rect(0,0,240,50));option.UpdateLayout();
         if(option.Template.FindName("Box",option) is not System.Windows.Controls.Border optionBox || optionBox.CornerRadius.TopLeft!=5 || optionBox.Background is not SolidColorBrush optionFill || optionFill.Color!=Color.FromRgb(0x75,0xE2,0xC1))throw new InvalidOperationException("Checkbox does not use the rounded dark-theme template.");
@@ -48,19 +54,28 @@ internal static class UiAssetsCheck
         }
         finally{editor.Close();}
         var templateDefaults=new CommandDefaults{MidiChannel=9,OscHost="192.168.10.2",OscPort=9010,OscAddress="/mix"};
-        var templateEditor=new SlotEditor(0,new(){Action=SlotAction.Audio},_=>Task.FromResult(new Reply(true)),defaults:templateDefaults);
+        var templateEditor=new SlotEditor(0,new(){Action=SlotAction.Audio, HoldToStart=true, BlockOtherStarts=true, StopOthersOnStart=true},_=>Task.FromResult(new Reply(true)),defaults:templateDefaults);
         try
         {
             IEnumerable<DependencyObject> Nodes(DependencyObject root)
             {yield return root;foreach(var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())foreach(var node in Nodes(child))yield return node;}
+            var ordinary=templateEditor.Read();
+            if (!ordinary.RequiresHold || ordinary.EmergencyHold || !ordinary.BlockOtherStarts || !ordinary.StopOthersOnStart)
+                throw new InvalidOperationException("Slot launch options failed editor roundtrip.");
             var boxes=Nodes(templateEditor).OfType<System.Windows.Controls.CheckBox>().ToArray();
+            var pause=boxes.Single(b=>Equals(b.Content,"Pausa globale"));
+            var playbackPanel=(System.Windows.Controls.Panel)boxes.Single(b=>Equals(b.Content,"Ferma gli altri slot audio all’avvio")).Parent;
+            pause.IsChecked=true;
+            if(playbackPanel.Visibility!=Visibility.Collapsed || !templateEditor.Read().EmergencyPauseAll)throw new InvalidOperationException("Global pause layout failed.");
+            pause.IsChecked=false;
+            if(playbackPanel.Visibility!=Visibility.Visible)throw new InvalidOperationException("Audio section failed to reopen.");
             boxes.Single(b=>Equals(b.Content,"MIDI")).IsChecked=true;
             if(templateEditor.Read().MidiCommands![0].Channel!=9 || templateEditor.Read().MidiCommands![0].UseShowDestination)throw new InvalidOperationException("New editable MIDI defaults failed.");
             boxes.Single(b=>Equals(b.Content,"OSC")).IsChecked=true;
             if(templateEditor.Read().OscCommands.Single().Port!=9010)throw new InvalidOperationException("New OSC action must preload destination.");
             boxes.Single(b=>Equals(b.Content,"+ Marker")).IsChecked=true;
             var markerOnly=templateEditor.Read();
-            if(markerOnly.Action!=SlotAction.Marker || markerOnly.EmergencyPauseAll || markerOnly.EmergencyHold)throw new InvalidOperationException("Marker action exclusivity failed.");
+            if(markerOnly.Action!=SlotAction.Marker || markerOnly.EmergencyPauseAll || markerOnly.EmergencyHold || markerOnly.HoldToStart || markerOnly.BlockOtherStarts || markerOnly.StopOthersOnStart)throw new InvalidOperationException("Marker action exclusivity failed.");
             boxes.Single(b=>Equals(b.Content,"+ Marker")).IsChecked=false;
             if(templateEditor.Read().Action!=SlotAction.None)throw new InvalidOperationException("No selected actions must stay disabled.");
         }

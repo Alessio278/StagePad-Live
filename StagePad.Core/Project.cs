@@ -39,6 +39,11 @@ public sealed record SlotSettings
     public bool? AutoName {get;init;}
     public bool EmergencyPauseAll {get;init;}
     public bool EmergencyHold {get;init;}
+    public bool BlockOtherStarts { get; init; }
+    public bool StopOthersOnStart { get; init; }
+    public bool HoldToStart { get; init; }
+    [JsonIgnore]
+    public bool RequiresHold => EmergencyPauseAll ? EmergencyHold : HoldToStart;
     public int LedIdleValue {get;init;}=20;
     public int LedActiveValue {get;init;}=127;
     public string Color { get; init; } = "#4A78BC";
@@ -69,7 +74,7 @@ public sealed record RoutingSettings
 public sealed record GridLayout(int Rows=4,int Columns=4);
 public sealed record ProjectDocument
 {
-    public int Schema { get; init; } = 4;
+    public int Schema { get; init; } = 5;
     public int SlotCount { get; init; } = 16;
     public GridLayout Grid { get; init; } = new();
     public GridLayout SetupGrid { get; init; } = new();
@@ -133,7 +138,7 @@ public static partial class Projects
         if(p.CommandDefaults==null)throw new InvalidDataException("Destinazioni non valide.");
         p.CommandDefaults.Validate();
         if(p.Routing?.PadFeedbackOutput is {} selectedLed && string.IsNullOrWhiteSpace(selectedLed) || (p.Routing?.PadFeedbackOutput?.Length??0)>512 || p.Routing?.PadFeedbackOutput is {} led && led==p.Routing.MidiOutput)throw new InvalidDataException("La porta LED deve essere separata dalla porta MIDI dei comandi.");
-        if (p.Schema is not (1 or 2 or 3 or 4) || p.Slots is not { Length: >=1 and <=MaxSlots } || p.SlotCount is <1 or >MaxSlots || p.SlotCount>p.Slots.Length || p.Routing == null) throw new InvalidDataException("Progetto non valido: schema 1/2/3/4 e da 1 a 100 slot richiesti.");
+        if (p.Schema is not (1 or 2 or 3 or 4 or 5) || p.Slots is not { Length: >=1 and <=MaxSlots } || p.SlotCount is <1 or >MaxSlots || p.SlotCount>p.Slots.Length || p.Routing == null) throw new InvalidDataException("Progetto non valido: schema 1/2/3/4/5 e da 1 a 100 slot richiesti.");
         if (string.IsNullOrWhiteSpace(p.Name) || p.Name.Length > 100 || !float.IsFinite(p.Master) || p.Master is < 0 or > 1 || !float.IsFinite(p.DefaultSlotVolume) || p.DefaultSlotVolume is <0 or >1 || p.MemoryMiB is < 128 or > 4096) throw new InvalidDataException("Nome, master o budget RAM non validi.");
         if ((p.Routing.AudioDevice?.Length ?? 0) > 512 || (p.Routing.MidiInput?.Length ?? 0) > 512 || (p.Routing.MidiOutput?.Length ?? 0) > 512) throw new InvalidDataException("Identificatore dispositivo troppo lungo.");
         if (p.Routing.BufferMs is not (20 or 40 or 80)) throw new InvalidDataException("Buffer audio non valido.");
@@ -155,7 +160,7 @@ public static partial class Projects
         if ((s.File?.Length ?? 0) > 1024) throw new InvalidDataException("Percorso audio troppo lungo (massimo 1024 caratteri).");
         if (!Enum.IsDefined(s.Mode) || !Enum.IsDefined(s.Action) || !float.IsFinite(s.Volume) || s.Volume is < 0 or > 1 || s.PadChannel is < 1 or > 16 || s.PadNote is < -1 or > 127 || s.FadeInMs is < 0 or > 30000 || s.FadeOutMs is < 0 or > 30000) throw new InvalidDataException("Parametri audio/mappatura non validi.");
         if(s.LedIdleValue is <0 or >127 || s.LedActiveValue is <0 or >127)throw new InvalidDataException("Valori LED da 0 a 127.");
-        if(s.Action==SlotAction.Marker && (s.EmergencyPauseAll || s.EmergencyHold))throw new InvalidDataException("+ Marker è un’azione esclusiva.");
+        if(s.Action==SlotAction.Marker && (s.EmergencyPauseAll || s.EmergencyHold || s.HoldToStart || s.StopOthersOnStart || s.BlockOtherStarts))throw new InvalidDataException("+ Marker è un’azione esclusiva.");
         AudioMarkers.Validate(s.Markers);
         MarkerLoops.Validate(s.MarkerLoop,s.Markers);
         MarkerTrims.ValidateLoop(s.MarkerTrim,s.MarkerLoop,s.Markers);

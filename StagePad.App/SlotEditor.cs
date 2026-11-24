@@ -15,14 +15,18 @@ internal sealed class SlotEditor : Window
     private readonly int slotIndex;
     private readonly Func<Request,Task<Reply>>? test;
     private string selectedColor;
-    private readonly CheckBox emergencyHold=new(){Content="Tieni premuto 3 secondi per attivare",ToolTip="MIDI: usa un pad momentaneo che invii Note Off al rilascio."};
+    private readonly CheckBox blockStarts = new() { ToolTip="Gli altri pad audio già in riproduzione continuano. Se ne premi un altro, il suo avvio e i comandi MIDI/OSC associati vengono ignorati." };
+    private readonly CheckBox stopOthers = new() { Content = "Ferma gli altri slot audio all’avvio",ToolTip="Avvia subito questo pad e ferma le altre tracce con il fade-out impostato su ciascuna." };
+    private readonly CheckBox emergencyHold=new(){Content="Tieni premuto 3 secondi per attivare",ToolTip="Rilascia prima di tre secondi per annullare. Via MIDI usa un pad momentaneo con Note Off."};
+    private readonly StackPanel playback = new();
+    private TextBlock activationTitle = new(), pauseHint = new(), markerHint = new();
     private readonly CommandDefaults defaults;
     private readonly TextBlock sequencePreview=new(){TextWrapping=TextWrapping.Wrap,Foreground=Brushes.MediumAquamarine};
-    private readonly CheckBox emergency=new(){Content="Emergenza"},useMarker=new(){Content="+ Marker"};
+    private readonly CheckBox emergency=new(){Content="Pausa globale",ToolTip="Mette in pausa tutte le tracce conservando le posizioni."},useMarker=new(){Content="+ Marker",ToolTip="+ Marker è esclusivo: inserisce marker nella traccia selezionata in riproduzione, solo in Setup."};
     private bool populating,changingActions;
     private Button duplicateMidi=new(),duplicateOsc=new(),previewSequence=new();
-    private TextBlock? sequenceHint;
-    private readonly CheckBox useAudio=new(){Content="Audio"},useMidi=new(){Content="MIDI"},useOsc=new(){Content="OSC"};
+    private TextBlock? sequenceHint, commandHint;
+    private readonly CheckBox useAudio=new(){Content="Audio",ToolTip="Riproduce il file audio assegnato allo slot."},useMidi=new(){Content="MIDI",ToolTip="Invia i comandi MIDI configurati per questo pad."},useOsc=new(){Content="OSC",ToolTip="Invia i messaggi OSC configurati per questo pad."};
     private readonly List<MidiCommandEditor> midiCommands=[];
     private readonly List<OscCommandEditor> oscCommands=[];
     private StackPanel midiList=new(),oscList=new(),midiSection=new(),oscSection=new();
@@ -73,34 +77,42 @@ internal sealed class SlotEditor : Window
         midiList=new();oscList=new();populated=settings;
         Text("Nome",SlotTitles.Automatic(settings,slotIndex)?"":settings.Name);
         fields.Children.Add(new TextBlock{Text="Nome vuoto: usa automaticamente il nome della traccia caricata.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=11});AddPalette();
-        var selectedActions=new Grid{Margin=new Thickness(0,4,0,8)};
-        for(int column=0;column<4;column++)selectedActions.ColumnDefinitions.Add(new());
-        for(int row=0;row<3;row++)selectedActions.RowDefinitions.Add(new(){Height=GridLength.Auto});
-        int actionIndex=0;
-        useAudio.IsChecked=SlotActions.Audio(settings.Action);useMidi.IsChecked=SlotActions.Midi(settings.Action);useOsc.IsChecked=SlotActions.Osc(settings.Action);emergency.IsChecked=settings.EmergencyPauseAll;useMarker.IsChecked=settings.Action==SlotAction.Marker;
-        foreach(var box in new[]{useAudio,useMidi,useOsc,emergency,useMarker})
+        playback.Children.Clear();
+        useAudio.IsChecked=SlotActions.Audio(settings.Action);useMidi.IsChecked=SlotActions.Midi(settings.Action);useOsc.IsChecked=SlotActions.Osc(settings.Action);
+        emergency.IsChecked=settings.EmergencyPauseAll;useMarker.IsChecked=settings.Action==SlotAction.Marker;
+        Heading("Uscite dello slot");
+        AddActionRow(useAudio, useMidi, useOsc);
+        Heading("Comandi di regia");
+        AddActionRow(emergency, useMarker);
+        pauseHint = Hint("Mette in pausa tutte le tracce conservando le posizioni.");
+        markerHint = Hint("+ Marker è esclusivo: inserisce marker nella traccia selezionata in riproduzione, solo in Setup.");
+        activationTitle = Heading("Attivazione");
+        emergencyHold.IsChecked=settings.RequiresHold;
+        foreach (var option in new[]{emergencyHold,blockStarts,stopOthers})
         {
-            box.Margin=new Thickness(6,4,6,4);box.Padding=new Thickness(10,8,10,8);box.MinHeight=44;box.HorizontalAlignment=HorizontalAlignment.Stretch;box.Foreground=Brushes.White;
-            Grid.SetRow(box,actionIndex/2);Grid.SetColumn(box,(actionIndex%2)*2);Grid.SetColumnSpan(box,2);actionIndex++;
-            if(box.Parent is Panel previous)previous.Children.Remove(box);selectedActions.Children.Add(box);
+            option.Margin=new Thickness(0,4,0,4);
+            option.Padding=new Thickness(5,3,5,3);
         }
-        Heading("Azioni alla pressione");fields.Children.Add(selectedActions);
-        fields.Children.Add(new TextBlock{Text="+ Marker è esclusivo: inserisce marker nella traccia selezionata in riproduzione, solo in Setup.",Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap,FontSize=11});
-        if(emergencyHold.Parent is Panel previousHold)previousHold.Children.Remove(emergencyHold);
-        emergencyHold.IsChecked=settings.EmergencyHold;emergencyHold.Visibility=settings.EmergencyPauseAll?Visibility.Visible:Visibility.Collapsed;fields.Children.Add(emergencyHold);
-        fields.Children.Add(new TextBlock{Text="In emergenza l’audio viene messo in pausa senza perdere le posizioni. MIDI/OSC seguono le selezioni dello slot.",Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap,FontSize=11});
-        Choice("Play", settings.Mode, new Dictionary<PlayMode,string> { [PlayMode.OneShot]="Tocca e parte (ripremi: riparte)", [PlayMode.Hold]="Tieni premuto", [PlayMode.Protected]="Senza interruzione (solo STOP mouse)", [PlayMode.TogglePause]="Play / pausa / riprendi" });
-        Text("Fade in ms", settings.FadeInMs); Text("Fade out ms", settings.FadeOutMs);
+        fields.Children.Add(emergencyHold);
+        fields.Children.Add(playback);
+        Heading("Riproduzione audio", playback);
+        Choice("Play", settings.Mode, new Dictionary<PlayMode,string> { [PlayMode.OneShot]="Tocca e parte (ripremi: riparte)", [PlayMode.Hold]="Tieni premuto", [PlayMode.Protected]="Senza interruzione (solo STOP mouse)", [PlayMode.TogglePause]="Play / pausa / riprendi" }, playback);
+        Text("Fade in ms", settings.FadeInMs, playback); Text("Fade out ms", settings.FadeOutMs, playback);
+        blockStarts.Content=new TextBlock { Text="Impedisci di avviare altri pad audio durante la riproduzione", TextWrapping=TextWrapping.Wrap };
+        blockStarts.IsChecked=settings.BlockOtherStarts;
+        stopOthers.IsChecked=settings.StopOthersOnStart;
+        playback.Children.Add(blockStarts);
+        playback.Children.Add(stopOthers);
         Heading("Mappatura controller - puoi anche usare LEARN nella griglia Setup");
         Text("Valore LED a riposo",settings.LedIdleValue);Text("Valore LED premuto",settings.LedActiveValue);
         Text("Canale Pad", settings.PadChannel); Text("Nota pad −1 = non associato", settings.PadNote);
         midiSection=new StackPanel();midiSection.Children.Add(midiList);
         addMidiButton=CommandForm.Button("Aggiungi comando MIDI",()=>{if(midiCommands.Count<16)AddMidi(defaults.Midi());});midiSection.Children.Add(addMidiButton);
-        midiSection.Children.Insert(0,new TextBlock{Text="Comandi MIDI · massimo 16",Foreground=CommandForm.Accent,Margin=new Thickness(0,16,0,6)});fields.Children.Add(midiSection);
+        midiSection.Children.Insert(0,new TextBlock{Text="Comandi MIDI · massimo 16",Foreground=CommandForm.Accent,Margin=new Thickness(0,22,0,8)});fields.Children.Add(midiSection);
         foreach(var command in SlotActions.MidiList(settings))AddMidi(!SlotActions.Midi(settings.Action) && settings.MidiCommands==null?defaults.Midi() with{Note=command.Note}:defaults.Resolve(command));
         oscSection=new StackPanel();oscSection.Children.Add(oscList);
         addOscButton=CommandForm.Button("Aggiungi comando OSC",()=>{if(oscCommands.Count<16)AddOsc(defaults.Osc());});oscSection.Children.Add(addOscButton);
-        oscSection.Children.Insert(0,new TextBlock{Text="Comandi OSC · UDP · massimo 16",Foreground=CommandForm.Accent,Margin=new Thickness(0,16,0,6)});fields.Children.Add(oscSection);
+        oscSection.Children.Insert(0,new TextBlock{Text="Comandi OSC · UDP · massimo 16",Foreground=CommandForm.Accent,Margin=new Thickness(0,22,0,8)});fields.Children.Add(oscSection);
         foreach(var command in settings.OscCommands)AddOsc(defaults.Resolve(command));
         var sequenceTools=new WrapPanel();
         sequenceTools.Children.Add(duplicateMidi=CommandForm.Button("Duplica ultimo MIDI",()=>{if(midiCommands.Count<16 && midiCommands.Count>0)try{AddMidi(midiCommands[^1].Read());}catch(Exception ex){warning.Text=ex.Message;}}));
@@ -108,8 +120,9 @@ internal sealed class SlotEditor : Window
         sequenceTools.Children.Add(previewSequence=CommandForm.Button("Riepilogo sequenze",()=>{try{int midiAt=0,oscAt=0;sequencePreview.Text=string.Join("\n",new[]{useMidi.IsChecked==true?"MIDI: "+string.Join(" → ",midiCommands.Select(c=>(midiAt+=c.Read().DelayMs)+" ms")):null,useOsc.IsChecked==true?"OSC: "+string.Join(" → ",oscCommands.Select(c=>(oscAt+=c.Read().DelayMs)+" ms")):null}.Where(v=>v!=null));}catch(Exception ex){warning.Text=ex.Message;}}));
         fields.Children.Add(sequenceTools);if(sequencePreview.Parent is Panel oldPreview)oldPreview.Children.Remove(sequencePreview);fields.Children.Add(sequencePreview);
         Heading("Le attese sono cumulative nella sequenza. MIDI e OSC partono insieme e avanzano indipendentemente. STOP annulla i comandi ancora in attesa.");
-        sequenceHint=fields.Children.OfType<TextBlock>().LastOrDefault();populating=false;Sections();
-        Heading("Ogni pressione invia i comandi selezionati. OSC usa UDP: verifica host, porta e percorso nel ricevitore. Il rilascio chiude le note MIDI Gate.");
+        sequenceHint=fields.Children.OfType<TextBlock>().LastOrDefault();
+        commandHint=Hint("Ogni pressione invia i comandi selezionati. OSC usa UDP: verifica host, porta e percorso nel ricevitore. Il rilascio chiude le note MIDI Gate.");
+        populating=false;Sections();
         L.Apply(fields);
     }
     private void ActionChanged(CheckBox box)
@@ -132,8 +145,12 @@ internal sealed class SlotEditor : Window
         oscSection.Visibility=duplicateOsc.Visibility=osc?Visibility.Visible:Visibility.Collapsed;
         previewSequence.Visibility=midi || osc?Visibility.Visible:Visibility.Collapsed;
         sequencePreview.Text="";sequencePreview.Visibility=previewSequence.Visibility;
+        if(commandHint!=null)commandHint.Visibility=previewSequence.Visibility;
         if(sequenceHint!=null)sequenceHint.Visibility=previewSequence.Visibility;
-        emergencyHold.Visibility=emergency.IsChecked==true?Visibility.Visible:Visibility.Collapsed;
+        pauseHint.Visibility = emergency.IsChecked==true ? Visibility.Visible : Visibility.Collapsed;
+        markerHint.Visibility = useMarker.IsChecked==true ? Visibility.Visible : Visibility.Collapsed;
+        activationTitle.Visibility=emergencyHold.Visibility=useMarker.IsChecked!=true ? Visibility.Visible : Visibility.Collapsed;
+        playback.Visibility=blockStarts.Visibility=stopOthers.Visibility=useAudio.IsChecked==true && emergency.IsChecked!=true ? Visibility.Visible : Visibility.Collapsed;
     }
     private void AddPalette()
     {
@@ -147,21 +164,41 @@ internal sealed class SlotEditor : Window
         Add("Colore",row);
     }
     private sealed record Option<T>(T Key,string Label) { public string Value=>L.T(Label);public override string ToString()=>Value; }
-    private void Heading(string value) => fields.Children.Add(new TextBlock { Text = value, FontSize=13, FontWeight=FontWeights.SemiBold, Foreground=new SolidColorBrush(Color.FromRgb(117,226,193)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,16,0,6) });
-    private void Add(string name, FrameworkElement editor)
+    private void AddActionRow(params CheckBox[] boxes)
+    {
+        var row = new System.Windows.Controls.Primitives.UniformGrid { Rows=1, Columns=boxes.Length };
+        foreach (var box in boxes)
+        {
+            if (box.Parent is Panel previous) previous.Children.Remove(box);
+            box.MinHeight=38;box.Padding=new Thickness(7,5,7,5);box.Margin=new Thickness(0,2,8,4);
+            row.Children.Add(box);
+        }
+        fields.Children.Add(row);
+    }
+    private TextBlock Hint(string text)
+    {
+        var hint=new TextBlock { Text=text, TextWrapping=TextWrapping.Wrap, Foreground=Brushes.LightSlateGray, FontSize=11, Margin=new Thickness(4,2,0,0) };
+        fields.Children.Add(hint);return hint;
+    }
+    private TextBlock Heading(string value, Panel? parent=null)
+    {
+        var title=new TextBlock { Text=value, FontSize=13, FontWeight=FontWeights.SemiBold, Foreground=CommandForm.Accent, TextWrapping=TextWrapping.Wrap, Margin=new Thickness(0,22,0,8) };
+        (parent??fields).Children.Add(title);return title;
+    }
+    private void Add(string name, FrameworkElement editor, Panel? parent=null)
     {
         var grid = new Grid { Margin = new Thickness(0,4,0,4) };
         grid.ColumnDefinitions.Add(new() { Width = new GridLength(.36,GridUnitType.Star) }); grid.ColumnDefinitions.Add(new() { Width=new GridLength(.64,GridUnitType.Star) });
         grid.Children.Add(new TextBlock { Text=name,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,0,10,0),FontSize=12,Foreground=new SolidColorBrush(Color.FromRgb(166,186,208)), VerticalAlignment = VerticalAlignment.Center });
-        Grid.SetColumn(editor, 1); grid.Children.Add(editor); fields.Children.Add(grid);
+        Grid.SetColumn(editor, 1); grid.Children.Add(editor); (parent??fields).Children.Add(grid);
     }
-    private void Text(string label, object value)
-    { var field = new TextBox { Text = Convert.ToString(value, CultureInfo.InvariantCulture), Padding = new Thickness(9,7,9,7), MaxLength = 150 }; texts[label] = field; Add(label, field); }
-    private void Choice<T>(string label, T selected, Dictionary<T, string>? labels = null) where T : struct, Enum
+    private void Text(string label, object value, Panel? parent=null)
+    { var field = new TextBox { Text = Convert.ToString(value, CultureInfo.InvariantCulture), Padding = new Thickness(9,7,9,7), MaxLength = 150 }; texts[label] = field; Add(label, field,parent); }
+    private void Choice<T>(string label, T selected, Dictionary<T, string>? labels = null, Panel? parent=null) where T : struct, Enum
     {
         var options = Enum.GetValues<T>().Select(x => new Option<T>(x, labels?.GetValueOrDefault(x) ?? x.ToString())).ToArray();
-        var combo = new ComboBox { ItemsSource = options, DisplayMemberPath = "Value", SelectedValuePath = "Key", SelectedValue = selected, Padding = new Thickness(9,7,9,7) };
-        choices[label] = combo; Add(label, combo);
+        var combo = new ComboBox { ToolTip="Scegli come reagisce la traccia alla pressione e al rilascio del pad.", ItemsSource = options, DisplayMemberPath = "Value", SelectedValuePath = "Key", SelectedValue = selected, Padding = new Thickness(9,7,9,7) };
+        choices[label] = combo; Add(label, combo,parent);
     }
     private int N(string key) => int.Parse(texts[key].Text, CultureInfo.InvariantCulture);
     private T Pick<T>(string key) where T : struct, Enum => (T)choices[key].SelectedValue;
@@ -185,7 +222,10 @@ internal sealed class SlotEditor : Window
         var osc=useOsc.IsChecked==true?oscCommands.Select(e=>e.Read()).ToArray():populated.OscCommands;
         return original with
         {
-            Name=string.IsNullOrWhiteSpace(texts["Nome"].Text)?$"Slot {slotIndex+1}":texts["Nome"].Text.Trim(),AutoName=string.IsNullOrWhiteSpace(texts["Nome"].Text),Color=selectedColor,EmergencyPauseAll=emergency.IsChecked==true,EmergencyHold=emergency.IsChecked==true && emergencyHold.IsChecked==true,Action=useMarker.IsChecked==true?SlotAction.Marker:SlotActions.From(useAudio.IsChecked==true,useMidi.IsChecked==true,useOsc.IsChecked==true),Mode=Pick<PlayMode>("Play"),
+            Name=string.IsNullOrWhiteSpace(texts["Nome"].Text)?$"Slot {slotIndex+1}":texts["Nome"].Text.Trim(),AutoName=string.IsNullOrWhiteSpace(texts["Nome"].Text),Color=selectedColor,EmergencyPauseAll=emergency.IsChecked==true,EmergencyHold=emergency.IsChecked==true && emergencyHold.IsChecked==true,
+            HoldToStart=useMarker.IsChecked!=true && emergency.IsChecked!=true && emergencyHold.IsChecked==true,
+            BlockOtherStarts=blockStarts.Visibility==Visibility.Visible && blockStarts.IsChecked==true,
+            StopOthersOnStart=stopOthers.Visibility==Visibility.Visible && stopOthers.IsChecked==true,Action=useMarker.IsChecked==true?SlotAction.Marker:SlotActions.From(useAudio.IsChecked==true,useMidi.IsChecked==true,useOsc.IsChecked==true),Mode=Pick<PlayMode>("Play"),
             FadeInMs=N("Fade in ms"),FadeOutMs=N("Fade out ms"),PadChannel=N("Canale Pad"),PadNote=N("Nota pad −1 = non associato"),
             LedIdleValue=N("Valore LED a riposo"),LedActiveValue=N("Valore LED premuto"),
             Midi=midi?.FirstOrDefault()??populated.Midi,MidiCommands=midi,OscCommands=osc

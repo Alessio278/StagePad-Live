@@ -65,6 +65,31 @@ try
     await Until(s => s.MidiIn?.Status == "Connesso" && s.MidiOut?.Status=="Connesso", "MIDI open");
     string file = Path.Combine(folder, "audio.wav"); await File.WriteAllTextAsync(file, "OK");
     await LoadReady(0,file,"load");
+    await LoadReady(1,file,"second slot ready for launch protection");
+    await Configure(0,s=>s with{BlockOtherStarts=true,StopOthersOnStart=true,HoldToStart=true});
+    await Configure(1,s=>s with{FadeOutMs=600,Action=SlotAction.All,
+        MidiCommands=[new(){Kind=MidiKind.ControlChange,Channel=14,Controller=42,ControlValue=42}],
+        OscCommands=[new(){Host="127.0.0.1",Port=9123,Address="/launch-test"}]});
+    await Do(new("play",1));
+    await Do(new("pad-down",0));await Do(new("pad-up",0));
+    await Task.Delay(3100);
+    Check((await State()).Slots[0].TriggerCount==0,"early release discards ordinary cue");
+    Check(!(await audio.Handle(new("play",0))).Ok,"plain play respects ordinary hold");
+    await Do(new("play",1));await Do(new("pad-down",0));
+    await Until(s=>s.Slots[0].State=="Playing" && s.Slots[1].State=="Stopping","confirmed cue fades previous slot",4500);
+    var beforeBlocked=await State();
+    long otherCount=beforeBlocked.Slots[1].TriggerCount;
+    int controllerCount=FakeMidi.Notes.Count(n=>n==MidiCodec.ControlChange(14,42,42));
+    await Do(new("play",1));await Do(new("pad-up",0));
+    await Until(s=>s.Slots[1].State=="Stopped","outgoing fade completes");
+    Check((await State()).Slots[1].TriggerCount==otherCount,"blocked cue discarded");
+    Check((await State()).OscSent==beforeBlocked.OscSent && FakeMidi.Notes.Count(n=>n==MidiCodec.ControlChange(14,42,42))==controllerCount,"blocked mixed cue sends neither OSC nor MIDI");
+    await Do(new("stop",0));await Until(s=>s.Slots[0].State=="Stopped","blocking slot stopped");
+    await Do(new("play",1));await Until(s=>s.Slots[1].State=="Playing","fresh launch accepted after unlock");
+    await Do(new("panic"));await Until(s=>s.Slots[1].State=="Stopped","reset protection test");
+    await Configure(0,s=>s with{BlockOtherStarts=false,StopOthersOnStart=false,HoldToStart=false});
+    await Do(new("clear",1));
+    await Configure(1,s=>Projects.DefaultSlot(1));
     var wire = await Wire.Call(pipe, new("state")); Check(wire.State?.Project?.Slots.Length == 16, "serialized protocol project snapshot roundtrip (in-process transport)");
     Check((await Wire.Call(pipe, new("wave"))).Peaks?.Length == 5, "waveform serialized separately");
     var waveState=await State();int oldWaveRevision=waveState.Slots[0].Revision;

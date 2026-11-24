@@ -22,6 +22,61 @@ internal static class L
     public static event Action? Changed;
     public static readonly DependencyProperty PreserveTextProperty=DependencyProperty.RegisterAttached("PreserveText",typeof(bool),typeof(L),new PropertyMetadata(false));
     private static UiPreferences preferences=new();
+    public static bool ShowTooltips => preferences.ShowTooltips;
+    public static bool SetShowTooltips(bool enabled)
+    {
+        preferences = preferences with { ShowTooltips=enabled };
+        if (!enabled) CloseTooltip();
+        return Save(preferences);
+    }
+    static L()
+    {
+        EventManager.RegisterClassHandler(typeof(ToolTip),ToolTip.OpenedEvent,new RoutedEventHandler(OnTooltipOpened));
+        EventManager.RegisterClassHandler(typeof(ToolTip),ToolTip.ClosedEvent,new RoutedEventHandler(OnTooltipClosed));
+        EventManager.RegisterClassHandler(typeof(FrameworkElement), ToolTipService.ToolTipOpeningEvent,
+            new ToolTipEventHandler((_, e) => { if (!ShowTooltips) e.Handled=true; }));
+    }
+    private static ToolTip? openTip;
+    private static FrameworkElement? tipOwner;
+    private static Window? tipWindow;
+
+    private static void OnTooltipOpened(object sender, RoutedEventArgs e)
+    {
+        var tip=(ToolTip)sender;
+        if (ReferenceEquals(tip,openTip)) return;
+        CloseTooltip();
+        openTip=tip;
+        tipOwner=tip.PlacementTarget as FrameworkElement;
+        if (tipOwner!=null)
+        {
+            tipOwner.MouseLeave+=OnTooltipExit;
+            tipOwner.Unloaded+=OnTooltipExit;
+            tipWindow=Window.GetWindow(tipOwner);
+            if (tipWindow!=null) tipWindow.Deactivated+=OnTooltipExit;
+        }
+        if (!ShowTooltips) CloseTooltip();
+    }
+    private static void OnTooltipExit(object? sender, EventArgs e) => CloseTooltip();
+    private static void OnTooltipClosed(object sender, RoutedEventArgs e)
+    {
+        if (ReferenceEquals(sender,openTip)) DetachTooltip();
+    }
+    private static void CloseTooltip()
+    {
+        var tip=openTip;
+        DetachTooltip();
+        tip?.SetCurrentValue(ToolTip.IsOpenProperty,false);
+    }
+    private static void DetachTooltip()
+    {
+        if (tipOwner!=null)
+        {
+            tipOwner.MouseLeave-=OnTooltipExit;
+            tipOwner.Unloaded-=OnTooltipExit;
+        }
+        if (tipWindow!=null) tipWindow.Deactivated-=OnTooltipExit;
+        openTip=null;tipOwner=null;tipWindow=null;
+    }
     public static bool FollowTriggeredSlot=>preferences.FollowTriggeredSlot;
     public static bool AutoSaveProjects=>preferences.AutoSaveProjects;
     public static bool SetAutoSaveProjects(bool enabled){var next=preferences with{AutoSaveProjects=enabled};bool saved=Save(next);preferences=next;return saved;}

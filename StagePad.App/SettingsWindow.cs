@@ -17,8 +17,8 @@ internal sealed class SettingsWindow : Window
     private CommandDefaults? shownDefaults;
     private readonly TextBox defaultSlotVolume=new(){Text="100"};
     private float? shownDefaultVolume;
-    private readonly ComboBox feedbackOutput=new(){DisplayMemberPath="Name",SelectedValuePath="Id"};
-    private readonly TextBlock feedbackStatus=new(){Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};
+    private readonly ComboBox feedbackOutput=new(){ToolTip="Scegli la porta che aggiorna i LED del controller.",DisplayMemberPath="Name",SelectedValuePath="Id"};
+    private readonly TextBlock feedbackStatus=new(){Visibility=Visibility.Collapsed,Margin=new Thickness(0,4,0,0),Foreground=Brushes.LightSlateGray,TextWrapping=TextWrapping.Wrap};
     private string? shownFeedbackOutput;
     private bool feedbackInitialized;
     private readonly StackPanel volumeControls=new();
@@ -60,11 +60,24 @@ internal sealed class SettingsWindow : Window
         body.Children.Add(new TextBlock { Text="Impostazioni",FontSize=25,FontWeight=FontWeights.SemiBold });
         body.Children.Add(new TextBlock { Text="Lingua dell’interfaccia",FontSize=13,Margin=new Thickness(0,22,0,7) });
         var languages=new ComboBox { ItemsSource=new[]{new LanguageOption("it","Italiano"),new LanguageOption("en","English"),new LanguageOption("es","Español"),new LanguageOption("fr","Français")},DisplayMemberPath="Name",SelectedValuePath="Code",SelectedValue=L.Language };
+        languages.ToolTip="La lingua si aggiorna subito ed è salvata su questo PC. L’audio continua senza interruzioni.";
+        masterMode.ToolTip=trackMode.ToolTip="Scegli come interpretare i valori del fader o encoder MIDI.";
+        masterPickup.ToolTip=trackPickup.ToolTip=PickupHelp().Text;
         body.Children.Add(languages);
         body.Children.Add(new TextBlock { Text="La lingua si aggiorna subito ed è salvata su questo PC. L’audio continua senza interruzioni.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,Margin=new Thickness(0,12,0,0) });
+        var tips=new CheckBox { Content="Mostra suggerimenti al passaggio del mouse", IsChecked=L.ShowTooltips,
+            ToolTip="Visualizza una spiegazione quando il puntatore si ferma su un controllo.", Margin=new Thickness(0,14,0,6) };
+        body.Children.Add(tips);
+        void SaveTips()
+        {
+            notice=L.SetShowTooltips(tips.IsChecked==true)?"":"L’opzione è applicata, ma non è stato possibile salvarla.";
+            UpdateNotice();
+        }
+        tips.Checked+=(_,_)=>SaveTips();tips.Unchecked+=(_,_)=>SaveTips();
         Section(body,"SERATA");
         var follow=new CheckBox { IsChecked=L.FollowTriggeredSlot,Foreground=Brushes.White,
             Content=new TextBlock { Text="Scorrimento automatico al pad attivato",TextWrapping=TextWrapping.Wrap },Margin=new Thickness(0,0,0,8) };
+        follow.ToolTip="Solo in Serata. I pad già completamente visibili non spostano la griglia.";
         body.Children.Add(follow);
         body.Children.Add(new TextBlock { Text="Solo in Serata. I pad già completamente visibili non spostano la griglia.",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightSlateGray,FontSize=12 });
         void SaveFollow()
@@ -88,7 +101,7 @@ internal sealed class SettingsWindow : Window
         }));
         Section(body,"LED CONTROLLER · PROFILO GENERICO");
         body.Children.Add(CommandForm.Row("Porta MIDI LED dedicata",feedbackOutput));
-        body.Children.Add(new TextBlock{Text="Disattivato per default. Solo per controller che ricevono LED tramite Note On. I valori LED dello slot dipendono dal dispositivo: non sono colori RGB universali. Compatibilità Donner da verificare. Non selezionare la porta dei comandi MIDI.",Foreground=Brushes.LightSlateGray,FontSize=12,TextWrapping=TextWrapping.Wrap});
+        body.Children.Add(new TextBlock{Text="Usa una porta MIDI dedicata ai LED. Il controller deve ricevere messaggi Note On. I colori associati alle note dipendono dal modello.",Foreground=Brushes.LightSlateGray,FontSize=12,TextWrapping=TextWrapping.Wrap});
         body.Children.Add(CommandForm.Button("Applica porta LED",async()=>
         {
             if(state?.Project==null)return;
@@ -152,7 +165,7 @@ internal sealed class SettingsWindow : Window
         }
         learnMaster.Click+=async(_,_)=>await Learn("master");learnTrack.Click+=async(_,_)=>await Learn("track");
         Section(body,"PROGETTI");
-        automaticSave=new CheckBox{Content=new TextBlock{Text="Salvataggio automatico degli show",Foreground=Brushes.White,TextWrapping=TextWrapping.Wrap},IsChecked=L.AutoSaveProjects,Foreground=Brushes.White,Margin=new Thickness(0,0,0,12)};body.Children.Add(automaticSave);
+        automaticSave=new CheckBox{ToolTip="Salva automaticamente le modifiche allo show.",Content=new TextBlock{Text="Salvataggio automatico degli show",Foreground=Brushes.White,TextWrapping=TextWrapping.Wrap},IsChecked=L.AutoSaveProjects,Foreground=Brushes.White,Margin=new Thickness(0,0,0,12)};body.Children.Add(automaticSave);
         async Task SaveAutomaticOption()
         {
             bool enabled=automaticSave.IsChecked==true;
@@ -230,7 +243,7 @@ internal sealed class SettingsWindow : Window
     }
     private static void Section(Panel panel,string caption)
     {
-        panel.Children.Add(new Border { Height=1,Background=new SolidColorBrush(Color.FromRgb(41,60,81)),Margin=new Thickness(0,22,0,14) });
+        panel.Children.Add(new Border { Height=1,Background=new SolidColorBrush(Color.FromRgb(41,60,81)),Margin=new Thickness(0,24,0,14) });
         panel.Children.Add(new TextBlock { Text=caption,Foreground=new SolidColorBrush(Color.FromRgb(117,226,193)),FontSize=11,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,0,0,10) });
     }
     private void UpdateNotice()=>status.Text=L.Message(notice);
@@ -241,7 +254,10 @@ internal sealed class SettingsWindow : Window
         {var selected=feedbackOutput.SelectedValue;feedbackOutput.ItemsSource=ledPorts;feedbackOutput.SelectedValue=selected??current.Project?.Routing.PadFeedbackOutput??"";}
         if(!feedbackInitialized || shownFeedbackOutput!=current.Project?.Routing.PadFeedbackOutput)
         {feedbackInitialized=true;shownFeedbackOutput=current.Project?.Routing.PadFeedbackOutput;feedbackOutput.SelectedValue=shownFeedbackOutput??"";}
-        feedbackStatus.Text=L.Message(current.MidiOut?.FeedbackStatus??"OFF");
+        var ledStatus=current.MidiOut?.FeedbackStatus;
+        bool showLedStatus=!string.IsNullOrWhiteSpace(ledStatus) && ledStatus!="OFF";
+        feedbackStatus.Text=showLedStatus?L.Message(ledStatus!):"";
+        feedbackStatus.Visibility=showLedStatus?Visibility.Visible:Visibility.Collapsed;
         if(current.Project is {} volumeProject && shownDefaultVolume!=volumeProject.DefaultSlotVolume && !defaultSlotVolume.IsKeyboardFocusWithin)
         {shownDefaultVolume=volumeProject.DefaultSlotVolume;defaultSlotVolume.Text=(volumeProject.DefaultSlotVolume*100).ToString("0.#",CultureInfo.InvariantCulture);}
         var defaults=current.Project?.CommandDefaults??new();

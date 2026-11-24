@@ -2,7 +2,7 @@ namespace StagePad.Core;
 
 public enum VoiceState { Empty, Ready, Playing, Paused, Stopped, Ended, Error, Stopping }
 public enum AudioOp { Install, Play, Pause, Stop, Volume, Master, Test, Configure, Trigger, Release, Seek, Loop, Markers, Trim }
-public readonly record struct AudioCommand(AudioOp Op, int Slot = 0, float Value = 0, IAudioSource? Source = null, long Ticket = 0, int Epoch = 0, PlayMode Mode = PlayMode.OneShot, int FadeInMs = 5, int FadeOutMs = 5, long Frame = 0, SeekBuffer? Seek = null, LoopRegion? Loop = null, AudioMarker[]? Markers=null,int MarkerVersion=0,int SignalEpoch=0, TrimRegion? Trim=null);
+public readonly record struct AudioCommand(AudioOp Op, int Slot = 0, float Value = 0, IAudioSource? Source = null, long Ticket = 0, int Epoch = 0, PlayMode Mode = PlayMode.OneShot, int FadeInMs = 5, int FadeOutMs = 5, long Frame = 0, SeekBuffer? Seek = null, LoopRegion? Loop = null, AudioMarker[]? Markers=null,int MarkerVersion=0,int SignalEpoch=0, TrimRegion? Trim=null, bool StopOthers=false);
 public readonly record struct MarkerSignal(int Slot,int Index,AudioMarker Marker,int Version,int SignalEpoch,int Epoch,long Tick);
 public readonly record struct VoiceView(VoiceState State, long Frame, long Frames, float Volume, long Starvations, long LoopPass=0);
 
@@ -138,6 +138,15 @@ public sealed class Mixer
                     if (v.Source == null) break;
                     if (v.Mode == PlayMode.Protected && (VoiceState)v.State is VoiceState.Playing or VoiceState.Paused or VoiceState.Stopping) break;
                     if (v.Mode == PlayMode.TogglePause && (VoiceState)v.State == VoiceState.Playing) { v.State = (int)VoiceState.Paused; break; }
+                    if (c.StopOthers)
+                    {
+                        foreach (var other in voices)
+                        {
+                            if (ReferenceEquals(other, v) || (VoiceState)other.State != VoiceState.Playing) continue;
+                            other.ReleaseStep = other.Envelope / other.FadeOut;
+                            other.State = (int)VoiceState.Stopping;
+                        }
+                    }
                     if (v.Mode != PlayMode.TogglePause || (VoiceState)v.State != VoiceState.Paused) StartVoice(v);
                     v.Cued=false;
                     v.EmergencyPaused=false;v.State = (int)VoiceState.Playing; break;
